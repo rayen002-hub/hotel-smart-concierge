@@ -1,0 +1,15 @@
+node_modules
+.env
+dist
+build
+coverage
+__pycache__
+venv
+*.pyc
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache
+android/.gradle
+ios/Pods
+.DS_Store
