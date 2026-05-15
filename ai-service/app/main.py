@@ -1,7 +1,13 @@
 from fastapi import FastAPI, HTTPException
 
-from app.schemas import ClassifyRequest, ClassifyResponse
+from app.schemas import (
+    ClassifyRequest,
+    ClassifyResponse,
+    DetectLanguageRequest,
+    DetectLanguageResponse,
+)
 from app.services.classifier_service import ComplaintClassifier
+from app.services.language_service import detect_language
 
 app = FastAPI(
     title="Hotel Smart Concierge - AI Service",
@@ -52,4 +58,21 @@ def classify_complaint(request: ClassifyRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la classification : {str(e)}",
+        )
+
+
+@app.post("/detect-language", response_model=DetectLanguageResponse)
+def detect_language_endpoint(request: DetectLanguageRequest):
+    """
+    Detecter la langue d'un message.
+
+    Recoit un texte et retourne le code ISO 639-1 de la langue detectee.
+    """
+    try:
+        result = detect_language(request.message)
+        return DetectLanguageResponse(**result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la detection de langue : {str(e)}",
         )
