@@ -1,0 +1,61 @@
+============================================================
+  RAPPORT DE CLASSIFICATION DES RECLAMATIONS
+============================================================
+
+--- LogisticRegression * MEILLEUR ---
+
+Accuracy  : 0.7412
+F1-score  : 0.7409
+
+Classification Report :
+              precision    recall  f1-score   support
+
+   COMPLAINT       1.00      0.71      0.83        14
+HOUSEKEEPING       0.80      0.57      0.67        14
+ MAINTENANCE       0.60      1.00      0.75        15
+       OTHER       0.69      0.64      0.67        14
+   RECEPTION       0.73      0.79      0.76        14
+  RESTAURANT       0.83      0.71      0.77        14
+
+    accuracy                           0.74        85
+   macro avg       0.78      0.74      0.74        85
+weighted avg       0.77      0.74      0.74        85
+
+Confusion Matrix :
+[[10  1  1  1  0  1]
+ [ 0  8  6  0  0  0]
+ [ 0  0 15  0  0  0]
+ [ 0  1  1  9  2  1]
+ [ 0  0  0  3 11  0]
+ [ 0  0  2  0  2 10]]
+
+--- LinearSVC ---
+
+Accuracy  : 0.6824
+F1-score  : 0.6783
+
+Classification Report :
+              precision    recall  f1-score   support
+
+   COMPLAINT       0.91      0.71      0.80        14
+HOUSEKEEPING       0.64      0.64      0.64        14
+ MAINTENANCE       0.65      1.00      0.79        15
+       OTHER       0.64      0.50      0.56        14
+   RECEPTION       0.50      0.50      0.50        14
+  RESTAURANT       0.83      0.71      0.77        14
+
+    accuracy                           0.68        85
+   macro avg       0.70      0.68      0.68        85
+weighted avg       0.70      0.68      0.68        85
+
+Confusion Matrix :
+[[10  2  1  1  0  0]
+ [ 0  9  5  0  0  0]
+ [ 0  0 15  0  0  0]
+ [ 0  1  0  7  5  1]
+ [ 1  2  0  3  7  1]
+ [ 0  0  2  0  2 10]]
+
+============================================================
+Modele selectionne : LogisticRegression
+============================================================
