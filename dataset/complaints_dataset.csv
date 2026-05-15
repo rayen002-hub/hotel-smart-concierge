@@ -1,0 +1,422 @@
+text,category
+"The air conditioning is not working in my room",MAINTENANCE
+"AC unit is making a loud noise",MAINTENANCE
+"The heater is broken",MAINTENANCE
+"There is no hot water in the bathroom",MAINTENANCE
+"The shower is leaking",MAINTENANCE
+"The toilet is clogged",MAINTENANCE
+"Light bulb in the bedroom is burnt out",MAINTENANCE
+"The TV remote is not working",MAINTENANCE
+"Power outlet near the desk is broken",MAINTENANCE
+"The sink faucet is dripping",MAINTENANCE
+"Window won't close properly",MAINTENANCE
+"The door lock is jammed",MAINTENANCE
+"There is a strange smell coming from the AC",MAINTENANCE
+"The minibar is not cooling",MAINTENANCE
+"The bathroom fan is not working",MAINTENANCE
+"The safe in the room is malfunctioning",MAINTENANCE
+"Elevator is out of service on the 3rd floor",MAINTENANCE
+"The radiator is not heating the room",MAINTENANCE
+"My room key card stopped working",MAINTENANCE
+"The ceiling is leaking water",MAINTENANCE
+"The phone in the room has no dial tone",MAINTENANCE
+"The curtains are stuck and won't open",MAINTENANCE
+"There is a power outage in my room",MAINTENANCE
+"The bathtub drain is very slow",MAINTENANCE
+"The smoke detector keeps beeping",MAINTENANCE
+"Hot water takes too long to come",MAINTENANCE
+"The Wi-Fi router in my room is blinking red",MAINTENANCE
+"The balcony door is difficult to open",MAINTENANCE
+"My room thermostat is not responding",MAINTENANCE
+"The electrical socket is sparking",MAINTENANCE
+"The bathroom mirror light is flickering",MAINTENANCE
+"The closet door is broken",MAINTENANCE
+"The air vent is blocked",MAINTENANCE
+"There is mold around the shower",MAINTENANCE
+"The carpet is wet near the window",MAINTENANCE
+"Plumbing issue in room 302",MAINTENANCE
+"The desk lamp doesn't turn on",MAINTENANCE
+"The iron provided in the room is broken",MAINTENANCE
+"The hairdryer stopped working mid-use",MAINTENANCE
+"There is a crack in the bathroom tile",MAINTENANCE
+"The blinds are broken and won't go up",MAINTENANCE
+"Water pressure in the shower is very low",MAINTENANCE
+"The exhaust fan in the bathroom is very noisy",MAINTENANCE
+"The flush mechanism is broken",MAINTENANCE
+"There's an electrical problem with the lights",MAINTENANCE
+"La climatisation ne fonctionne pas",MAINTENANCE
+"Le robinet de la salle de bain fuit",MAINTENANCE
+"Il n'y a pas d'eau chaude",MAINTENANCE
+"La lumière de la chambre ne s'allume plus",MAINTENANCE
+"Le chauffage est en panne",MAINTENANCE
+"La serrure de la porte est bloquée",MAINTENANCE
+"La télévision ne s'allume pas",MAINTENANCE
+"Le coffre-fort ne fonctionne plus",MAINTENANCE
+"L'ascenseur est en panne",MAINTENANCE
+"La chasse d'eau est cassée",MAINTENANCE
+"The AC keeps turning off by itself",MAINTENANCE
+"I hear a buzzing sound from the wall",MAINTENANCE
+"The showerhead is broken",MAINTENANCE
+"The fridge in the room is not working",MAINTENANCE
+"There is a water stain on the ceiling",MAINTENANCE
+"The bathroom door handle is loose",MAINTENANCE
+"I can't adjust the room temperature",MAINTENANCE
+"The light switch in the hallway doesn't work",MAINTENANCE
+"The window blind cord is broken",MAINTENANCE
+"The towel rack fell off the wall",MAINTENANCE
+"The electrical kettle is not working",MAINTENANCE
+"There is no power in the bathroom outlets",MAINTENANCE
+"Room needs extra towels please",HOUSEKEEPING
+"The bed sheets have not been changed",HOUSEKEEPING
+"Please clean my room",HOUSEKEEPING
+"I need more pillows",HOUSEKEEPING
+"The room has not been cleaned today",HOUSEKEEPING
+"There are stains on the bedsheets",HOUSEKEEPING
+"Please provide extra blankets",HOUSEKEEPING
+"The bathroom needs cleaning",HOUSEKEEPING
+"There is dust on the furniture",HOUSEKEEPING
+"I found hair in the bathtub",HOUSEKEEPING
+"The trash bin has not been emptied",HOUSEKEEPING
+"Need fresh towels delivered to my room",HOUSEKEEPING
+"The floor is dirty",HOUSEKEEPING
+"Please replace the bed linens",HOUSEKEEPING
+"The minibar needs restocking",HOUSEKEEPING
+"There are no toiletries in the bathroom",HOUSEKEEPING
+"I need extra hangers in the closet",HOUSEKEEPING
+"The room smells bad please clean it",HOUSEKEEPING
+"There is a stain on the carpet",HOUSEKEEPING
+"Please bring more toilet paper",HOUSEKEEPING
+"The mirror in the bathroom is dirty",HOUSEKEEPING
+"The coffee cups have not been washed",HOUSEKEEPING
+"I need a new bathrobe",HOUSEKEEPING
+"There are crumbs on the desk",HOUSEKEEPING
+"The shower curtain is moldy",HOUSEKEEPING
+"Please vacuum the room",HOUSEKEEPING
+"The windows are very dirty",HOUSEKEEPING
+"I need an extra set of slippers",HOUSEKEEPING
+"The pillow cases need to be changed",HOUSEKEEPING
+"There is a bug in my room",HOUSEKEEPING
+"The room has not been serviced since yesterday",HOUSEKEEPING
+"Please bring more shampoo and soap",HOUSEKEEPING
+"The towels smell musty",HOUSEKEEPING
+"There are water marks on the glass table",HOUSEKEEPING
+"I need an ironing board brought to my room",HOUSEKEEPING
+"The duvet cover has a hole in it",HOUSEKEEPING
+"Please clean the balcony area",HOUSEKEEPING
+"There are ants near the window",HOUSEKEEPING
+"The ashtray on the balcony hasn't been cleaned",HOUSEKEEPING
+"I need a baby cot set up in the room",HOUSEKEEPING
+"The bathroom floor is slippery and dirty",HOUSEKEEPING
+"Please provide more drinking water bottles",HOUSEKEEPING
+"Les serviettes n'ont pas été changées",HOUSEKEEPING
+"La chambre n'a pas été nettoyée",HOUSEKEEPING
+"Il manque du papier toilette",HOUSEKEEPING
+"J'ai besoin d'oreillers supplémentaires",HOUSEKEEPING
+"Le lit n'a pas été fait",HOUSEKEEPING
+"Il y a de la poussière partout",HOUSEKEEPING
+"Les draps sont tachés",HOUSEKEEPING
+"Veuillez nettoyer la salle de bain",HOUSEKEEPING
+"Il y a un insecte dans la chambre",HOUSEKEEPING
+"J'ai besoin de couvertures supplémentaires",HOUSEKEEPING
+"The laundry bag is missing from the room",HOUSEKEEPING
+"Please bring extra tea and coffee supplies",HOUSEKEEPING
+"The mattress has a stain on it",HOUSEKEEPING
+"I need the do not disturb sign replaced",HOUSEKEEPING
+"The tissue box in the room is empty",HOUSEKEEPING
+"Please change the shower mat",HOUSEKEEPING
+"There is mildew on the bathroom walls",HOUSEKEEPING
+"Can I get an extra bed sheet",HOUSEKEEPING
+"The room service tray hasn't been picked up",HOUSEKEEPING
+"The curtains smell like smoke",HOUSEKEEPING
+"I would like to request a late checkout",RECEPTION
+"Can I extend my stay for one more night",RECEPTION
+"I need help with my reservation",RECEPTION
+"I want to change my room",RECEPTION
+"Can you store my luggage after checkout",RECEPTION
+"I have a problem with my booking",RECEPTION
+"I would like an early check-in please",RECEPTION
+"Please call a taxi for me",RECEPTION
+"I need a copy of my invoice",RECEPTION
+"My reservation is under a different name",RECEPTION
+"Can I upgrade to a suite",RECEPTION
+"I need directions to the nearest pharmacy",RECEPTION
+"What time is checkout",RECEPTION
+"Can I get a wake-up call at 6 AM",RECEPTION
+"I lost my room key card",RECEPTION
+"I need an extra key for my companion",RECEPTION
+"Is there a shuttle service to the airport",RECEPTION
+"Can you recommend local attractions",RECEPTION
+"I want to file a complaint about billing",RECEPTION
+"There is an error on my bill",RECEPTION
+"I was charged twice for my room",RECEPTION
+"Can I pay with a different credit card",RECEPTION
+"Please add my loyalty membership number",RECEPTION
+"I need a receipt for my company",RECEPTION
+"Is breakfast included in my reservation",RECEPTION
+"What are the pool hours",RECEPTION
+"Can I get a room with a sea view",RECEPTION
+"I need to cancel my reservation",RECEPTION
+"Where is the nearest ATM",RECEPTION
+"Can I leave a message for another guest",RECEPTION
+"I need information about local restaurants",RECEPTION
+"Can you arrange a car rental for me",RECEPTION
+"What is the Wi-Fi password",RECEPTION
+"How do I connect to the hotel Wi-Fi",RECEPTION
+"Is there a gym in the hotel",RECEPTION
+"I want to change my checkout date",RECEPTION
+"Can I have a map of the area",RECEPTION
+"I need a doctor recommendation nearby",RECEPTION
+"Please forward my mail to my home address",RECEPTION
+"I need to check in early is that possible",RECEPTION
+"Can I have a crib added to the room",RECEPTION
+"Je voudrais un late checkout s'il vous plaît",RECEPTION
+"Je souhaite prolonger mon séjour",RECEPTION
+"Pouvez-vous appeler un taxi",RECEPTION
+"Il y a une erreur sur ma facture",RECEPTION
+"Je voudrais changer de chambre",RECEPTION
+"Quel est le mot de passe Wi-Fi",RECEPTION
+"Pouvez-vous garder mes bagages",RECEPTION
+"J'ai perdu ma carte de chambre",RECEPTION
+"À quelle heure est le checkout",RECEPTION
+"Je voudrais annuler ma réservation",RECEPTION
+"Can you print my boarding pass",RECEPTION
+"Is there a currency exchange at the hotel",RECEPTION
+"Can I get a late checkout until 2 PM",RECEPTION
+"Where can I find the business center",RECEPTION
+"Do you have a conference room available",RECEPTION
+"I need to send a fax urgently",RECEPTION
+"What floor is the swimming pool on",RECEPTION
+"I need a parking spot for my car",RECEPTION
+"Can you help me book a tour",RECEPTION
+"Where is the hotel spa located",RECEPTION
+"I would like to book a table for dinner",RESTAURANT
+"The food was cold when it arrived",RESTAURANT
+"Can I see the room service menu",RESTAURANT
+"What time does breakfast start",RESTAURANT
+"I have a food allergy please note it",RESTAURANT
+"The restaurant is too noisy",RESTAURANT
+"I ordered room service an hour ago still waiting",RESTAURANT
+"Can I get a vegetarian meal option",RESTAURANT
+"The coffee machine in the lounge is broken",RESTAURANT
+"I want to make a reservation for the restaurant",RESTAURANT
+"Is there a kids menu available",RESTAURANT
+"The portion size was very small",RESTAURANT
+"Can I order breakfast to my room",RESTAURANT
+"The juice at breakfast was not fresh",RESTAURANT
+"I found a hair in my food",RESTAURANT
+"Can I have gluten-free bread for breakfast",RESTAURANT
+"The waiter was very rude to us",RESTAURANT
+"We waited 45 minutes for our food",RESTAURANT
+"The steak was overcooked",RESTAURANT
+"Is room service available 24 hours",RESTAURANT
+"Can I get a birthday cake for tonight",RESTAURANT
+"The dinner menu is too limited",RESTAURANT
+"I need a high chair for my child",RESTAURANT
+"The soup was too salty",RESTAURANT
+"Can I order a bottle of wine to my room",RESTAURANT
+"There are no vegan options on the menu",RESTAURANT
+"Breakfast buffet was not replenished",RESTAURANT
+"The eggs at breakfast were undercooked",RESTAURANT
+"We need a table for six people tonight",RESTAURANT
+"The bar closes too early",RESTAURANT
+"Room service forgot my dessert",RESTAURANT
+"The food quality has declined since last visit",RESTAURANT
+"I would like to order a fruit platter",RESTAURANT
+"The water served at dinner was not cold",RESTAURANT
+"Can we have a table by the window",RESTAURANT
+"The restaurant staff ignored us for 20 minutes",RESTAURANT
+"I want to complain about the breakfast quality",RESTAURANT
+"Is there a halal food option",RESTAURANT
+"Can I get a late dinner reservation at 10 PM",RESTAURANT
+"The cocktail I ordered was wrong",RESTAURANT
+"The restaurant was not clean",RESTAURANT
+"Le petit-déjeuner était froid",RESTAURANT
+"Je voudrais réserver une table pour ce soir",RESTAURANT
+"Le service au restaurant était très lent",RESTAURANT
+"J'ai une allergie alimentaire",RESTAURANT
+"La nourriture n'était pas bonne",RESTAURANT
+"Il n'y a pas d'options végétariennes",RESTAURANT
+"Le serveur était impoli",RESTAURANT
+"Je voudrais commander le room service",RESTAURANT
+"Le café du petit-déjeuner était tiède",RESTAURANT
+"Pouvez-vous apporter un menu enfant",RESTAURANT
+"The pasta was tasteless",RESTAURANT
+"I'd like to order a cheese platter for the room",RESTAURANT
+"Can I have my coffee without sugar",RESTAURANT
+"The fish at dinner tasted off",RESTAURANT
+"We were given the wrong order",RESTAURANT
+"The dessert menu was unavailable",RESTAURANT
+"Breakfast ended too early today",RESTAURANT
+"The smoothie bar was closed during breakfast",RESTAURANT
+"Can I get soy milk with my cereal",RESTAURANT
+"The bread at breakfast was stale",RESTAURANT
+"I am very disappointed with the service",COMPLAINT
+"This is the worst hotel I have ever stayed in",COMPLAINT
+"The noise from the construction is unbearable",COMPLAINT
+"I feel unsafe in this hotel",COMPLAINT
+"The staff was extremely rude",COMPLAINT
+"I have been waiting for hours and nobody came",COMPLAINT
+"This hotel does not meet its advertised standards",COMPLAINT
+"The room does not match the photos online",COMPLAINT
+"I want to speak with the manager",COMPLAINT
+"I am going to leave a negative review",COMPLAINT
+"The service quality is unacceptable",COMPLAINT
+"I paid a premium price for a terrible experience",COMPLAINT
+"Nobody is answering my calls for help",COMPLAINT
+"I have complained three times and nothing has been done",COMPLAINT
+"The walls are paper thin I can hear everything",COMPLAINT
+"I was promised a quiet room but it is very noisy",COMPLAINT
+"The hotel is falsely advertised",COMPLAINT
+"I want a full refund for my stay",COMPLAINT
+"The neighbors are extremely loud at night",COMPLAINT
+"I cannot sleep because of the noise",COMPLAINT
+"The front desk staff was unhelpful and dismissive",COMPLAINT
+"I was given a dirty room despite paying for a premium",COMPLAINT
+"The hotel smells terrible in the hallways",COMPLAINT
+"Security did nothing about the noise complaint",COMPLAINT
+"I have been overcharged and nobody is helping",COMPLAINT
+"The room is much smaller than advertised",COMPLAINT
+"I am very unsatisfied with my stay overall",COMPLAINT
+"This is a terrible experience I want compensation",COMPLAINT
+"The hotel staff showed no respect",COMPLAINT
+"I feel like my complaints are being ignored",COMPLAINT
+"There was a party on my floor until 3 AM",COMPLAINT
+"I specifically requested a non-smoking room but it smells like smoke",COMPLAINT
+"The check-in process was chaotic and disorganized",COMPLAINT
+"I was treated poorly compared to other guests",COMPLAINT
+"I expected much better for the price I paid",COMPLAINT
+"The hotel does not care about customer satisfaction",COMPLAINT
+"I am going to report this hotel to consumer protection",COMPLAINT
+"Nobody apologized for the inconvenience caused",COMPLAINT
+"My experience has been absolutely horrible",COMPLAINT
+"The management is unresponsive to complaints",COMPLAINT
+"Je suis très mécontent du service",COMPLAINT
+"L'hôtel ne correspond pas aux photos",COMPLAINT
+"Le bruit est insupportable",COMPLAINT
+"Je veux parler au directeur",COMPLAINT
+"Je demande un remboursement complet",COMPLAINT
+"Le personnel est impoli et désagréable",COMPLAINT
+"C'est inacceptable pour le prix payé",COMPLAINT
+"Personne ne répond à mes appels",COMPLAINT
+"Je vais laisser un avis négatif",COMPLAINT
+"Je suis déçu par la qualité du service",COMPLAINT
+"The view from my room is blocked by construction",COMPLAINT
+"I was promised a king bed but got two singles",COMPLAINT
+"The hotel has hidden fees that were not disclosed",COMPLAINT
+"The cleanliness standards are below expectations",COMPLAINT
+"I waited 30 minutes at the front desk to check in",COMPLAINT
+"The parking situation is terrible",COMPLAINT
+"The gym equipment is outdated and dirty",COMPLAINT
+"The pool area was filthy and overcrowded",COMPLAINT
+"I was moved to a different room without notice",COMPLAINT
+"This hotel needs serious improvement",COMPLAINT
+"Can someone help me with my luggage",OTHER
+"What time does the pool close",OTHER
+"Is there a laundry service available",OTHER
+"Can I get an adapter for my charger",OTHER
+"Where is the nearest supermarket",OTHER
+"Do you have a lost and found",OTHER
+"Can I use the gym facilities",OTHER
+"Is there a spa in the hotel",OTHER
+"Can you help me with directions",OTHER
+"I left something in my previous room",OTHER
+"Where can I buy souvenirs nearby",OTHER
+"Is there a kids play area",OTHER
+"Can I get a newspaper delivered to my room",OTHER
+"What channels are available on the TV",OTHER
+"Do you have a swimming pool",OTHER
+"Is there parking available",OTHER
+"Can I borrow an umbrella",OTHER
+"Where is the ice machine on this floor",OTHER
+"Do you have a gift shop",OTHER
+"What is the checkout procedure",OTHER
+"Can I store my valuables at the front desk",OTHER
+"Where can I find an iron",OTHER
+"Is there a dress code for the restaurant",OTHER
+"Can I get a city map",OTHER
+"Do you offer laundry pickup service",OTHER
+"Where is the nearest bus stop",OTHER
+"Is there a movie theater nearby",OTHER
+"Can I request a specific room number",OTHER
+"Do you have a business center",OTHER
+"Is the hotel pet friendly",OTHER
+"Can I get extra batteries for the remote",OTHER
+"What events are happening in the area",OTHER
+"Do you have a prayer room",OTHER
+"Is there a smoking area",OTHER
+"Can I use the hotel computer",OTHER
+"Where can I rent a bicycle",OTHER
+"Do you offer babysitting services",OTHER
+"What is the voltage of the power outlets",OTHER
+"Can I receive a package at the hotel",OTHER
+"Is there an ATM inside the hotel",OTHER
+"Where is the emergency exit",OTHER
+"Où se trouve la piscine",OTHER
+"Y a-t-il un service de blanchisserie",OTHER
+"Avez-vous un adaptateur de prise",OTHER
+"Où est le supermarché le plus proche",OTHER
+"Y a-t-il un parking disponible",OTHER
+"Pouvez-vous m'aider avec mes valises",OTHER
+"Où se trouve la salle de sport",OTHER
+"Y a-t-il un espace enfants",OTHER
+"Où puis-je trouver un fer à repasser",OTHER
+"L'hôtel accepte-t-il les animaux",OTHER
+"Can I get late night snacks from somewhere",OTHER
+"Is there a florist near the hotel",OTHER
+"Do you have connecting rooms available",OTHER
+"Can someone help me carry my bags",OTHER
+"What is the best way to get to the airport",OTHER
+"Is the breakfast area wheelchair accessible",OTHER
+"Do you have a safe deposit box",OTHER
+"Where can I do some shopping nearby",OTHER
+"Can I get a rollaway bed for the room",OTHER
+"Is there a pharmacy in the hotel",OTHER
+"Can I get a wake-up call service",OTHER
+"Where is the vending machine",OTHER
+"Is there a coin laundry in the hotel",OTHER
+"Can I have some extra coat hangers",OTHER
+"What are the spa operating hours",OTHER
+"Do you have a shuttle to the city center",OTHER
+"Where is the nearest post office",OTHER
+"Can I get a late night taxi from the hotel",OTHER
+"Do you have board games for guests",OTHER
+"The plumbing in the bathroom needs fixing",MAINTENANCE
+"The door hinge is squeaking loudly",MAINTENANCE
+"The AC filter needs to be cleaned",MAINTENANCE
+"There is water leaking from under the sink",MAINTENANCE
+"The light in the corridor near my room is out",MAINTENANCE
+"The room heater makes a clicking sound",MAINTENANCE
+"The USB charging port on the nightstand is broken",MAINTENANCE
+"The bathroom extractor fan doesn't work",MAINTENANCE
+"Please bring more hand soap and conditioner",HOUSEKEEPING
+"The room needs to be vacuumed urgently",HOUSEKEEPING
+"I found a cockroach in the bathroom",HOUSEKEEPING
+"The bin bags need to be replaced",HOUSEKEEPING
+"The bedspread has not been washed",HOUSEKEEPING
+"There are cobwebs in the corner of the room",HOUSEKEEPING
+"I need a new set of bath towels",HOUSEKEEPING
+"The glasses in the minibar area are dirty",HOUSEKEEPING
+"Can you help me book a flight",RECEPTION
+"I need a room away from the elevator",RECEPTION
+"Is there a deposit required for the room",RECEPTION
+"I have a special request for my anniversary",RECEPTION
+"Can I get a copy of the hotel brochure",RECEPTION
+"What is the cancellation policy",RECEPTION
+"I need a tax invoice for my company",RECEPTION
+"Can I check in with my passport instead of ID card",RECEPTION
+"I want to order a full English breakfast",RESTAURANT
+"Can I get a lactose-free milk option",RESTAURANT
+"The toast at breakfast was burnt",RESTAURANT
+"Is there a set menu for lunch",RESTAURANT
+"Can I have extra butter and jam at breakfast",RESTAURANT
+"The restaurant air conditioning is too cold",RESTAURANT
+"When does the bar open in the evening",RESTAURANT
+"The food presentation was disappointing",RESTAURANT
+"This is absolutely unacceptable behavior from staff",COMPLAINT
+"I was kept waiting without any explanation",COMPLAINT
+"The hotel misrepresented the room category",COMPLAINT
+"My privacy was violated by housekeeping",COMPLAINT
+"The construction noise ruined my entire stay",COMPLAINT
+"I feel discriminated against by the staff",COMPLAINT
+"I have never experienced such poor service",COMPLAINT
+"The management refused to address my concern",COMPLAINT
