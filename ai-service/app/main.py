@@ -5,9 +5,12 @@ from app.schemas import (
     ClassifyResponse,
     DetectLanguageRequest,
     DetectLanguageResponse,
+    TranslateRequest,
+    TranslateResponse,
 )
 from app.services.classifier_service import ComplaintClassifier
 from app.services.language_service import detect_language
+from app.services.translation_service import TranslationService
 
 app = FastAPI(
     title="Hotel Smart Concierge - AI Service",
@@ -24,6 +27,9 @@ except FileNotFoundError as e:
 except RuntimeError as e:
     print(f"[ERROR] {e}")
     classifier = None
+
+# Initialiser le service de traduction
+translator = TranslationService()
 
 
 @app.get("/health")
@@ -75,4 +81,26 @@ def detect_language_endpoint(request: DetectLanguageRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la detection de langue : {str(e)}",
+        )
+
+
+@app.post("/translate", response_model=TranslateResponse)
+def translate_text(request: TranslateRequest):
+    """
+    Traduire un message d'une langue source vers une langue cible.
+
+    En mode mock, le texte original est retourne sans traduction.
+    En mode nllb, le modele facebook/nllb-200-distilled-600M est utilise.
+    """
+    try:
+        result = translator.translate(
+            text=request.message,
+            source_language=request.source_language,
+            target_language=request.target_language,
+        )
+        return TranslateResponse(**result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la traduction : {str(e)}",
         )

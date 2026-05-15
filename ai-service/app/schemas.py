@@ -52,3 +52,48 @@ class DetectLanguageResponse(BaseModel):
         None,
         description="Score de confiance. Null car langdetect ne le fournit pas.",
     )
+
+
+class TranslateRequest(BaseModel):
+    """Schema pour la requete de traduction."""
+    message: str = Field(
+        ...,
+        min_length=2,
+        description="Le texte a traduire. Minimum 2 caracteres.",
+        examples=["La climatisation ne marche pas"],
+    )
+    source_language: str = Field(
+        ...,
+        description="Code ISO 639-1 de la langue source (ex: fr, en, ar).",
+        examples=["fr"],
+    )
+    target_language: str = Field(
+        ...,
+        description="Code ISO 639-1 de la langue cible (ex: en, fr).",
+        examples=["en"],
+    )
+
+
+class TranslateResponse(BaseModel):
+    """Schema pour la reponse de traduction."""
+    translated_text: str = Field(
+        ...,
+        description="Le texte traduit.",
+    )
+    source_language: str = Field(
+        ...,
+        description="Code ISO 639-1 de la langue source.",
+    )
+    target_language: str = Field(
+        ...,
+        description="Code ISO 639-1 de la langue cible.",
+    )
+    mode: str = Field(
+        ...,
+        description="Mode de traduction utilise (mock ou nllb).",
+        examples=["mock"],
+    )
+    warning: Optional[str] = Field(
+        None,
+        description="Message d'avertissement si applicable.",
+    )
