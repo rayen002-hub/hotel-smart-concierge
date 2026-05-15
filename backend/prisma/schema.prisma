@@ -1,0 +1,11 @@
+// Prisma Schema - Hotel Smart Concierge
+// Les modeles seront ajoutes dans les prochaines etapes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
