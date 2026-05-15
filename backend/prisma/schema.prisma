@@ -1,5 +1,7 @@
-// Prisma Schema - Hotel Smart Concierge
-// Les modeles seront ajoutes dans les prochaines etapes.
+// =============================================================
+//  Hotel Smart Concierge - Schema Prisma PostgreSQL
+//  Ne pas ajouter de champ priority dans Complaint.
+// =============================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -8,4 +10,263 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// =============================================================
+//  ENUMS
+// =============================================================
+
+enum UserRole {
+  ADMIN
+  RECEPTIONIST
+  MAINTENANCE_MANAGER
+  HOUSEKEEPING_MANAGER
+  EMPLOYEE
+}
+
+enum Department {
+  RECEPTION
+  MAINTENANCE
+  HOUSEKEEPING
+  RESTAURANT
+  GENERAL
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  PENDING
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum ComplaintCategory {
+  MAINTENANCE
+  HOUSEKEEPING
+  RECEPTION
+  RESTAURANT
+  COMPLAINT
+  OTHER
+}
+
+enum ComplaintStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CONFIRMED
+  NEEDS_REVIEW
+  REOPENED
+}
+
+enum InterventionResult {
+  FIXED
+  NOT_FIXED
+}
+
+// =============================================================
+//  MODELS
+// =============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  employeeProfile     EmployeeProfile?
+  createdProfiles     EmployeeProfile[]  @relation("CreatedByAdmin")
+  assignedComplaints  Complaint[]        @relation("AssignedTo")
+  assignerComplaints  Complaint[]        @relation("AssignedBy")
+  interventionLogs    InterventionLog[]
+  sentMessages        InternalMessage[]  @relation("Sender")
+  receivedMessages    InternalMessage[]  @relation("Receiver")
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model EmployeeProfile {
+  id            String     @id @default(uuid())
+  userId        String     @unique
+  department    Department
+  isAvailable   Boolean    @default(true)
+  lastSeenAt    DateTime?
+  lastLoginAt   DateTime?
+  lastLogoutAt  DateTime?
+  createdById   String?
+
+  // Relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("CreatedByAdmin", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("employee_profiles")
+}
+
+model Room {
+  id              String     @id @default(uuid())
+  roomNumber      String     @unique
+  floor           Int
+  type            String
+  status          RoomStatus @default(AVAILABLE)
+  workerQrVersion Int        @default(1)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  reservations     Reservation[]
+  complaints       Complaint[]
+  interventionLogs InterventionLog[]
+
+  @@map("rooms")
+}
+
+model Reservation {
+  id                String            @id @default(uuid())
+  reservationNumber String            @unique
+  guestFirstName    String
+  guestLastName     String
+  guestEmail        String?
+  guestPhone        String?
+  nationality       String?
+  checkInDate       DateTime
+  checkOutDate      DateTime
+  status            ReservationStatus @default(PENDING)
+  roomId            String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  room       Room?       @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  guestForm  GuestForm?
+  complaints Complaint[]
+
+  @@map("reservations")
+}
+
+model GuestForm {
+  id                String   @id @default(uuid())
+  reservationId     String   @unique
+  fullName          String
+  nationality       String
+  passportEncrypted String?
+  phone             String?
+  address           String?
+  submittedAt       DateTime @default(now())
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@map("guest_forms")
+}
+
+model Complaint {
+  id                   String            @id @default(uuid())
+  reservationId        String
+  roomId               String
+  originalMessage      String
+  detectedLanguage     String?
+  normalizedMessageEn  String?
+  staffMessage         String?
+  category             ComplaintCategory
+  status               ComplaintStatus   @default(PENDING)
+  assignedToId         String?
+  assignedById         String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  resolvedAt           DateTime?
+  confirmedAt          DateTime?
+  reopenedAt           DateTime?
+  needsReviewAt        DateTime?
+
+  // Relations
+  reservation      Reservation       @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  room             Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  assignedTo       User?             @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedBy       User?             @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  interventionLogs InterventionLog[]
+  internalMessages InternalMessage[]
+
+  @@map("complaints")
+}
+
+model InterventionLog {
+  id              String              @id @default(uuid())
+  complaintId     String
+  employeeId      String
+  roomId          String
+  entryTime       DateTime?
+  exitTime        DateTime?
+  result          InterventionResult?
+  employeeComment String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  employee  User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("intervention_logs")
+}
+
+model InternalMessage {
+  id          String    @id @default(uuid())
+  complaintId String
+  senderId    String
+  receiverId  String
+  message     String
+  createdAt   DateTime  @default(now())
+  readAt      DateTime?
+
+  // Relations
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  sender    User      @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User      @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("internal_messages")
+}
+
+model HotelInfo {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  type      String
+  updatedAt DateTime @updatedAt
+
+  @@map("hotel_infos")
+}
+
+model CurrencyRate {
+  id        String   @id @default(uuid())
+  currency  String   @unique
+  rateToTnd Float
+  updatedAt DateTime @updatedAt
+
+  @@map("currency_rates")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }
