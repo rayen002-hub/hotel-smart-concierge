@@ -97,3 +97,30 @@ class TranslateResponse(BaseModel):
         None,
         description="Message d'avertissement si applicable.",
     )
+
+
+class AnalyzeRequest(BaseModel):
+    """Schema pour la requete d'analyse complete d'une reclamation."""
+    message: str = Field(
+        ...,
+        min_length=2,
+        description="Le texte brut de la reclamation. Minimum 2 caracteres.",
+        examples=["La climatisation ne marche pas"],
+    )
+    staff_language: str = Field(
+        ...,
+        description="Code ISO 639-1 de la langue du personnel (ex: fr, en, es).",
+        examples=["fr"],
+    )
+
+
+class AnalyzeResponse(BaseModel):
+    """Schema pour la reponse d'analyse complete."""
+    original_message: str = Field(..., description="Le message original du client.")
+    detected_language: str = Field(..., description="La langue detectee du message.")
+    normalized_message_en: str = Field(..., description="Le message traduit en anglais pour la classification.")
+    staff_message: str = Field(..., description="Le message traduit dans la langue du personnel.")
+    staff_language: str = Field(..., description="La langue du personnel.")
+    category: str = Field(..., description="La categorie predite.")
+    category_confidence: Optional[float] = Field(None, description="Le score de confiance de la prediction.")
+    translation_warning: Optional[str] = Field(None, description="Avertissement eventuel sur la traduction.")
