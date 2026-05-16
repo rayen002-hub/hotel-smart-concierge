@@ -4,6 +4,7 @@ import {
   listStaffComplaints,
   getStaffComplaint,
   updateStaffComplaintCategory,
+  assignStaffComplaint,
 } from "../controllers/staffComplaint.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
@@ -52,6 +53,20 @@ router.patch(
   ],
   validateRequest,
   updateStaffComplaintCategory
+);
+
+/**
+ * PATCH /api/complaints/:id/assign
+ */
+router.patch(
+  "/:id/assign",
+  [
+    body("employeeId")
+      .isUUID()
+      .withMessage("L'identifiant de l'employe doit etre un UUID valide."),
+  ],
+  validateRequest,
+  assignStaffComplaint
 );
 
 export default router;

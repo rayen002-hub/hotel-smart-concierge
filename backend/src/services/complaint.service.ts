@@ -318,4 +318,80 @@ export class ComplaintService {
 
     return updated;
   }
+
+  /**
+   * Assigner une reclamation a un employe.
+   */
+  async assignComplaint(
+    complaintId: string,
+    employeeId: string,
+    assignedById: string
+  ) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    const assignableStatuses: ComplaintStatus[] = [
+      ComplaintStatus.PENDING,
+      ComplaintStatus.REOPENED,
+      ComplaintStatus.NEEDS_REVIEW,
+    ];
+
+    if (!assignableStatuses.includes(complaint.status)) {
+      throw new AppError(`Impossible d'assigner une reclamation avec le statut ${complaint.status}.`, 400);
+    }
+
+    const employee = await prisma.user.findUnique({
+      where: { id: employeeId },
+      include: { employeeProfile: true },
+    });
+
+    if (!employee || !employee.employeeProfile) {
+      throw new AppError("Employe introuvable ou profil employe manquant.", 404);
+    }
+
+    const empDept = employee.employeeProfile.department;
+    const category = complaint.category;
+
+    // Verifier le departement de l'employe par rapport a la categorie
+    if (category === "MAINTENANCE" && empDept !== "MAINTENANCE") {
+      throw new AppError("Les reclamations MAINTENANCE doivent etre assignees au departement MAINTENANCE.", 400);
+    } else if (category === "HOUSEKEEPING" && empDept !== "HOUSEKEEPING") {
+      throw new AppError("Les reclamations HOUSEKEEPING doivent etre assignees au departement HOUSEKEEPING.", 400);
+    } else if (
+      ["RECEPTION", "RESTAURANT", "COMPLAINT", "OTHER"].includes(category) &&
+      !["GENERAL", "RECEPTION"].includes(empDept)
+    ) {
+      throw new AppError(`Les reclamations de categorie ${category} doivent etre assignees a GENERAL ou RECEPTION.`, 400);
+    }
+
+    const updated = await prisma.complaint.update({
+      where: { id: complaintId },
+      data: {
+        assignedToId: employeeId,
+        assignedById,
+        status: ComplaintStatus.ASSIGNED,
+      },
+      include: {
+        assignedTo: { select: { id: true, name: true, role: true } },
+      },
+    });
+
+    await createAuditLog({
+      actorId: assignedById,
+      action: "ASSIGN_COMPLAINT",
+      entity: "Complaint",
+      entityId: complaintId,
+      metadata: {
+        assignedToId: employeeId,
+      },
+    });
+
+    return updated;
+  }
 }
+

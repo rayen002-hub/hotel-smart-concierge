@@ -137,3 +137,42 @@ export const updateStaffComplaintCategory = async (
     next(error);
   }
 };
+
+/**
+ * PATCH /api/complaints/:id/assign
+ * Assigner une reclamation a un employe.
+ */
+export const assignStaffComplaint = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaintId = req.params.id as string;
+    const employeeId = req.body.employeeId as string;
+    const userRole = req.userRole as UserRole;
+    const userId = req.userId as string;
+
+    // Verifier que l'utilisateur a le droit d'assigner (selon la categorie de la reclamation)
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.RECEPTIONIST) {
+      const complaint = await complaintService.getById(complaintId);
+      
+      if (userRole === UserRole.MAINTENANCE_MANAGER && complaint.category !== ComplaintCategory.MAINTENANCE) {
+        throw new AppError("Vous ne pouvez assigner que des reclamations MAINTENANCE.", 403);
+      }
+      if (userRole === UserRole.HOUSEKEEPING_MANAGER && complaint.category !== ComplaintCategory.HOUSEKEEPING) {
+        throw new AppError("Vous ne pouvez assigner que des reclamations HOUSEKEEPING.", 403);
+      }
+    }
+
+    const updated = await complaintService.assignComplaint(
+      complaintId,
+      employeeId,
+      userId
+    );
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
