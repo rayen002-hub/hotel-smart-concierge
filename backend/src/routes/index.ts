@@ -4,6 +4,7 @@ import authRoutes from "./auth.routes";
 import roomRoutes from "./room.routes";
 import reservationRoutes from "./reservation.routes";
 import checkinRoutes from "./checkin.routes";
+import complaintRoutes from "./complaint.routes";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use("/reservations", reservationRoutes);
 
 // Routes publiques (pas d'auth)
 router.use("/public/checkin", checkinRoutes);
+router.use("/public/complaints", complaintRoutes);
 
 export default router;
