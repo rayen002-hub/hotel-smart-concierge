@@ -1,0 +1,139 @@
+import { Response, NextFunction } from "express";
+import { AuthRequest } from "../middlewares/auth.middleware";
+import { ComplaintService } from "../services/complaint.service";
+import { ComplaintCategory, ComplaintStatus, UserRole } from "@prisma/client";
+import { getViewableCategories } from "../utils/permissions";
+import { AppError } from "../services/auth.service";
+
+const complaintService = new ComplaintService();
+
+/**
+ * GET /api/complaints
+ * Lister les reclamations (filtrees par role).
+ */
+export const listStaffComplaints = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as ComplaintStatus | undefined;
+    const category = req.query.category as ComplaintCategory | undefined;
+    const roomId = req.query.roomId as string | undefined;
+
+    // Determiner les categories visibles selon le role
+    const userRole = req.userRole as UserRole;
+    const allowedCategories = getViewableCategories({
+      id: req.userId as string,
+      role: userRole,
+    });
+
+    // Si un filtre categorie est fourni, verifier qu'il est autorise
+    if (category && !allowedCategories.includes(category)) {
+      res.status(403).json({
+        success: false,
+        error: "Vous n'avez pas acces a cette categorie de reclamations.",
+      });
+      return;
+    }
+
+    const result = await complaintService.listForStaff({
+      page,
+      limit,
+      status,
+      category,
+      roomId,
+      // Pour ADMIN et RECEPTIONIST, pas de filtre (ils voient tout)
+      allowedCategories:
+        userRole === UserRole.ADMIN || userRole === UserRole.RECEPTIONIST
+          ? undefined
+          : allowedCategories,
+    });
+
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/complaints/:id
+ * Detail d'une reclamation.
+ */
+export const getStaffComplaint = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaint = await complaintService.getById(req.params.id as string);
+
+    // Verifier que le role a acces a cette categorie
+    const userRole = req.userRole as UserRole;
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.RECEPTIONIST) {
+      const allowedCategories = getViewableCategories({
+        id: req.userId as string,
+        role: userRole,
+      });
+      if (!allowedCategories.includes(complaint.category)) {
+        res.status(403).json({
+          success: false,
+          error: "Vous n'avez pas acces a cette reclamation.",
+        });
+        return;
+      }
+    }
+
+    res.status(200).json({ success: true, data: complaint });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/complaints/:id/category
+ * Corriger la categorie d'une reclamation.
+ */
+export const updateStaffComplaintCategory = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const newCategory = req.body.category as ComplaintCategory;
+    const userRole = req.userRole as UserRole;
+
+    // Verifier les permissions de correction
+    if (
+      userRole === UserRole.MAINTENANCE_MANAGER &&
+      newCategory !== ComplaintCategory.MAINTENANCE
+    ) {
+      throw new AppError(
+        "En tant que responsable maintenance, vous ne pouvez corriger que vers MAINTENANCE.",
+        403
+      );
+    }
+
+    if (
+      userRole === UserRole.HOUSEKEEPING_MANAGER &&
+      newCategory !== ComplaintCategory.HOUSEKEEPING
+    ) {
+      throw new AppError(
+        "En tant que responsable housekeeping, vous ne pouvez corriger que vers HOUSEKEEPING.",
+        403
+      );
+    }
+
+    const updated = await complaintService.updateCategory(
+      req.params.id as string,
+      newCategory,
+      req.userId as string
+    );
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};

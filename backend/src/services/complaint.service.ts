@@ -1,5 +1,5 @@
 import prisma from "../config/prisma";
-import { ComplaintStatus } from "@prisma/client";
+import { ComplaintStatus, ComplaintCategory } from "@prisma/client";
 import { AIService, AIAnalysisResult } from "./ai.service";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
@@ -176,6 +176,143 @@ export class ComplaintService {
       metadata: {
         source: "public_client",
         clientComment: comment || null,
+      },
+    });
+
+    return updated;
+  }
+
+  // -----------------------------------------------------------
+  // Staff methods
+  // -----------------------------------------------------------
+
+  /**
+   * Lister les reclamations pour le staff avec filtres et pagination.
+   * Le filtrage par categorie depend du role.
+   */
+  async listForStaff(params: {
+    page: number;
+    limit: number;
+    status?: ComplaintStatus;
+    category?: ComplaintCategory;
+    roomId?: string;
+    allowedCategories?: ComplaintCategory[];
+  }) {
+    const { page, limit, status, category, roomId, allowedCategories } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (roomId) where.roomId = roomId;
+
+    // Filtrer par categorie autorisee selon le role
+    if (category) {
+      where.category = category;
+    } else if (allowedCategories && allowedCategories.length > 0) {
+      where.category = { in: allowedCategories };
+    }
+
+    const [complaints, total] = await Promise.all([
+      prisma.complaint.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          room: { select: { id: true, roomNumber: true, type: true } },
+          reservation: {
+            select: {
+              id: true,
+              reservationNumber: true,
+              guestFirstName: true,
+              guestLastName: true,
+            },
+          },
+          assignedTo: { select: { id: true, name: true, role: true } },
+        },
+      }),
+      prisma.complaint.count({ where }),
+    ]);
+
+    return {
+      data: complaints,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Recuperer une reclamation par ID (vue staff).
+   */
+  async getById(complaintId: string) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+      include: {
+        room: { select: { id: true, roomNumber: true, type: true, floor: true } },
+        reservation: {
+          select: {
+            id: true,
+            reservationNumber: true,
+            guestFirstName: true,
+            guestLastName: true,
+          },
+        },
+        assignedTo: { select: { id: true, name: true, role: true } },
+        assignedBy: { select: { id: true, name: true, role: true } },
+        interventionLogs: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            employee: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    return complaint;
+  }
+
+  /**
+   * Corriger la categorie d'une reclamation (staff).
+   */
+  async updateCategory(
+    complaintId: string,
+    newCategory: ComplaintCategory,
+    actorId: string
+  ) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    const oldCategory = complaint.category;
+
+    const updated = await prisma.complaint.update({
+      where: { id: complaintId },
+      data: { category: newCategory },
+      include: {
+        room: { select: { id: true, roomNumber: true } },
+      },
+    });
+
+    await createAuditLog({
+      actorId,
+      action: "UPDATE_COMPLAINT_CATEGORY",
+      entity: "Complaint",
+      entityId: complaintId,
+      metadata: {
+        oldCategory,
+        newCategory,
       },
     });
 
