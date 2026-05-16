@@ -6,6 +6,7 @@ import {
   updateReservation,
   deleteReservation,
 } from "../controllers/reservation.controller";
+import { generateClientRoomLink } from "../controllers/qr.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
@@ -118,5 +119,11 @@ router.patch(
  * DELETE /api/reservations/:id
  */
 router.delete("/:id", deleteReservation);
+
+/**
+ * POST /api/reservations/:id/client-room-link
+ * Generer un lien d'acces PWA pour le client.
+ */
+router.post("/:id/client-room-link", generateClientRoomLink);
 
 export default router;

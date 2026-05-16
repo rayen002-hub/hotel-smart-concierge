@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { listRooms, createRoom, updateRoom, deleteRoom } from "../controllers/room.controller";
+import { generateWorkerQr, regenerateWorkerQr } from "../controllers/qr.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
@@ -79,5 +80,17 @@ router.patch(
  * DELETE /api/rooms/:id
  */
 router.delete("/:id", deleteRoom);
+
+/**
+ * POST /api/rooms/:id/worker-qr
+ * Generer un QR code pour le scan employe.
+ */
+router.post("/:id/worker-qr", generateWorkerQr);
+
+/**
+ * POST /api/rooms/:id/regenerate-worker-qr
+ * Regenerer le QR employe (invalide l'ancien).
+ */
+router.post("/:id/regenerate-worker-qr", regenerateWorkerQr);
 
 export default router;
