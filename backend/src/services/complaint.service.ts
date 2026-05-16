@@ -1,8 +1,9 @@
 import prisma from "../config/prisma";
-import { ComplaintStatus, ComplaintCategory } from "@prisma/client";
+import { ComplaintStatus, ComplaintCategory, InterventionResult } from "@prisma/client";
 import { AIService, AIAnalysisResult } from "./ai.service";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
+import { verifyWorkerRoomQr } from "./qrToken.service";
 
 const aiService = new AIService();
 
@@ -392,6 +393,176 @@ export class ComplaintService {
     });
 
     return updated;
+  }
+
+  // -----------------------------------------------------------
+  // Mobile / Employee Methods
+  // -----------------------------------------------------------
+
+  /**
+   * Lister les reclamations assignees a un employe.
+   */
+  async listForEmployee(employeeId: string) {
+    return prisma.complaint.findMany({
+      where: {
+        assignedToId: employeeId,
+        status: {
+          in: [
+            ComplaintStatus.ASSIGNED,
+            ComplaintStatus.IN_PROGRESS,
+            ComplaintStatus.NEEDS_REVIEW,
+            ComplaintStatus.REOPENED,
+          ],
+        },
+      },
+      orderBy: { createdAt: "asc" },
+      include: {
+        room: { select: { id: true, roomNumber: true, type: true, floor: true } },
+      },
+    });
+  }
+
+  /**
+   * Scan d'entree dans la chambre.
+   */
+  async scanEntry(
+    complaintId: string,
+    employeeId: string,
+    workerRoomQrToken: string
+  ) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    if (complaint.assignedToId !== employeeId) {
+      throw new AppError("Cette reclamation ne vous est pas assignee.", 403);
+    }
+
+    // Verifier le QR token
+    const qrData = await verifyWorkerRoomQr(workerRoomQrToken);
+
+    if (complaint.roomId !== qrData.roomId) {
+      throw new AppError("Ce QR code ne correspond pas a la chambre de la reclamation.", 403);
+    }
+
+    // Creer un InterventionLog
+    const interventionLog = await prisma.interventionLog.create({
+      data: {
+        complaintId,
+        employeeId,
+        roomId: complaint.roomId,
+        entryTime: new Date(),
+      },
+    });
+
+    // Mettre a jour le statut si non IN_PROGRESS
+    if (complaint.status !== ComplaintStatus.IN_PROGRESS) {
+      await prisma.complaint.update({
+        where: { id: complaintId },
+        data: { status: ComplaintStatus.IN_PROGRESS },
+      });
+    }
+
+    return interventionLog;
+  }
+
+  /**
+   * Scan de sortie de la chambre avec resultat.
+   */
+  async scanExit(
+    complaintId: string,
+    employeeId: string,
+    workerRoomQrToken: string,
+    result: InterventionResult,
+    employeeComment?: string
+  ) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    if (complaint.assignedToId !== employeeId) {
+      throw new AppError("Cette reclamation ne vous est pas assignee.", 403);
+    }
+
+    // Verifier le QR token
+    const qrData = await verifyWorkerRoomQr(workerRoomQrToken);
+
+    if (complaint.roomId !== qrData.roomId) {
+      throw new AppError("Ce QR code ne correspond pas a la chambre de la reclamation.", 403);
+    }
+
+    // Trouver l'intervention en cours
+    const log = await prisma.interventionLog.findFirst({
+      where: {
+        complaintId,
+        employeeId,
+        exitTime: null,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    let logId: string;
+
+    if (log) {
+      const updatedLog = await prisma.interventionLog.update({
+        where: { id: log.id },
+        data: {
+          exitTime: new Date(),
+          result,
+          employeeComment,
+        },
+      });
+      logId = updatedLog.id;
+    } else {
+      // Cas ou l'employe n'a pas scanne en entrant
+      const newLog = await prisma.interventionLog.create({
+        data: {
+          complaintId,
+          employeeId,
+          roomId: complaint.roomId,
+          exitTime: new Date(),
+          result,
+          employeeComment,
+        },
+      });
+      logId = newLog.id;
+    }
+
+    // Mettre a jour la reclamation
+    const newStatus = result === InterventionResult.FIXED
+      ? ComplaintStatus.RESOLVED
+      : ComplaintStatus.NEEDS_REVIEW;
+
+    const updatedComplaint = await prisma.complaint.update({
+      where: { id: complaintId },
+      data: {
+        status: newStatus,
+        ...(result === InterventionResult.FIXED ? { resolvedAt: new Date() } : { needsReviewAt: new Date() }),
+      },
+    });
+
+    await createAuditLog({
+      actorId: employeeId,
+      action: "COMPLAINT_INTERVENTION_EXIT",
+      entity: "Complaint",
+      entityId: complaintId,
+      metadata: {
+        result,
+        employeeComment,
+        interventionLogId: logId,
+        newStatus,
+      },
+    });
+
+    return updatedComplaint;
   }
 }
 

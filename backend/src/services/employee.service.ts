@@ -232,4 +232,14 @@ export class EmployeeService {
 
     return employees;
   }
+
+  /**
+   * Mettre a jour lastSeenAt pour un employe.
+   */
+  async heartbeat(userId: string) {
+    await prisma.employeeProfile.update({
+      where: { userId },
+      data: { lastSeenAt: new Date() },
+    });
+  }
 }
