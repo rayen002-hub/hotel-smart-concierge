@@ -11,6 +11,8 @@ import checkinRoutes from "./checkin.routes";
 import complaintRoutes from "./complaint.routes";
 import hotelPublicRoutes from "./hotelPublic.routes";
 
+import rateLimit from "express-rate-limit";
+
 const router = Router();
 
 // Enregistrer les routes
@@ -23,9 +25,21 @@ router.use("/employees", employeeRoutes);
 router.use("/mobile", mobileRoutes);
 router.use("/", hotelRoutes); // Provides /hotel-info and /currency-rates
 
+// Rate limiting strict pour les routes publiques
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limite plus stricte pour le public (30 requetes / 15 min)
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Trop de requetes sur les services publics. Veuillez patienter.",
+  },
+});
+
 // Routes publiques (pas d'auth)
-router.use("/public/checkin", checkinRoutes);
-router.use("/public/complaints", complaintRoutes);
-router.use("/public", hotelPublicRoutes);
+router.use("/public/checkin", publicLimiter, checkinRoutes);
+router.use("/public/complaints", publicLimiter, complaintRoutes);
+router.use("/public", publicLimiter, hotelPublicRoutes);
 
 export default router;
