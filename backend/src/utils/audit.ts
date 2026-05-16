@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
  * Enregistrer une action dans l'audit log.
  */
 export const createAuditLog = async (params: {
-  actorId: string;
+  actorId?: string | null;
   action: string;
   entity: string;
   entityId?: string;
@@ -13,7 +13,7 @@ export const createAuditLog = async (params: {
 }) => {
   await prisma.auditLog.create({
     data: {
-      actorId: params.actorId,
+      actorId: params.actorId || null,
       action: params.action,
       entity: params.entity,
       entityId: params.entityId || null,
