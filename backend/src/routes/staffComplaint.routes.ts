@@ -5,6 +5,8 @@ import {
   getStaffComplaint,
   updateStaffComplaintCategory,
   assignStaffComplaint,
+  getStaffMessages,
+  addStaffMessage,
 } from "../controllers/staffComplaint.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
@@ -67,6 +69,27 @@ router.patch(
   ],
   validateRequest,
   assignStaffComplaint
+);
+
+/**
+ * GET /api/complaints/:id/messages
+ */
+router.get("/:id/messages", getStaffMessages);
+
+/**
+ * POST /api/complaints/:id/messages
+ */
+router.post(
+  "/:id/messages",
+  [
+    body("message")
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 2000 })
+      .withMessage("Le message est requis (max 2000 caracteres)."),
+  ],
+  validateRequest,
+  addStaffMessage
 );
 
 export default router;

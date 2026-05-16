@@ -3,6 +3,7 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import { EmployeeService } from "../services/employee.service";
 import { ComplaintService } from "../services/complaint.service";
 import { InterventionResult } from "@prisma/client";
+import { AppError } from "../services/auth.service";
 
 const employeeService = new EmployeeService();
 const complaintService = new ComplaintService();
@@ -108,6 +109,64 @@ export const scanExit = async (
     );
 
     res.status(200).json({ success: true, data: updatedTask });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/mobile/tasks/:id/messages
+ */
+export const getMobileMessages = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaintId = req.params.id as string;
+    const complaint = await complaintService.getById(complaintId);
+
+    if (complaint.assignedToId !== req.userId) {
+      throw new AppError("Cette tache ne vous est pas assignee.", 403);
+    }
+
+    const messages = await complaintService.getMessages(complaintId);
+    res.status(200).json({ success: true, data: messages });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/mobile/tasks/:id/messages
+ */
+export const addMobileMessage = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaintId = req.params.id as string;
+    const { message } = req.body;
+    
+    // AuthRequest guarantees userRole exists
+    const userRole = req.userRole!;
+    const userId = req.userId as string;
+
+    const complaint = await complaintService.getById(complaintId);
+
+    if (complaint.assignedToId !== userId) {
+      throw new AppError("Cette tache ne vous est pas assignee.", 403);
+    }
+
+    const newMessage = await complaintService.addMessage(
+      complaintId,
+      userId,
+      userRole,
+      message
+    );
+
+    res.status(201).json({ success: true, data: newMessage });
   } catch (error) {
     next(error);
   }

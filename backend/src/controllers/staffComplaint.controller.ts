@@ -176,3 +176,75 @@ export const assignStaffComplaint = async (
     next(error);
   }
 };
+
+/**
+ * GET /api/complaints/:id/messages
+ * Recuperer les messages internes d'une reclamation (Staff).
+ */
+export const getStaffMessages = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaintId = req.params.id as string;
+    const userRole = req.userRole as UserRole;
+
+    const complaint = await complaintService.getById(complaintId);
+
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.RECEPTIONIST) {
+      const allowedCategories = getViewableCategories({
+        id: req.userId as string,
+        role: userRole,
+      });
+      if (!allowedCategories.includes(complaint.category)) {
+        throw new AppError("Vous n'avez pas acces a cette reclamation.", 403);
+      }
+    }
+
+    const messages = await complaintService.getMessages(complaintId);
+    res.status(200).json({ success: true, data: messages });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/complaints/:id/messages
+ * Ajouter un message interne a une reclamation (Staff).
+ */
+export const addStaffMessage = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const complaintId = req.params.id as string;
+    const userRole = req.userRole as UserRole;
+    const userId = req.userId as string;
+    const { message } = req.body;
+
+    const complaint = await complaintService.getById(complaintId);
+
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.RECEPTIONIST) {
+      const allowedCategories = getViewableCategories({
+        id: req.userId as string,
+        role: userRole,
+      });
+      if (!allowedCategories.includes(complaint.category)) {
+        throw new AppError("Vous n'avez pas acces a cette reclamation.", 403);
+      }
+    }
+
+    const newMessage = await complaintService.addMessage(
+      complaintId,
+      userId,
+      userRole,
+      message
+    );
+
+    res.status(201).json({ success: true, data: newMessage });
+  } catch (error) {
+    next(error);
+  }
+};

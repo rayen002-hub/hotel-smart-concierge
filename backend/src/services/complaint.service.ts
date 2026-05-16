@@ -564,5 +564,86 @@ export class ComplaintService {
 
     return updatedComplaint;
   }
+
+  // -----------------------------------------------------------
+  // Internal Messaging
+  // -----------------------------------------------------------
+
+  /**
+   * Recuperer les messages internes d'une reclamation.
+   */
+  async getMessages(complaintId: string) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    return prisma.internalMessage.findMany({
+      where: { complaintId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        sender: { select: { id: true, name: true, role: true } },
+        receiver: { select: { id: true, name: true, role: true } },
+      },
+    });
+  }
+
+  /**
+   * Ajouter un message interne a une reclamation.
+   */
+  async addMessage(
+    complaintId: string,
+    senderId: string,
+    senderRole: string,
+    message: string
+  ) {
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId },
+    });
+
+    if (!complaint) {
+      throw new AppError("Reclamation introuvable.", 404);
+    }
+
+    let receiverId: string | null = null;
+
+    if (senderRole === "EMPLOYEE") {
+      // Si l'employe parle, il parle a celui qui a assigne la tache
+      if (!complaint.assignedById) {
+        throw new AppError("Aucun responsable n'a assigne cette tache.", 400);
+      }
+      receiverId = complaint.assignedById;
+      
+      // Verifier que l'employe est bien assigne
+      if (complaint.assignedToId !== senderId) {
+        throw new AppError("Vous n'etes pas assigne a cette reclamation.", 403);
+      }
+    } else {
+      // Si un manager parle, il parle a l'employe assigne
+      if (!complaint.assignedToId) {
+        throw new AppError("Aucun employe n'est assigne a cette tache.", 400);
+      }
+      receiverId = complaint.assignedToId;
+    }
+
+    const newMessage = await prisma.internalMessage.create({
+      data: {
+        complaintId,
+        senderId,
+        receiverId,
+        message,
+      },
+      include: {
+        sender: { select: { id: true, name: true, role: true } },
+        receiver: { select: { id: true, name: true, role: true } },
+      },
+    });
+
+    return newMessage;
+  }
 }
+
 

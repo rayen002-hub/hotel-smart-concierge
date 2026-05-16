@@ -6,6 +6,8 @@ import {
   getTask,
   scanEntry,
   scanExit,
+  getMobileMessages,
+  addMobileMessage,
 } from "../controllers/mobile.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
@@ -68,6 +70,27 @@ router.post(
   ],
   validateRequest,
   scanExit
+);
+
+/**
+ * GET /api/mobile/tasks/:id/messages
+ */
+router.get("/tasks/:id/messages", getMobileMessages);
+
+/**
+ * POST /api/mobile/tasks/:id/messages
+ */
+router.post(
+  "/tasks/:id/messages",
+  [
+    body("message")
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 2000 })
+      .withMessage("Le message est requis (max 2000 caracteres)."),
+  ],
+  validateRequest,
+  addMobileMessage
 );
 
 export default router;
