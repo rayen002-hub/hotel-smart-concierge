@@ -1,20 +1,21 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
+import { RoomLayout } from '../layouts/RoomLayout';
 import { NotFound } from '../pages/NotFound';
 import { CheckInPage } from '../pages/public/CheckInPage';
+import { RoomHomePage } from '../pages/public/RoomHomePage';
 
-// Placeholders for Public Pages
-const RoomHome = () => <div>Room Home Page</div>;
-const RoomComplaint = () => <div>Room Complaint Submission</div>;
-const RoomComplaintsList = () => <div>Room Complaints Tracking</div>;
-const RoomHotelInfo = () => <div>Hotel Information</div>;
-const RoomCurrency = () => <div>Currency Exchange Rates</div>;
+// Placeholders for Public Room Pages
+const RoomComplaint = () => <div className="p-4">Room Complaint Submission</div>;
+const RoomComplaintsList = () => <div className="p-4">Room Complaints Tracking</div>;
+const RoomHotelInfo = () => <div className="p-4">Hotel Information</div>;
+const RoomCurrency = () => <div className="p-4">Currency Exchange Rates</div>;
 
 // Placeholders for Auth/Staff Pages
-const Login = () => <div>Login Page</div>;
-const ReceptionDashboard = () => <div>Reception Dashboard</div>;
-const ManagerDashboard = () => <div>Manager Dashboard</div>;
-const AdminDashboard = () => <div>Admin Dashboard</div>;
+const Login = () => <div className="p-4">Login Page</div>;
+const ReceptionDashboard = () => <div className="p-4">Reception Dashboard</div>;
+const ManagerDashboard = () => <div className="p-4">Manager Dashboard</div>;
+const AdminDashboard = () => <div className="p-4">Admin Dashboard</div>;
 
 const router = createBrowserRouter([
   {
@@ -23,16 +24,22 @@ const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Navigate to="/login" replace /> },
-      
+
       // Public Check-in
       { path: 'checkin', element: <CheckInPage /> },
-      
-      // Public Room Interface
-      { path: 'room', element: <RoomHome /> },
-      { path: 'room/complaint', element: <RoomComplaint /> },
-      { path: 'room/complaints', element: <RoomComplaintsList /> },
-      { path: 'room/hotel-info', element: <RoomHotelInfo /> },
-      { path: 'room/currency', element: <RoomCurrency /> },
+
+      // Public Room Interface (protected by RoomLayout token gate)
+      {
+        path: 'room',
+        element: <RoomLayout />,
+        children: [
+          { index: true, element: <RoomHomePage /> },
+          { path: 'complaint', element: <RoomComplaint /> },
+          { path: 'complaints', element: <RoomComplaintsList /> },
+          { path: 'hotel-info', element: <RoomHotelInfo /> },
+          { path: 'currency', element: <RoomCurrency /> },
+        ],
+      },
 
       // Auth
       { path: 'login', element: <Login /> },
@@ -41,7 +48,7 @@ const router = createBrowserRouter([
       { path: 'dashboard/reception', element: <ReceptionDashboard /> },
       { path: 'dashboard/manager', element: <ManagerDashboard /> },
       { path: 'dashboard/admin', element: <AdminDashboard /> },
-      
+
       // 404 Catch-all
       { path: '*', element: <NotFound /> },
     ],
