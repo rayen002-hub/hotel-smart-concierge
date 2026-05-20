@@ -1,0 +1,162 @@
+import { staffClient } from './apiClient';
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Staff API — all requests carry Authorization: Bearer via staffClient
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── Rooms ───────────────────────────────────────────────────────────
+
+export interface RoomPayload {
+  roomNumber: string;
+  floor: number;
+  type: string;
+  status?: string;
+}
+
+export async function listRooms() {
+  const { data } = await staffClient.get('/rooms');
+  return data;
+}
+
+export async function createRoom(payload: RoomPayload) {
+  const { data } = await staffClient.post('/rooms', payload);
+  return data;
+}
+
+export async function updateRoom(id: string, payload: Partial<RoomPayload>) {
+  const { data } = await staffClient.patch(`/rooms/${id}`, payload);
+  return data;
+}
+
+export async function deleteRoom(id: string) {
+  const { data } = await staffClient.delete(`/rooms/${id}`);
+  return data;
+}
+
+export async function generateWorkerQr(roomId: string) {
+  const { data } = await staffClient.post(`/rooms/${roomId}/worker-qr`);
+  return data;
+}
+
+export async function regenerateWorkerQr(roomId: string) {
+  const { data } = await staffClient.post(`/rooms/${roomId}/regenerate-worker-qr`);
+  return data;
+}
+
+// ─── Reservations ────────────────────────────────────────────────────
+
+export interface ReservationPayload {
+  reservationNumber: string;
+  guestFirstName: string;
+  guestLastName: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  nationality?: string;
+  checkInDate: string;
+  checkOutDate: string;
+  roomId?: string;
+}
+
+export async function listReservations() {
+  const { data } = await staffClient.get('/reservations');
+  return data;
+}
+
+export async function createReservation(payload: ReservationPayload) {
+  const { data } = await staffClient.post('/reservations', payload);
+  return data;
+}
+
+export async function updateReservation(id: string, payload: Partial<ReservationPayload & { status: string }>) {
+  const { data } = await staffClient.patch(`/reservations/${id}`, payload);
+  return data;
+}
+
+export async function deleteReservation(id: string) {
+  const { data } = await staffClient.delete(`/reservations/${id}`);
+  return data;
+}
+
+export async function generateClientRoomLink(reservationId: string) {
+  const { data } = await staffClient.post(`/reservations/${reservationId}/client-room-link`);
+  return data;
+}
+
+// ─── Complaints (staff view) ─────────────────────────────────────────
+
+export interface ComplaintFilters {
+  status?: string;
+  category?: string;
+  roomId?: string;
+}
+
+export async function listComplaints(filters?: ComplaintFilters) {
+  const { data } = await staffClient.get('/complaints', { params: filters });
+  return data;
+}
+
+export async function getComplaint(id: string) {
+  const { data } = await staffClient.get(`/complaints/${id}`);
+  return data;
+}
+
+export async function updateComplaintCategory(id: string, category: string) {
+  const { data } = await staffClient.patch(`/complaints/${id}/category`, { category });
+  return data;
+}
+
+export async function assignComplaint(id: string, employeeId: string) {
+  const { data } = await staffClient.patch(`/complaints/${id}/assign`, { employeeId });
+  return data;
+}
+
+export async function getComplaintMessages(id: string) {
+  const { data } = await staffClient.get(`/complaints/${id}/messages`);
+  return data;
+}
+
+export async function sendComplaintMessage(id: string, message: string) {
+  const { data } = await staffClient.post(`/complaints/${id}/messages`, { message });
+  return data;
+}
+
+// ─── Employees ───────────────────────────────────────────────────────
+
+export interface EmployeePayload {
+  name: string;
+  email: string;
+  password: string;
+  department: string;
+}
+
+export async function listEmployees() {
+  const { data } = await staffClient.get('/employees');
+  return data;
+}
+
+export async function createEmployee(payload: EmployeePayload) {
+  const { data } = await staffClient.post('/employees', payload);
+  return data;
+}
+
+export async function updateEmployee(id: string, payload: Partial<{ isAvailable: boolean; department: string }>) {
+  const { data } = await staffClient.patch(`/employees/${id}`, payload);
+  return data;
+}
+
+export async function listOnlineEmployees() {
+  const { data } = await staffClient.get('/employees/online');
+  return data;
+}
+
+// ─── Hotel Info & Currency (staff edit) ──────────────────────────────
+
+export async function updateHotelInfo(id: string, payload: { title?: string; content?: string; type?: string }) {
+  const { data } = await staffClient.patch(`/hotel-info/${id}`, payload);
+  return data;
+}
+
+export async function updateCurrencyRate(id: string, rateToTnd: number) {
+  const { data } = await staffClient.patch(`/currency-rates/${id}`, { rateToTnd });
+  return data;
+}
