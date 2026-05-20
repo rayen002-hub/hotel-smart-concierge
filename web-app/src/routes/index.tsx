@@ -4,10 +4,10 @@ import { RoomLayout } from '../layouts/RoomLayout';
 import { NotFound } from '../pages/NotFound';
 import { CheckInPage } from '../pages/public/CheckInPage';
 import { RoomHomePage } from '../pages/public/RoomHomePage';
+import { RoomComplaintPage } from '../pages/public/RoomComplaintPage';
+import { RoomComplaintsPage } from '../pages/public/RoomComplaintsPage';
 
 // Placeholders for Public Room Pages
-const RoomComplaint = () => <div className="p-4">Room Complaint Submission</div>;
-const RoomComplaintsList = () => <div className="p-4">Room Complaints Tracking</div>;
 const RoomHotelInfo = () => <div className="p-4">Hotel Information</div>;
 const RoomCurrency = () => <div className="p-4">Currency Exchange Rates</div>;
 
@@ -34,8 +34,8 @@ const router = createBrowserRouter([
         element: <RoomLayout />,
         children: [
           { index: true, element: <RoomHomePage /> },
-          { path: 'complaint', element: <RoomComplaint /> },
-          { path: 'complaints', element: <RoomComplaintsList /> },
+          { path: 'complaint', element: <RoomComplaintPage /> },
+          { path: 'complaints', element: <RoomComplaintsPage /> },
           { path: 'hotel-info', element: <RoomHotelInfo /> },
           { path: 'currency', element: <RoomCurrency /> },
         ],
