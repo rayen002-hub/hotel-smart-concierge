@@ -6,10 +6,8 @@ import { CheckInPage } from '../pages/public/CheckInPage';
 import { RoomHomePage } from '../pages/public/RoomHomePage';
 import { RoomComplaintPage } from '../pages/public/RoomComplaintPage';
 import { RoomComplaintsPage } from '../pages/public/RoomComplaintsPage';
-
-// Placeholders for Public Room Pages
-const RoomHotelInfo = () => <div className="p-4">Hotel Information</div>;
-const RoomCurrency = () => <div className="p-4">Currency Exchange Rates</div>;
+import { RoomHotelInfoPage } from '../pages/public/RoomHotelInfoPage';
+import { RoomCurrencyPage } from '../pages/public/RoomCurrencyPage';
 
 // Placeholders for Auth/Staff Pages
 const Login = () => <div className="p-4">Login Page</div>;
@@ -36,8 +34,8 @@ const router = createBrowserRouter([
           { index: true, element: <RoomHomePage /> },
           { path: 'complaint', element: <RoomComplaintPage /> },
           { path: 'complaints', element: <RoomComplaintsPage /> },
-          { path: 'hotel-info', element: <RoomHotelInfo /> },
-          { path: 'currency', element: <RoomCurrency /> },
+          { path: 'hotel-info', element: <RoomHotelInfoPage /> },
+          { path: 'currency', element: <RoomCurrencyPage /> },
         ],
       },
 
