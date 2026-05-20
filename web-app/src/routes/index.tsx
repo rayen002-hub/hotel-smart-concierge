@@ -1,9 +1,9 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { NotFound } from '../pages/NotFound';
+import { CheckInPage } from '../pages/public/CheckInPage';
 
 // Placeholders for Public Pages
-const CheckIn = () => <div>Check-in Page</div>;
 const RoomHome = () => <div>Room Home Page</div>;
 const RoomComplaint = () => <div>Room Complaint Submission</div>;
 const RoomComplaintsList = () => <div>Room Complaints Tracking</div>;
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/login" replace /> },
       
       // Public Check-in
-      { path: 'checkin', element: <CheckIn /> },
+      { path: 'checkin', element: <CheckInPage /> },
       
       // Public Room Interface
       { path: 'room', element: <RoomHome /> },
