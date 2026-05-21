@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { RoomLayout } from '../layouts/RoomLayout';
+import { StaffLayout } from '../layouts/StaffLayout';
 import { NotFound } from '../pages/NotFound';
 import { CheckInPage } from '../pages/public/CheckInPage';
 import { RoomHomePage } from '../pages/public/RoomHomePage';
@@ -8,12 +9,13 @@ import { RoomComplaintPage } from '../pages/public/RoomComplaintPage';
 import { RoomComplaintsPage } from '../pages/public/RoomComplaintsPage';
 import { RoomHotelInfoPage } from '../pages/public/RoomHotelInfoPage';
 import { RoomCurrencyPage } from '../pages/public/RoomCurrencyPage';
+import { LoginPage } from '../pages/staff/LoginPage';
+import { AuthGuard } from '../components/AuthGuard';
 
-// Placeholders for Auth/Staff Pages
-const Login = () => <div className="p-4">Login Page</div>;
-const ReceptionDashboard = () => <div className="p-4">Reception Dashboard</div>;
-const ManagerDashboard = () => <div className="p-4">Manager Dashboard</div>;
-const AdminDashboard = () => <div className="p-4">Admin Dashboard</div>;
+// Dashboard placeholders (to be implemented)
+const ReceptionDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">🛎️ Dashboard Réception — à implémenter</div>;
+const ManagerDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">📋 Dashboard Manager — à implémenter</div>;
+const AdminDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">⚙️ Dashboard Admin — à implémenter</div>;
 
 const router = createBrowserRouter([
   {
@@ -40,12 +42,43 @@ const router = createBrowserRouter([
       },
 
       // Auth
-      { path: 'login', element: <Login /> },
+      { path: 'login', element: <LoginPage /> },
 
-      // Staff Dashboards
-      { path: 'dashboard/reception', element: <ReceptionDashboard /> },
-      { path: 'dashboard/manager', element: <ManagerDashboard /> },
-      { path: 'dashboard/admin', element: <AdminDashboard /> },
+      // Staff Dashboards (protected by AuthGuard + StaffLayout)
+      {
+        path: 'dashboard',
+        element: (
+          <AuthGuard allowedRoles={['ADMIN', 'RECEPTIONIST', 'MAINTENANCE_MANAGER', 'HOUSEKEEPING_MANAGER']}>
+            <StaffLayout />
+          </AuthGuard>
+        ),
+        children: [
+          {
+            path: 'reception',
+            element: (
+              <AuthGuard allowedRoles={['ADMIN', 'RECEPTIONIST']}>
+                <ReceptionDashboard />
+              </AuthGuard>
+            ),
+          },
+          {
+            path: 'manager',
+            element: (
+              <AuthGuard allowedRoles={['ADMIN', 'MAINTENANCE_MANAGER', 'HOUSEKEEPING_MANAGER']}>
+                <ManagerDashboard />
+              </AuthGuard>
+            ),
+          },
+          {
+            path: 'admin',
+            element: (
+              <AuthGuard allowedRoles={['ADMIN']}>
+                <AdminDashboard />
+              </AuthGuard>
+            ),
+          },
+        ],
+      },
 
       // 404 Catch-all
       { path: '*', element: <NotFound /> },
