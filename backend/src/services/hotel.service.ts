@@ -87,4 +87,20 @@ export class HotelService {
 
     return updated;
   }
+
+  // -----------------------------------------------------------
+  // Audit Logs
+  // -----------------------------------------------------------
+
+  async getAuditLogs() {
+    return prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        actor: {
+          select: { id: true, name: true, role: true, email: true },
+        },
+      },
+      take: 100,
+    });
+  }
 }

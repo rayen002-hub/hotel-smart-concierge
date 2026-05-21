@@ -81,3 +81,19 @@ export const updateStaffCurrencyRate = async (
     next(error);
   }
 };
+
+/**
+ * GET /api/audit-logs
+ */
+export const getStaffAuditLogs = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const logs = await hotelService.getAuditLogs();
+    res.status(200).json({ success: true, data: logs });
+  } catch (error) {
+    next(error);
+  }
+};

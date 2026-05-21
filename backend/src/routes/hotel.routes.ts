@@ -3,6 +3,7 @@ import { body } from "express-validator";
 import {
   updateStaffHotelInfo,
   updateStaffCurrencyRate,
+  getStaffAuditLogs,
 } from "../controllers/hotel.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
@@ -15,6 +16,16 @@ const hotelStaffMiddleware = [
   authMiddleware,
   requireRole(UserRole.RECEPTIONIST), // ADMIN is automatically allowed
 ];
+
+/**
+ * GET /api/audit-logs
+ */
+router.get(
+  "/audit-logs",
+  authMiddleware,
+  requireRole(UserRole.ADMIN),
+  getStaffAuditLogs
+);
 
 /**
  * PATCH /api/hotel-info/:id

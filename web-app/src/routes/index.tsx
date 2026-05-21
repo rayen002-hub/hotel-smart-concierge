@@ -13,9 +13,7 @@ import { LoginPage } from '../pages/staff/LoginPage';
 import { AuthGuard } from '../components/AuthGuard';
 import { ReceptionDashboard } from '../pages/staff/ReceptionDashboard';
 import { ManagerDashboard } from '../pages/staff/ManagerDashboard';
-
-// Dashboard placeholders (to be implemented)
-const AdminDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">⚙️ Dashboard Admin — à implémenter</div>;
+import { AdminDashboard } from '../pages/staff/AdminDashboard';
 
 const router = createBrowserRouter([
   {

@@ -160,3 +160,8 @@ export async function updateCurrencyRate(id: string, rateToTnd: number) {
   const { data } = await staffClient.patch(`/currency-rates/${id}`, { rateToTnd });
   return data;
 }
+
+export async function listAuditLogs() {
+  const { data } = await staffClient.get('/audit-logs');
+  return data;
+}
