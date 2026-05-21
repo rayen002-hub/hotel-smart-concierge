@@ -11,9 +11,9 @@ import { RoomHotelInfoPage } from '../pages/public/RoomHotelInfoPage';
 import { RoomCurrencyPage } from '../pages/public/RoomCurrencyPage';
 import { LoginPage } from '../pages/staff/LoginPage';
 import { AuthGuard } from '../components/AuthGuard';
+import { ReceptionDashboard } from '../pages/staff/ReceptionDashboard';
 
 // Dashboard placeholders (to be implemented)
-const ReceptionDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">🛎️ Dashboard Réception — à implémenter</div>;
 const ManagerDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">📋 Dashboard Manager — à implémenter</div>;
 const AdminDashboard = () => <div className="p-4 text-sm text-[hsl(var(--muted-foreground))]">⚙️ Dashboard Admin — à implémenter</div>;
 
