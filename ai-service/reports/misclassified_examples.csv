@@ -1,5 +1,6 @@
 text,true_category,predicted_category
 i need an ironing board brought to my room,HOUSEKEEPING,RECEPTION
+pouvez vous garder mes bagages,RECEPTION,OTHER
 the walls are paper thin i can hear everything,COMPLAINT,OTHER
 i have lost something at the hotel can you check,RECEPTION,OTHER
 i need to reserve the business center for a meeting,RECEPTION,RESTAURANT
@@ -8,6 +9,7 @@ is there a dress code for the restaurant,OTHER,RESTAURANT
 can you help me with directions,OTHER,RECEPTION
 we found an insect in the salad,RESTAURANT,HOUSEKEEPING
 pouvez vous me rappeler quand possible,OTHER,RECEPTION
+je n ai jamais vu un service aussi mauvais,COMPLAINT,OTHER
 je voudrais réserver une table pour ce soir,RESTAURANT,RECEPTION
 there are ants near the window,HOUSEKEEPING,MAINTENANCE
 i was lied to about the room features,COMPLAINT,RESTAURANT
