@@ -10,6 +10,11 @@ import hotelRoutes from "./hotel.routes";
 import checkinRoutes from "./checkin.routes";
 import complaintRoutes from "./complaint.routes";
 import hotelPublicRoutes from "./hotelPublic.routes";
+import checkinQrRoutes from "./checkinQr.routes";
+import guestMessageRoutes from "./guestMessage.routes";
+import staffGuestMessageRoutes from "./staffGuestMessage.routes";
+import eventRoutes from "./event.routes";
+import eventPublicRoutes from "./eventPublic.routes";
 
 import rateLimit from "express-rate-limit";
 
@@ -24,6 +29,9 @@ router.use("/complaints", staffComplaintRoutes);
 router.use("/employees", employeeRoutes);
 router.use("/mobile", mobileRoutes);
 router.use("/", hotelRoutes); // Provides /hotel-info and /currency-rates
+router.use("/checkin-qr", checkinQrRoutes);
+router.use("/guest-messages", staffGuestMessageRoutes);
+router.use("/events", eventRoutes);
 
 // Rate limiting strict pour les routes publiques
 const publicLimiter = rateLimit({
@@ -40,6 +48,8 @@ const publicLimiter = rateLimit({
 // Routes publiques (pas d'auth)
 router.use("/public/checkin", publicLimiter, checkinRoutes);
 router.use("/public/complaints", publicLimiter, complaintRoutes);
+router.use("/public/messages", publicLimiter, guestMessageRoutes);
+router.use("/public/events", publicLimiter, eventPublicRoutes);
 router.use("/public", publicLimiter, hotelPublicRoutes);
 
 export default router;

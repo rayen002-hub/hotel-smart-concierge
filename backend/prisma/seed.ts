@@ -135,6 +135,9 @@ async function main() {
       checkOutDate: addDays(today, 3),
       status: ReservationStatus.CHECKED_IN,
       roomNumber: "101",
+      adultsCount: 2,
+      childrenCount: 1,
+      totalGuests: 3,
     },
     {
       reservationNumber: "RES-2026-002",
@@ -147,6 +150,9 @@ async function main() {
       checkOutDate: addDays(today, 5),
       status: ReservationStatus.CHECKED_IN,
       roomNumber: "203",
+      adultsCount: 1,
+      childrenCount: 0,
+      totalGuests: 1,
     },
     {
       reservationNumber: "RES-2026-003",
@@ -159,6 +165,9 @@ async function main() {
       checkOutDate: addDays(today, 4),
       status: ReservationStatus.PENDING,
       roomNumber: "201",
+      adultsCount: 2,
+      childrenCount: 0,
+      totalGuests: 2,
     },
     {
       reservationNumber: "RES-2026-004",
@@ -171,6 +180,9 @@ async function main() {
       checkOutDate: addDays(today, 6),
       status: ReservationStatus.PENDING,
       roomNumber: "301",
+      adultsCount: 2,
+      childrenCount: 2,
+      totalGuests: 4,
     },
     {
       reservationNumber: "RES-2026-005",
@@ -183,6 +195,9 @@ async function main() {
       checkOutDate: addDays(today, -1),
       status: ReservationStatus.CHECKED_OUT,
       roomNumber: "102",
+      adultsCount: 1,
+      childrenCount: 0,
+      totalGuests: 1,
     },
   ];
 
@@ -202,9 +217,12 @@ async function main() {
         checkOutDate: r.checkOutDate,
         status: r.status,
         roomId: room.id,
+        adultsCount: r.adultsCount,
+        childrenCount: r.childrenCount,
+        totalGuests: r.totalGuests,
       },
     });
-    console.log(`  -> ${r.reservationNumber} - ${r.guestFirstName} ${r.guestLastName} (${r.status})`);
+    console.log(`  -> ${r.reservationNumber} - ${r.guestFirstName} ${r.guestLastName} (${r.status}) [${r.adultsCount}A + ${r.childrenCount}E = ${r.totalGuests}]`);
   }
 
   // -----------------------------------------------------------
@@ -220,6 +238,9 @@ async function main() {
     { title: "Navette aeroport",        content: "Navette gratuite toutes les heures de 06h00 a 23h00.",                    type: "transport" },
     { title: "Spa et bien-etre",        content: "Le spa est ouvert de 09h00 a 21h00. Reservation a la reception.",         type: "service" },
   ];
+
+  // Clear existing hotel infos to allow re-seeding
+  await prisma.hotelInfo.deleteMany();
 
   for (const info of hotelInfos) {
     await prisma.hotelInfo.create({ data: info });

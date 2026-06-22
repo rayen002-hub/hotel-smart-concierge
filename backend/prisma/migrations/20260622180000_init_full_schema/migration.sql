@@ -19,6 +19,15 @@ CREATE TYPE "ComplaintStatus" AS ENUM ('PENDING', 'ASSIGNED', 'IN_PROGRESS', 'RE
 -- CreateEnum
 CREATE TYPE "InterventionResult" AS ENUM ('FIXED', 'NOT_FIXED');
 
+-- CreateEnum
+CREATE TYPE "MessageSenderType" AS ENUM ('CLIENT', 'STAFF');
+
+-- CreateEnum
+CREATE TYPE "CheckinCompletionStatus" AS ENUM ('NOT_STARTED', 'PARTIAL', 'COMPLETED');
+
+-- CreateEnum
+CREATE TYPE "TravelerType" AS ENUM ('ADULT', 'CHILD');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -73,6 +82,10 @@ CREATE TABLE "reservations" (
     "checkOutDate" TIMESTAMP(3) NOT NULL,
     "status" "ReservationStatus" NOT NULL DEFAULT 'PENDING',
     "roomId" TEXT,
+    "adultsCount" INTEGER NOT NULL DEFAULT 1,
+    "childrenCount" INTEGER NOT NULL DEFAULT 0,
+    "totalGuests" INTEGER NOT NULL DEFAULT 1,
+    "checkinCompletionStatus" "CheckinCompletionStatus" NOT NULL DEFAULT 'NOT_STARTED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -83,6 +96,9 @@ CREATE TABLE "reservations" (
 CREATE TABLE "guest_forms" (
     "id" TEXT NOT NULL,
     "reservationId" TEXT NOT NULL,
+    "travelerIndex" INTEGER NOT NULL,
+    "travelerType" "TravelerType" NOT NULL DEFAULT 'ADULT',
+    "isCompleted" BOOLEAN NOT NULL DEFAULT false,
     "fullName" TEXT NOT NULL,
     "nationality" TEXT NOT NULL,
     "passportEncrypted" TEXT,
@@ -179,6 +195,39 @@ CREATE TABLE "audit_logs" (
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "guest_staff_messages" (
+    "id" TEXT NOT NULL,
+    "reservationId" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
+    "senderType" "MessageSenderType" NOT NULL,
+    "senderUserId" TEXT,
+    "originalMessage" TEXT NOT NULL,
+    "detectedLanguage" TEXT,
+    "staffMessage" TEXT NOT NULL,
+    "clientMessage" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "readAt" TIMESTAMP(3),
+
+    CONSTRAINT "guest_staff_messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "hotel_events" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "eventDate" TIMESTAMP(3) NOT NULL,
+    "imageUrl" TEXT,
+    "imagePath" TEXT,
+    "isPublished" BOOLEAN NOT NULL DEFAULT false,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "hotel_events_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -192,7 +241,7 @@ CREATE UNIQUE INDEX "rooms_roomNumber_key" ON "rooms"("roomNumber");
 CREATE UNIQUE INDEX "reservations_reservationNumber_key" ON "reservations"("reservationNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "guest_forms_reservationId_key" ON "guest_forms"("reservationId");
+CREATE UNIQUE INDEX "guest_forms_reservationId_travelerIndex_key" ON "guest_forms"("reservationId", "travelerIndex");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "currency_rates_currency_key" ON "currency_rates"("currency");
@@ -241,3 +290,16 @@ ALTER TABLE "internal_messages" ADD CONSTRAINT "internal_messages_receiverId_fke
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "guest_staff_messages" ADD CONSTRAINT "guest_staff_messages_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "reservations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "guest_staff_messages" ADD CONSTRAINT "guest_staff_messages_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "rooms"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "guest_staff_messages" ADD CONSTRAINT "guest_staff_messages_senderUserId_fkey" FOREIGN KEY ("senderUserId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "hotel_events" ADD CONSTRAINT "hotel_events_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

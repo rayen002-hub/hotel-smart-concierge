@@ -45,3 +45,27 @@ export async function reopenComplaint(id: string, payload?: ReopenComplaintPaylo
   const { data } = await publicClient.post(`/public/complaints/${id}/reopen`, payload);
   return data;
 }
+
+// ─── Client‑Room Guest Messages API ──────────────────────────────────
+
+export interface SendGuestMessagePayload {
+  message: string;
+}
+
+/**
+ * GET /api/public/messages
+ * List messages in the guest-reception conversation.
+ */
+export async function listGuestMessages() {
+  const { data } = await publicClient.get('/public/messages');
+  return data;
+}
+
+/**
+ * POST /api/public/messages
+ * Send a message to the reception.
+ */
+export async function sendGuestMessage(payload: SendGuestMessagePayload) {
+  const { data } = await publicClient.post('/public/messages', payload);
+  return data;
+}

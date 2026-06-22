@@ -13,3 +13,5 @@ venv
 android/.gradle
 ios/Pods
 .DS_Store
+uploads
+*.log

@@ -38,7 +38,7 @@ export class AIService {
           staff_language: "fr",
         },
         {
-          timeout: 10000, // 10 secondes max
+          timeout: 60000, // 60 secondes (premiere traduction = chargement modele NLLB)
           headers: { "Content-Type": "application/json" },
         }
       );
@@ -90,5 +90,51 @@ export class AIService {
       `[AI SERVICE WARNING] Categorie inconnue: "${category}". Fallback vers OTHER.`
     );
     return ComplaintCategory.OTHER;
+  }
+
+  /**
+   * Detecter la langue d'un message.
+   * Retourne le code ISO 639-1 (ex: "fr", "en", "es").
+   */
+  async detectLanguage(message: string): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/detect-language`,
+        { message },
+        { timeout: 5000, headers: { "Content-Type": "application/json" } }
+      );
+      return response.data.language || "fr";
+    } catch (error: any) {
+      console.warn(`[AI SERVICE WARNING] Detection de langue echouee: ${error.message}`);
+      return "fr"; // fallback
+    }
+  }
+
+  /**
+   * Traduire un message d'une langue source vers une langue cible.
+   * Retourne le texte traduit ou le message original en cas d'erreur.
+   */
+  async translateMessage(
+    message: string,
+    sourceLang: string,
+    targetLang: string
+  ): Promise<string> {
+    if (sourceLang === targetLang) return message;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/translate`,
+        {
+          message,
+          source_language: sourceLang,
+          target_language: targetLang,
+        },
+        { timeout: 60000, headers: { "Content-Type": "application/json" } }
+      );
+      return response.data.translated_text || message;
+    } catch (error: any) {
+      console.warn(`[AI SERVICE WARNING] Traduction echouee (${sourceLang}->${targetLang}): ${error.message}`);
+      return message; // fallback: message original
+    }
   }
 }

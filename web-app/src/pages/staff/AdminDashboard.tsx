@@ -9,6 +9,13 @@ import {
 } from '../../api/staffApi';
 import { getHotelInfo, getCurrencyRates } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import {
+  StatusBadge,
+  CategoryBadge,
+  LoadingSpinner,
+  EmptyState,
+  ErrorMessage,
+} from '../../components';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -77,27 +84,6 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'hotel', label: 'Infos Hôtel', icon: '🛎️' },
   { key: 'currency', label: 'Devises', icon: '💱' },
 ];
-
-const statusColors: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
-  ASSIGNED: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
-  IN_PROGRESS: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
-  NEEDS_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300',
-  RESOLVED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
-  REOPENED: 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300',
-  AVAILABLE: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
-  OCCUPIED: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
-  MAINTENANCE: 'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300',
-};
-
-const categoryLabels: Record<string, string> = {
-  MAINTENANCE: '🔧 Maintenance',
-  HOUSEKEEPING: '🧹 Ménage',
-  RECEPTION: '🛎️ Réception',
-  RESTAURANT: '🍽️ Restaurant',
-  COMPLAINT: '📢 Général',
-  OTHER: '📌 Autre',
-};
 
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -212,18 +198,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // ── Render Helpers ─────────────────────────────────────────────────
-
-  const renderLoading = () => (
-    <div className="flex flex-col items-center justify-center py-16 space-y-3">
-      <svg className="animate-spin h-8 w-8 text-indigo-500" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      <span className="text-xs text-[hsl(var(--muted-foreground))]">Chargement…</span>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -235,26 +209,28 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Banners */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-          <div className="flex items-start gap-2"><span>⚠️</span><span>{error}</span></div>
-        </div>
-      )}
+      <ErrorMessage message={error} onRetry={() => fetchTabContent(activeTab)} />
       {success && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
-          <div className="flex items-start gap-2"><span>✅</span><span>{success}</span></div>
+        <div className="rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-4 text-xs dark:border-emerald-950/25 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 shadow-sm transition-all animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm select-none" role="img" aria-label="success">✅</span>
+            <div className="space-y-0.5">
+              <span className="font-bold text-[10px] uppercase tracking-wider block text-emerald-900 dark:text-emerald-200">Succès</span>
+              <p className="leading-relaxed text-[11px] text-emerald-700 dark:text-emerald-400/90">{success}</p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-1 rounded-xl border bg-[hsl(var(--muted))]/20 p-1">
+      <div className="flex flex-wrap gap-1 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/25 p-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 min-w-[120px] h-9 rounded-lg text-xs font-medium transition-all duration-200 ${
+            className={`flex-1 min-w-[120px] h-9 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))] font-semibold'
+                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))]'
                 : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
             }`}
           >
@@ -264,55 +240,63 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="rounded-xl border bg-[hsl(var(--card))] p-6 shadow-sm">
+      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
         {loading ? (
-          renderLoading()
+          <LoadingSpinner message="Chargement des données..." />
         ) : (
           <>
             {/* TAB: Users */}
             {activeTab === 'users' && (
               <div className="space-y-4">
                 <h2 className="text-sm font-bold">Liste des Utilisateurs et Employés</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
-                        <th className="py-2.5 font-semibold">Nom</th>
-                        <th className="py-2.5 font-semibold">Email</th>
-                        <th className="py-2.5 font-semibold">Rôle</th>
-                        <th className="py-2.5 font-semibold">Département</th>
-                        <th className="py-2.5 font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[hsl(var(--border))]">
-                      {users.map((u) => {
-                        const online = isOnline(u.employeeProfile?.lastSeenAt);
-                        return (
-                          <tr key={u.id} className="hover:bg-[hsl(var(--muted))]/10">
-                            <td className="py-3 font-medium flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
-                              {u.name}
-                            </td>
-                            <td className="py-3 text-[hsl(var(--muted-foreground))]">{u.email}</td>
-                            <td className="py-3 font-semibold">{u.role}</td>
-                            <td className="py-3">{u.employeeProfile?.department || '—'}</td>
-                            <td className="py-3">
-                              {u.employeeProfile ? (
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                                  u.employeeProfile.isAvailable ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20' : 'bg-red-50 text-red-700 dark:bg-red-950/20'
-                                }`}>
-                                  {u.employeeProfile.isAvailable ? 'Disponible' : 'Indisponible'}
-                                </span>
-                              ) : (
-                                <span className="text-[hsl(var(--muted-foreground))]">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                {users.length === 0 ? (
+                  <EmptyState
+                    message="Aucun utilisateur trouvé"
+                    icon="👷"
+                    description="Aucun compte utilisateur ou employé n'a été trouvé dans le système."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                          <th className="py-2.5 font-semibold">Nom</th>
+                          <th className="py-2.5 font-semibold">Email</th>
+                          <th className="py-2.5 font-semibold">Rôle</th>
+                          <th className="py-2.5 font-semibold">Département</th>
+                          <th className="py-2.5 font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[hsl(var(--border))]">
+                        {users.map((u) => {
+                          const online = isOnline(u.employeeProfile?.lastSeenAt);
+                          return (
+                            <tr key={u.id} className="hover:bg-[hsl(var(--muted))]/10">
+                              <td className="py-3 font-medium flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
+                                {u.name}
+                              </td>
+                              <td className="py-3 text-[hsl(var(--muted-foreground))]">{u.email}</td>
+                              <td className="py-3 font-semibold">{u.role}</td>
+                              <td className="py-3">{u.employeeProfile?.department || '—'}</td>
+                              <td className="py-3">
+                                {u.employeeProfile ? (
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                    u.employeeProfile.isAvailable ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20' : 'bg-red-50 text-red-700 dark:bg-red-950/20'
+                                  }`}>
+                                    {u.employeeProfile.isAvailable ? 'Disponible' : 'Indisponible'}
+                                  </span>
+                                ) : (
+                                  <span className="text-[hsl(var(--muted-foreground))]">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -320,32 +304,38 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'rooms' && (
               <div className="space-y-4">
                 <h2 className="text-sm font-bold">Supervision des Chambres</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
-                        <th className="py-2.5 font-semibold">Numéro</th>
-                        <th className="py-2.5 font-semibold">Type</th>
-                        <th className="py-2.5 font-semibold">Étage</th>
-                        <th className="py-2.5 font-semibold">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[hsl(var(--border))]">
-                      {rooms.map((r) => (
-                        <tr key={r.id} className="hover:bg-[hsl(var(--muted))]/10">
-                          <td className="py-3 font-bold">Chambre {r.roomNumber}</td>
-                          <td className="py-3">{r.type}</td>
-                          <td className="py-3">Étage {r.floor}</td>
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[r.status] || 'bg-gray-100 text-gray-700'}`}>
-                              {r.status}
-                            </span>
-                          </td>
+                {rooms.length === 0 ? (
+                  <EmptyState
+                    message="Aucune chambre trouvée"
+                    icon="🚪"
+                    description="La liste des chambres de l'établissement est vide."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                          <th className="py-2.5 font-semibold">Numéro</th>
+                          <th className="py-2.5 font-semibold">Type</th>
+                          <th className="py-2.5 font-semibold">Étage</th>
+                          <th className="py-2.5 font-semibold">Statut</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-[hsl(var(--border))]">
+                        {rooms.map((r) => (
+                          <tr key={r.id} className="hover:bg-[hsl(var(--muted))]/10">
+                            <td className="py-3 font-bold">Chambre {r.roomNumber}</td>
+                            <td className="py-3">{r.type}</td>
+                            <td className="py-3">Étage {r.floor}</td>
+                            <td className="py-3">
+                              <StatusBadge status={r.status} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -353,36 +343,42 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'complaints' && (
               <div className="space-y-4">
                 <h2 className="text-sm font-bold">Suivi Global des Réclamations</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
-                        <th className="py-2.5 font-semibold">Date</th>
-                        <th className="py-2.5 font-semibold">Chambre</th>
-                        <th className="py-2.5 font-semibold">Catégorie</th>
-                        <th className="py-2.5 font-semibold">Message</th>
-                        <th className="py-2.5 font-semibold">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[hsl(var(--border))]">
-                      {complaints.map((c) => (
-                        <tr key={c.id} className="hover:bg-[hsl(var(--muted))]/10">
-                          <td className="py-3 whitespace-nowrap text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</td>
-                          <td className="py-3 font-semibold">Ch. {c.room?.roomNumber || '—'}</td>
-                          <td className="py-3">{categoryLabels[c.category] || c.category}</td>
-                          <td className="py-3 max-w-xs truncate" title={c.staffMessage || c.originalMessage}>
-                            {c.staffMessage || c.originalMessage}
-                          </td>
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-100 text-gray-700'}`}>
-                              {c.status}
-                            </span>
-                          </td>
+                {complaints.length === 0 ? (
+                  <EmptyState
+                    message="Aucune réclamation trouvée"
+                    icon="📢"
+                    description="Aucune réclamation globale signalée pour le moment."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                          <th className="py-2.5 font-semibold">Date</th>
+                          <th className="py-2.5 font-semibold">Chambre</th>
+                          <th className="py-2.5 font-semibold">Catégorie</th>
+                          <th className="py-2.5 font-semibold">Message</th>
+                          <th className="py-2.5 font-semibold">Statut</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-[hsl(var(--border))]">
+                        {complaints.map((c) => (
+                          <tr key={c.id} className="hover:bg-[hsl(var(--muted))]/10">
+                            <td className="py-3 whitespace-nowrap text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</td>
+                            <td className="py-3 font-semibold">Ch. {c.room?.roomNumber || '—'}</td>
+                            <td className="py-3"><CategoryBadge category={c.category} /></td>
+                            <td className="py-3 max-w-xs truncate" title={c.staffMessage || c.originalMessage}>
+                              {c.staffMessage || c.originalMessage}
+                            </td>
+                            <td className="py-3">
+                              <StatusBadge status={c.status} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -390,41 +386,49 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'logs' && (
               <div className="space-y-4">
                 <h2 className="text-sm font-bold">Logs d'activité système (100 derniers événements)</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
-                        <th className="py-2.5 font-semibold">Horodatage</th>
-                        <th className="py-2.5 font-semibold">Acteur</th>
-                        <th className="py-2.5 font-semibold">Action</th>
-                        <th className="py-2.5 font-semibold">Entité</th>
-                        <th className="py-2.5 font-semibold">Détails/Metadata</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[hsl(var(--border))]">
-                      {logs.map((l) => (
-                        <tr key={l.id} className="hover:bg-[hsl(var(--muted))]/10 text-[11px]">
-                          <td className="py-2.5 whitespace-nowrap text-[hsl(var(--muted-foreground))]">{formatDateTime(l.createdAt)}</td>
-                          <td className="py-2.5">
-                            {l.actor ? (
-                              <div>
-                                <span className="font-semibold">{l.actor.name}</span>
-                                <span className="text-[9px] text-[hsl(var(--muted-foreground))] block">{l.actor.role}</span>
-                              </div>
-                            ) : (
-                              <span className="text-[hsl(var(--muted-foreground))] italic">Système/Client</span>
-                            )}
-                          </td>
-                          <td className="py-2.5"><code className="px-1 py-0.5 rounded bg-[hsl(var(--muted))] font-mono text-[10px]">{l.action}</code></td>
-                          <td className="py-2.5 text-[hsl(var(--muted-foreground))]">{l.entity} (id: {l.entityId?.slice(0, 8) || '—'}…)</td>
-                          <td className="py-2.5 max-w-sm truncate text-[10px] font-mono text-[hsl(var(--muted-foreground))]" title={JSON.stringify(l.metadata, null, 2)}>
-                            {l.metadata ? JSON.stringify(l.metadata) : '—'}
-                          </td>
+                {logs.length === 0 ? (
+                  <EmptyState
+                    message="Aucun log d'activité"
+                    icon="📜"
+                    description="Aucune activité système enregistrée."
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                          <th className="py-2.5 font-semibold">Horodatage</th>
+                          <th className="py-2.5 font-semibold">Acteur</th>
+                          <th className="py-2.5 font-semibold">Action</th>
+                          <th className="py-2.5 font-semibold">Entité</th>
+                          <th className="py-2.5 font-semibold">Détails/Metadata</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-[hsl(var(--border))]">
+                        {logs.map((l) => (
+                          <tr key={l.id} className="hover:bg-[hsl(var(--muted))]/10 text-[11px]">
+                            <td className="py-2.5 whitespace-nowrap text-[hsl(var(--muted-foreground))]">{formatDateTime(l.createdAt)}</td>
+                            <td className="py-2.5">
+                              {l.actor ? (
+                                <div>
+                                  <span className="font-semibold">{l.actor.name}</span>
+                                  <span className="text-[9px] text-[hsl(var(--muted-foreground))] block">{l.actor.role}</span>
+                                </div>
+                              ) : (
+                                <span className="text-[hsl(var(--muted-foreground))] italic">Système/Client</span>
+                              )}
+                            </td>
+                            <td className="py-2.5"><code className="px-1 py-0.5 rounded bg-[hsl(var(--muted))] font-mono text-[10px]">{l.action}</code></td>
+                            <td className="py-2.5 text-[hsl(var(--muted-foreground))]">{l.entity} (id: {l.entityId?.slice(0, 8) || '—'}…)</td>
+                            <td className="py-2.5 max-w-sm truncate text-[10px] font-mono text-[hsl(var(--muted-foreground))]" title={JSON.stringify(l.metadata, null, 2)}>
+                              {l.metadata ? JSON.stringify(l.metadata) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

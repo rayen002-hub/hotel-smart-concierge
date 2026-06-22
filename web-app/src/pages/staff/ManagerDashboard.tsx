@@ -11,6 +11,13 @@ import {
 } from '../../api/staffApi';
 import { getStoredUser } from '../../components/AuthGuard';
 import type { ApiError } from '../../api/apiClient';
+import {
+  StatusBadge,
+  CategoryBadge,
+  LoadingSpinner,
+  EmptyState,
+  ErrorMessage,
+} from '../../components';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -71,37 +78,12 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'employees', label: 'Employés', icon: '👷' },
 ];
 
-const statusColors: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
-  ASSIGNED: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
-  IN_PROGRESS: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
-  NEEDS_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300',
-  RESOLVED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
-  CONFIRMED: 'bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-300',
-  REOPENED: 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300',
-};
-
-const categoryLabels: Record<string, string> = {
-  MAINTENANCE: '🔧 Maintenance',
-  HOUSEKEEPING: '🧹 Ménage',
-  RECEPTION: '🛎️ Réception',
-  RESTAURANT: '🍽️ Restaurant',
-  COMPLAINT: '📢 Général',
-  OTHER: '📌 Autre',
-};
-
 const resultLabels: Record<string, string> = {
   RESOLVED: '✅ Résolu',
   PARTIALLY_RESOLVED: '⚠️ Partiellement résolu',
   UNRESOLVED: '❌ Non résolu',
   NEEDS_FOLLOWUP: '🔄 Suivi nécessaire',
 };
-
-const Badge: React.FC<{ status: string; map?: Record<string, string> }> = ({ status, map }) => (
-  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${(map || statusColors)[status] || 'bg-gray-100 text-gray-700'}`}>
-    {status}
-  </span>
-);
 
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -306,24 +288,12 @@ export const ManagerDashboard: React.FC = () => {
     }
   };
 
-  // ── Render helpers ─────────────────────────────────────────────────
-
-  const renderLoading = () => (
-    <div className="flex flex-col items-center justify-center py-16 space-y-3">
-      <svg className="animate-spin h-8 w-8 text-indigo-500" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      <span className="text-xs text-[hsl(var(--muted-foreground))]">Chargement…</span>
-    </div>
-  );
-
   // ═══════════════════════════════════════════════════════════════════
   //  TAB: Réclamations
   // ═══════════════════════════════════════════════════════════════════
 
   const renderComplaints = () => {
-    if (loading) return renderLoading();
+    if (loading) return <LoadingSpinner message="Chargement des réclamations..." />;
 
     return (
       <div className="space-y-4">
@@ -354,9 +324,11 @@ export const ManagerDashboard: React.FC = () => {
         </div>
 
         {complaints.length === 0 ? (
-          <div className="text-center py-16 text-sm text-[hsl(var(--muted-foreground))]">
-            Aucune réclamation active dans votre service.
-          </div>
+          <EmptyState
+            message="Aucune réclamation active dans votre service"
+            icon="📢"
+            description="Toutes les réclamations de votre service ont été résolues ou traitées."
+          />
         ) : (
           <div className="space-y-3">
             {complaints.map((c) => (
@@ -368,8 +340,8 @@ export const ManagerDashboard: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge status={c.status} />
-                      <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{categoryLabels[c.category] || c.category}</span>
+                      <StatusBadge status={c.status} />
+                      <CategoryBadge category={c.category} />
                       <span className="text-[10px] text-[hsl(var(--muted-foreground))]">·</span>
                       <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</span>
                     </div>
@@ -449,7 +421,7 @@ export const ManagerDashboard: React.FC = () => {
           onClick={(e) => e.stopPropagation()}
         >
           {detailLoading ? (
-            renderLoading()
+            <LoadingSpinner message="Chargement du détail..." />
           ) : (
             <div className="p-6 space-y-5">
               {/* Header */}
@@ -463,8 +435,8 @@ export const ManagerDashboard: React.FC = () => {
 
               {/* Status + Category */}
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge status={c.status} />
-                <span className="text-xs">{categoryLabels[c.category] || c.category}</span>
+                <StatusBadge status={c.status} />
+                <CategoryBadge category={c.category} />
                 <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</span>
               </div>
 
@@ -586,7 +558,7 @@ export const ManagerDashboard: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════
 
   const renderEmployees = () => {
-    if (loading) return renderLoading();
+    if (loading) return <LoadingSpinner message="Chargement des employés..." />;
 
     return (
       <div className="space-y-4">
@@ -639,7 +611,11 @@ export const ManagerDashboard: React.FC = () => {
 
         {/* Employee list */}
         {employees.length === 0 ? (
-          <div className="text-center py-12 text-sm text-[hsl(var(--muted-foreground))]">Aucun employé dans votre département.</div>
+          <EmptyState
+            message="Aucun employé"
+            icon="👷"
+            description="Utilisez le bouton ci-dessus pour ajouter des employés à votre service."
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {employees.map((emp) => {
@@ -694,26 +670,28 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* Banners */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-          <div className="flex items-start gap-2"><span>⚠️</span><span>{error}</span></div>
-        </div>
-      )}
+      <ErrorMessage message={error} onRetry={() => activeTab === 'complaints' ? fetchComplaints() : fetchEmployees()} />
       {success && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
-          <div className="flex items-start gap-2"><span>✅</span><span>{success}</span></div>
+        <div className="rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-4 text-xs dark:border-emerald-950/25 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 shadow-sm transition-all animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm select-none" role="img" aria-label="success">✅</span>
+            <div className="space-y-0.5">
+              <span className="font-bold text-[10px] uppercase tracking-wider block text-emerald-900 dark:text-emerald-200">Succès</span>
+              <p className="leading-relaxed text-[11px] text-emerald-700 dark:text-emerald-400/90">{success}</p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 rounded-xl border bg-[hsl(var(--muted))]/20 p-1">
+      <div className="flex gap-1 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/25 p-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 h-9 rounded-lg text-xs font-medium transition-all duration-200 ${
+            className={`flex-1 h-9 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))] font-semibold'
+                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))]'
                 : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
             }`}
           >

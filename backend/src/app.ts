@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
 import rateLimit from "express-rate-limit";
 
 import { env } from "./config/env";
@@ -20,7 +21,7 @@ app.use(
     origin: env.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Client-Room-Token", "X-Checkin-Token"],
   })
 );
 
@@ -44,6 +45,9 @@ app.use(express.json({ limit: "10mb" }));
 
 // URL-encoded body parser
 app.use(express.urlencoded({ extended: true }));
+
+// --- Fichiers statiques (uploads) ---
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
 // --- Routes ---
 app.use("/api", routes);

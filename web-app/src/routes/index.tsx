@@ -9,6 +9,8 @@ import { RoomComplaintPage } from '../pages/public/RoomComplaintPage';
 import { RoomComplaintsPage } from '../pages/public/RoomComplaintsPage';
 import { RoomHotelInfoPage } from '../pages/public/RoomHotelInfoPage';
 import { RoomCurrencyPage } from '../pages/public/RoomCurrencyPage';
+import { RoomMessagesPage } from '../pages/public/RoomMessagesPage';
+import { RoomEventsPage } from '../pages/public/RoomEventsPage';
 import { LoginPage } from '../pages/staff/LoginPage';
 import { AuthGuard } from '../components/AuthGuard';
 import { ReceptionDashboard } from '../pages/staff/ReceptionDashboard';
@@ -36,6 +38,8 @@ const router = createBrowserRouter([
           { path: 'complaints', element: <RoomComplaintsPage /> },
           { path: 'hotel-info', element: <RoomHotelInfoPage /> },
           { path: 'currency', element: <RoomCurrencyPage /> },
+          { path: 'messages', element: <RoomMessagesPage /> },
+          { path: 'events', element: <RoomEventsPage /> },
         ],
       },
 

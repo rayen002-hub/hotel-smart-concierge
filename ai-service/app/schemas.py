@@ -50,7 +50,16 @@ class DetectLanguageResponse(BaseModel):
     )
     confidence: Optional[float] = Field(
         None,
-        description="Score de confiance. Null car langdetect ne le fournit pas.",
+        description="Score de confiance de la detection (0-1).",
+    )
+    language_name: Optional[str] = Field(
+        None,
+        description="Nom de la langue detectee.",
+        examples=["French"],
+    )
+    supported: Optional[bool] = Field(
+        None,
+        description="Si la langue est supportee par le modele de traduction.",
     )
 
 
@@ -76,6 +85,10 @@ class TranslateRequest(BaseModel):
 
 class TranslateResponse(BaseModel):
     """Schema pour la reponse de traduction."""
+    original_message: str = Field(
+        ...,
+        description="Le texte original avant traduction.",
+    )
     translated_text: str = Field(
         ...,
         description="Le texte traduit.",
@@ -88,14 +101,14 @@ class TranslateResponse(BaseModel):
         ...,
         description="Code ISO 639-1 de la langue cible.",
     )
-    mode: str = Field(
+    model: str = Field(
         ...,
-        description="Mode de traduction utilise (mock ou nllb).",
-        examples=["mock"],
+        description="Modele utilise pour la traduction.",
+        examples=["facebook/nllb-200-distilled-600M"],
     )
-    warning: Optional[str] = Field(
-        None,
-        description="Message d'avertissement si applicable.",
+    cached: bool = Field(
+        False,
+        description="Si la traduction vient du cache.",
     )
 
 
@@ -117,10 +130,15 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeResponse(BaseModel):
     """Schema pour la reponse d'analyse complete."""
     original_message: str = Field(..., description="Le message original du client.")
-    detected_language: str = Field(..., description="La langue detectee du message.")
+    detected_language: str = Field(..., description="La langue detectee du message (ISO 639-1).")
     normalized_message_en: str = Field(..., description="Le message traduit en anglais pour la classification.")
     staff_message: str = Field(..., description="Le message traduit dans la langue du personnel.")
     staff_language: str = Field(..., description="La langue du personnel.")
     category: str = Field(..., description="La categorie predite.")
-    category_confidence: Optional[float] = Field(None, description="Le score de confiance de la prediction.")
+    category_confidence: Optional[float] = Field(None, description="Le score de confiance de la prediction (0-1).")
+    translation_model: str = Field(
+        ...,
+        description="Le modele utilise pour la traduction.",
+        examples=["facebook/nllb-200-distilled-600M"],
+    )
     translation_warning: Optional[str] = Field(None, description="Avertissement eventuel sur la traduction.")

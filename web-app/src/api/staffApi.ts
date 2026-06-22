@@ -165,3 +165,53 @@ export async function listAuditLogs() {
   const { data } = await staffClient.get('/audit-logs');
   return data;
 }
+
+// ─── Check-in QR ─────────────────────────────────────────────────────
+
+export async function getCheckinQrUrl() {
+  const { data } = await staffClient.post('/checkin-qr');
+  return data;
+}
+
+// ─── Guest Messages (staff) ──────────────────────────────────────────
+
+export async function listGuestConversations() {
+  const { data } = await staffClient.get('/guest-messages');
+  return data;
+}
+
+export async function getGuestConversation(reservationId: string) {
+  const { data } = await staffClient.get(`/guest-messages/${reservationId}`);
+  return data;
+}
+
+export async function replyToGuest(reservationId: string, message: string) {
+  const { data } = await staffClient.post(`/guest-messages/${reservationId}/reply`, { message });
+  return data;
+}
+
+// ─── Events (staff) ──────────────────────────────────────────────────
+
+export async function listEvents() {
+  const { data } = await staffClient.get('/events');
+  return data;
+}
+
+export async function createEvent(formData: FormData) {
+  const { data } = await staffClient.post('/events', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function updateEvent(id: string, formData: FormData) {
+  const { data } = await staffClient.patch(`/events/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function deleteEvent(id: string) {
+  const { data } = await staffClient.delete(`/events/${id}`);
+  return data;
+}

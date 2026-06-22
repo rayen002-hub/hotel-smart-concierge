@@ -70,6 +70,22 @@ enum InterventionResult {
   NOT_FIXED
 }
 
+enum MessageSenderType {
+  CLIENT
+  STAFF
+}
+
+enum CheckinCompletionStatus {
+  NOT_STARTED
+  PARTIAL
+  COMPLETED
+}
+
+enum TravelerType {
+  ADULT
+  CHILD
+}
+
 // =============================================================
 //  MODELS
 // =============================================================
@@ -84,27 +100,29 @@ model User {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  employeeProfile     EmployeeProfile?
-  createdProfiles     EmployeeProfile[]  @relation("CreatedByAdmin")
-  assignedComplaints  Complaint[]        @relation("AssignedTo")
-  assignerComplaints  Complaint[]        @relation("AssignedBy")
-  interventionLogs    InterventionLog[]
-  sentMessages        InternalMessage[]  @relation("Sender")
-  receivedMessages    InternalMessage[]  @relation("Receiver")
-  auditLogs           AuditLog[]
+  employeeProfile    EmployeeProfile?
+  createdProfiles    EmployeeProfile[]   @relation("CreatedByAdmin")
+  assignedComplaints Complaint[]         @relation("AssignedTo")
+  assignerComplaints Complaint[]         @relation("AssignedBy")
+  interventionLogs   InterventionLog[]
+  sentMessages       InternalMessage[]   @relation("Sender")
+  receivedMessages   InternalMessage[]   @relation("Receiver")
+  guestStaffMessages GuestStaffMessage[] @relation("GuestStaffSender")
+  createdEvents      HotelEvent[]        @relation("EventCreatedBy")
+  auditLogs          AuditLog[]
 
   @@map("users")
 }
 
 model EmployeeProfile {
-  id            String     @id @default(uuid())
-  userId        String     @unique
-  department    Department
-  isAvailable   Boolean    @default(true)
-  lastSeenAt    DateTime?
-  lastLoginAt   DateTime?
-  lastLogoutAt  DateTime?
-  createdById   String?
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  department   Department
+  isAvailable  Boolean    @default(true)
+  lastSeenAt   DateTime?
+  lastLoginAt  DateTime?
+  lastLogoutAt DateTime?
+  createdById  String?
 
   // Relations
   user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -124,70 +142,80 @@ model Room {
   updatedAt       DateTime   @updatedAt
 
   // Relations
-  reservations     Reservation[]
-  complaints       Complaint[]
-  interventionLogs InterventionLog[]
+  reservations       Reservation[]
+  complaints         Complaint[]
+  guestStaffMessages GuestStaffMessage[]
+  interventionLogs   InterventionLog[]
 
   @@map("rooms")
 }
 
 model Reservation {
-  id                String            @id @default(uuid())
-  reservationNumber String            @unique
-  guestFirstName    String
-  guestLastName     String
-  guestEmail        String?
-  guestPhone        String?
-  nationality       String?
-  checkInDate       DateTime
-  checkOutDate      DateTime
-  status            ReservationStatus @default(PENDING)
-  roomId            String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                      String                  @id @default(uuid())
+  reservationNumber       String                  @unique
+  guestFirstName          String
+  guestLastName           String
+  guestEmail              String?
+  guestPhone              String?
+  nationality             String?
+  checkInDate             DateTime
+  checkOutDate            DateTime
+  status                  ReservationStatus       @default(PENDING)
+  roomId                  String?
+  adultsCount             Int                     @default(1)
+  childrenCount           Int                     @default(0)
+  totalGuests             Int                     @default(1)
+  checkinCompletionStatus CheckinCompletionStatus @default(NOT_STARTED)
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
 
   // Relations
-  room       Room?       @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  guestForm  GuestForm?
-  complaints Complaint[]
+  room               Room?               @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  guestForms         GuestForm[]
+  complaints         Complaint[]
+  guestStaffMessages GuestStaffMessage[]
 
   @@map("reservations")
 }
 
 model GuestForm {
-  id                String   @id @default(uuid())
-  reservationId     String   @unique
+  id                String       @id @default(uuid())
+  reservationId     String
+  travelerIndex     Int
+  travelerType      TravelerType @default(ADULT)
+  isCompleted       Boolean      @default(false)
   fullName          String
   nationality       String
   passportEncrypted String?
   phone             String?
   address           String?
-  submittedAt       DateTime @default(now())
+  submittedAt       DateTime     @default(now())
 
   // Relations
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 
+  @@unique([reservationId, travelerIndex])
   @@map("guest_forms")
 }
 
 model Complaint {
-  id                   String            @id @default(uuid())
-  reservationId        String
-  roomId               String
-  originalMessage      String
-  detectedLanguage     String?
-  normalizedMessageEn  String?
-  staffMessage         String?
-  category             ComplaintCategory
-  status               ComplaintStatus   @default(PENDING)
-  assignedToId         String?
-  assignedById         String?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  resolvedAt           DateTime?
-  confirmedAt          DateTime?
-  reopenedAt           DateTime?
-  needsReviewAt        DateTime?
+  id                  String            @id @default(uuid())
+  reservationId       String
+  roomId              String
+  originalMessage     String
+  detectedLanguage    String?
+  normalizedMessageEn String?
+  staffMessage        String?
+  category            ComplaintCategory
+  status              ComplaintStatus   @default(PENDING)
+  assignedToId        String?
+  assignedById        String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  resolvedAt          DateTime?
+  confirmedAt         DateTime?
+  reopenedAt          DateTime?
+  needsReviewAt       DateTime?
 
   // Relations
   reservation      Reservation       @relation(fields: [reservationId], references: [id], onDelete: Cascade)
@@ -269,4 +297,43 @@ model AuditLog {
   actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
+}
+
+model GuestStaffMessage {
+  id               String            @id @default(uuid())
+  reservationId    String
+  roomId           String
+  senderType       MessageSenderType
+  senderUserId     String?
+  originalMessage  String
+  detectedLanguage String?
+  staffMessage     String
+  clientMessage    String
+  createdAt        DateTime          @default(now())
+  readAt           DateTime?
+
+  // Relations
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderUser  User?       @relation("GuestStaffSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@map("guest_staff_messages")
+}
+
+model HotelEvent {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  eventDate   DateTime
+  imageUrl    String?
+  imagePath   String?
+  isPublished Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  createdBy User @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("hotel_events")
 }

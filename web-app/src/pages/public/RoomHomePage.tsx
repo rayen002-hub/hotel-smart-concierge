@@ -38,6 +38,20 @@ const services: ServiceCard[] = [
     path: '/room/currency',
     gradient: 'from-violet-500 to-purple-500',
   },
+  {
+    title: 'Messages réception',
+    description: 'Contactez la réception et suivez vos échanges.',
+    icon: '💬',
+    path: '/room/messages',
+    gradient: 'from-pink-500 to-rose-500',
+  },
+  {
+    title: 'Événements',
+    description: 'Découvrez les événements à venir dans l\'hôtel.',
+    icon: '🎉',
+    path: '/room/events',
+    gradient: 'from-amber-500 to-orange-500',
+  },
 ];
 
 export const RoomHomePage: React.FC = () => {

@@ -26,6 +26,7 @@ export class ReservationService {
         orderBy: { createdAt: "desc" },
         include: {
           room: { select: { id: true, roomNumber: true, type: true } },
+          _count: { select: { guestForms: true } },
         },
       }),
       prisma.reservation.count({ where }),

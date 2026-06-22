@@ -1,60 +1,156 @@
 """
-Service de traduction.
-Supporte deux modes : mock (dev) et nllb (production avec facebook/nllb-200-distilled-600M).
+Service de traduction basé sur facebook/nllb-200-distilled-600M.
+Pas de mode mock. Le modèle est chargé en lazy loading au premier appel.
+Inclut un cache LRU pour éviter les traductions redondantes.
+Le chargement du modèle est protégé par un timeout pour ne jamais bloquer le service.
 """
 
-import os
+import hashlib
+import threading
+import traceback
+from collections import OrderedDict
 from typing import Optional
 
 
-# Mapping des codes ISO 639-1 vers les codes NLLB (flores200)
-NLLB_LANGUAGE_MAP = {
-    "en": "eng_Latn",
-    "fr": "fra_Latn",
-    "ar": "arb_Arab",
-    "it": "ita_Latn",
-    "es": "spa_Latn",
-    "de": "deu_Latn",
-    "pt": "por_Latn",
-    "nl": "nld_Latn",
-    "ru": "rus_Cyrl",
-    "zh": "zho_Hans",
-    "ja": "jpn_Jpan",
-    "ko": "kor_Hang",
-    "tr": "tur_Latn",
-}
+from app.utils.language_mapping import get_nllb_code, is_supported, LANGUAGE_NAMES
+from app.utils.hotel_glossary import apply_glossary
+
+
+# -------------------------------------------------------------------
+# Translation cache (LRU, max 500 entries)
+# -------------------------------------------------------------------
+
+class TranslationCache:
+    """Cache LRU pour les traductions identiques."""
+
+    def __init__(self, max_size: int = 500):
+        self._cache: OrderedDict[str, str] = OrderedDict()
+        self._max_size = max_size
+        self._hits = 0
+        self._misses = 0
+
+    def _make_key(self, text: str, src: str, tgt: str) -> str:
+        raw = f"{src}|{tgt}|{text}"
+        return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+    def get(self, text: str, src: str, tgt: str) -> Optional[str]:
+        key = self._make_key(text, src, tgt)
+        if key in self._cache:
+            self._hits += 1
+            self._cache.move_to_end(key)
+            return self._cache[key]
+        self._misses += 1
+        return None
+
+    def put(self, text: str, src: str, tgt: str, result: str):
+        key = self._make_key(text, src, tgt)
+        self._cache[key] = result
+        self._cache.move_to_end(key)
+        if len(self._cache) > self._max_size:
+            self._cache.popitem(last=False)
+
+    @property
+    def stats(self) -> dict:
+        return {
+            "size": len(self._cache),
+            "max_size": self._max_size,
+            "hits": self._hits,
+            "misses": self._misses,
+            "hit_rate": round(self._hits / max(self._hits + self._misses, 1), 3),
+        }
+
+
+# -------------------------------------------------------------------
+# Translation Service
+# -------------------------------------------------------------------
+
+MODEL_NAME = "facebook/nllb-200-distilled-600M"
+
+# Maximum time (seconds) to wait for model loading
+MODEL_LOAD_TIMEOUT = 120
 
 
 class TranslationService:
-    """Service de traduction avec support mock et NLLB."""
+    """Service de traduction avec facebook/nllb-200-distilled-600M."""
 
     def __init__(self):
-        """Initialiser le service selon le mode configure."""
-        self.mode = os.environ.get("TRANSLATION_MODE", "mock").lower()
+        """Initialiser le service. Le modele est charge en lazy loading."""
         self._model = None
         self._tokenizer = None
+        self._loaded = False
+        self._loading = False
+        self._load_error: Optional[str] = None
+        self._cache = TranslationCache(max_size=500)
+        self._lock = threading.Lock()
 
-    def _load_nllb_model(self):
+    def _load_model(self):
         """Charger le modele NLLB a la premiere utilisation (lazy loading)."""
-        if self._model is not None:
+        if self._loaded:
             return
 
-        try:
-            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-            model_name = "facebook/nllb-200-distilled-600M"
-            print(f"[TranslationService] Chargement du modele {model_name}...")
-            self._tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self._model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-            print("[TranslationService] Modele charge avec succes.")
-        except Exception as e:
+        if self._load_error:
             raise RuntimeError(
-                f"Erreur lors du chargement du modele NLLB : {e}"
+                f"Le modele de traduction n'a pas pu etre charge: {self._load_error}"
             )
 
-    def _get_nllb_code(self, language: str) -> Optional[str]:
-        """Convertir un code ISO 639-1 en code NLLB."""
-        return NLLB_LANGUAGE_MAP.get(language)
+        if self._loading:
+            raise RuntimeError(
+                "Le modele de traduction est en cours de chargement. Reessayez dans quelques secondes."
+            )
+
+        with self._lock:
+            # Double-check after acquiring lock
+            if self._loaded:
+                return
+            if self._load_error:
+                raise RuntimeError(
+                    f"Le modele de traduction n'a pas pu etre charge: {self._load_error}"
+                )
+
+            self._loading = True
+
+        # Load in a background thread with timeout
+        load_result = {"success": False, "error": None}
+
+        def _do_load():
+            try:
+                from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+                print(f"[TranslationService] Chargement du modele {MODEL_NAME}...")
+                print("[TranslationService] Premier chargement = telechargement (~2.5 GB). Patience...")
+
+                tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+                model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+
+                self._tokenizer = tokenizer
+                self._model = model
+                self._loaded = True
+                load_result["success"] = True
+                print(f"[TranslationService] Modele {MODEL_NAME} charge avec succes.")
+            except Exception as e:
+                load_result["error"] = str(e)
+                print(f"[TranslationService] ERREUR lors du chargement: {e}")
+                traceback.print_exc()
+
+        thread = threading.Thread(target=_do_load, daemon=True)
+        thread.start()
+        thread.join(timeout=MODEL_LOAD_TIMEOUT)
+
+        self._loading = False
+
+        if thread.is_alive():
+            self._load_error = (
+                f"Timeout ({MODEL_LOAD_TIMEOUT}s) lors du chargement du modele. "
+                "Le cache HuggingFace est peut-etre corrompu. "
+                "Supprimez le dossier ~/.cache/huggingface/hub/models--facebook--nllb-200-distilled-600M et redemarrez."
+            )
+            raise RuntimeError(self._load_error)
+
+        if not load_result["success"]:
+            self._load_error = load_result["error"] or "Erreur inconnue"
+            raise RuntimeError(
+                f"Le modele de traduction n'a pas pu etre charge: {self._load_error}"
+            )
 
     def translate(self, text: str, source_language: str, target_language: str) -> dict:
         """
@@ -66,106 +162,108 @@ class TranslationService:
             target_language: Code ISO 639-1 de la langue cible (ex: "en").
 
         Returns:
-            dict avec translated_text, source_language, target_language, mode, warning.
+            dict avec original_message, translated_text, source_language,
+            target_language, model, cached.
         """
         # Si source == cible, pas besoin de traduire
         if source_language == target_language:
             return {
+                "original_message": text,
                 "translated_text": text,
                 "source_language": source_language,
                 "target_language": target_language,
-                "mode": self.mode,
-                "warning": None,
+                "model": MODEL_NAME,
+                "cached": False,
             }
 
-        if self.mode == "mock":
-            return self._translate_mock(text, source_language, target_language)
-        elif self.mode == "nllb":
-            return self._translate_nllb(text, source_language, target_language)
-        else:
-            return {
-                "translated_text": text,
-                "source_language": source_language,
-                "target_language": target_language,
-                "mode": self.mode,
-                "warning": f"Mode de traduction inconnu : {self.mode}. Texte original retourne.",
-            }
-
-    def _translate_mock(self, text: str, source_language: str, target_language: str) -> dict:
-        """Mode mock : retourner le texte original sans traduction."""
-        return {
-            "translated_text": text,
-            "source_language": source_language,
-            "target_language": target_language,
-            "mode": "mock",
-            "warning": "Mode mock actif. Le texte n'a pas ete traduit.",
-        }
-
-    def _translate_nllb(self, text: str, source_language: str, target_language: str) -> dict:
-        """Mode NLLB : traduire avec facebook/nllb-200-distilled-600M."""
         # Verifier que les langues sont supportees
-        src_code = self._get_nllb_code(source_language)
-        tgt_code = self._get_nllb_code(target_language)
+        src_nllb = get_nllb_code(source_language)
+        tgt_nllb = get_nllb_code(target_language)
 
-        if not src_code:
+        if not src_nllb:
+            src_name = LANGUAGE_NAMES.get(source_language, source_language)
+            raise ValueError(
+                f"Langue source non supportee : '{source_language}' ({src_name}). "
+                f"Langues supportees : voir GET /supported-languages"
+            )
+
+        if not tgt_nllb:
+            tgt_name = LANGUAGE_NAMES.get(target_language, target_language)
+            raise ValueError(
+                f"Langue cible non supportee : '{target_language}' ({tgt_name}). "
+                f"Langues supportees : voir GET /supported-languages"
+            )
+
+        # Verifier le cache
+        cached = self._cache.get(text, source_language, target_language)
+        if cached is not None:
             return {
-                "translated_text": text,
+                "original_message": text,
+                "translated_text": cached,
                 "source_language": source_language,
                 "target_language": target_language,
-                "mode": "nllb",
-                "warning": f"Langue source non supportee : {source_language}. Texte original retourne.",
-            }
-
-        if not tgt_code:
-            return {
-                "translated_text": text,
-                "source_language": source_language,
-                "target_language": target_language,
-                "mode": "nllb",
-                "warning": f"Langue cible non supportee : {target_language}. Texte original retourne.",
+                "model": MODEL_NAME,
+                "cached": True,
             }
 
         # Charger le modele si necessaire
-        try:
-            self._load_nllb_model()
-        except RuntimeError as e:
-            return {
-                "translated_text": text,
-                "source_language": source_language,
-                "target_language": target_language,
-                "mode": "nllb",
-                "warning": str(e),
-            }
+        self._load_model()
 
-        # Traduire
-        try:
-            self._tokenizer.src_lang = src_code
-            inputs = self._tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-            target_lang_id = self._tokenizer.convert_tokens_to_ids(tgt_code)
+        # Traduire avec NLLB
+        self._tokenizer.src_lang = src_nllb
+        inputs = self._tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512,
+            padding=True,
+        )
 
-            translated_tokens = self._model.generate(
-                **inputs,
-                forced_bos_token_id=target_lang_id,
-                max_new_tokens=512,
-            )
+        target_lang_id = self._tokenizer.convert_tokens_to_ids(tgt_nllb)
 
-            translated_text = self._tokenizer.batch_decode(
-                translated_tokens, skip_special_tokens=True
-            )[0]
+        translated_tokens = self._model.generate(
+            **inputs,
+            forced_bos_token_id=target_lang_id,
+            max_new_tokens=512,
+            num_beams=4,
+            early_stopping=True,
+        )
 
-            return {
-                "translated_text": translated_text,
-                "source_language": source_language,
-                "target_language": target_language,
-                "mode": "nllb",
-                "warning": None,
-            }
+        translated_text = self._tokenizer.batch_decode(
+            translated_tokens, skip_special_tokens=True
+        )[0]
 
-        except Exception as e:
-            return {
-                "translated_text": text,
-                "source_language": source_language,
-                "target_language": target_language,
-                "mode": "nllb",
-                "warning": f"Erreur de traduction : {str(e)}. Texte original retourne.",
-            }
+        # Post-traitement : appliquer le glossaire hotelier
+        translated_text = apply_glossary(translated_text, source_language, target_language)
+
+        # Mettre en cache
+        self._cache.put(text, source_language, target_language, translated_text)
+
+        return {
+            "original_message": text,
+            "translated_text": translated_text,
+            "source_language": source_language,
+            "target_language": target_language,
+            "model": MODEL_NAME,
+            "cached": False,
+        }
+
+    def reset_error(self):
+        """Reinitialiser l'erreur pour permettre une nouvelle tentative de chargement."""
+        self._load_error = None
+        self._loading = False
+
+    @property
+    def cache_stats(self) -> dict:
+        """Retourner les statistiques du cache."""
+        return self._cache.stats
+
+    @property
+    def is_loaded(self) -> bool:
+        """Verifier si le modele est charge."""
+        return self._loaded
+
+    @property
+    def load_error(self) -> Optional[str]:
+        """Retourner l'erreur de chargement si presente."""
+        return self._load_error
