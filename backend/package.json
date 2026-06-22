@@ -11,8 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
-    "test": "jest --runInBand --detectOpenHandles",
-    "postinstall": "npx prisma generate"
+    "test": "jest --runInBand --detectOpenHandles"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
