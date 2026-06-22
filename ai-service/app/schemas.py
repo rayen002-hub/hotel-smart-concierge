@@ -61,6 +61,11 @@ class DetectLanguageResponse(BaseModel):
         None,
         description="Si la langue est supportee par le modele de traduction.",
     )
+    method: Optional[str] = Field(
+        None,
+        description="Methode utilisee: 'keyword_override', 'langdetect', ou 'none'.",
+        examples=["langdetect"],
+    )
 
 
 class TranslateRequest(BaseModel):

@@ -35,25 +35,8 @@ mock_translator.translate = mock_translate
 import app.services.translation_service
 app.services.translation_service.TranslationService = MagicMock(return_value=mock_translator)
 
-# 3. Inject detect_language mock to override langdetect's misclassification of short French strings
-import app.services.language_service
-
-def mock_detect_language(text):
-    if "climatisation" in text or "La climatisation" in text:
-        return {
-            "language": "fr",
-            "confidence": 0.99,
-            "language_name": "French",
-            "supported": True
-        }
-    return {
-        "language": "en",
-        "confidence": 0.99,
-        "language_name": "English",
-        "supported": True
-    }
-
-app.services.language_service.detect_language = mock_detect_language
+# 3. Note: detect_language is NOT mocked anymore — the real implementation
+# now correctly handles French hotel phrases via keyword hints.
 
 # 4. Initialize test client
 from fastapi.testclient import TestClient
