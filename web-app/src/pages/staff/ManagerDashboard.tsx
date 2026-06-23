@@ -93,6 +93,26 @@ const isOnline = (lastSeenAt?: string | null) => {
   return Date.now() - new Date(lastSeenAt).getTime() < 2 * 60 * 1000;
 };
 
+/** Generate a short readable code from UUID (first 8 chars, uppercase) */
+const shortCode = (id: string) => id.slice(0, 8).toUpperCase();
+
+/** Copy text to clipboard and show feedback */
+const copyToClipboard = async (text: string, onSuccess?: () => void) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    onSuccess?.();
+  } catch {
+    // fallback
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    onSuccess?.();
+  }
+};
+
 // ─── Main Component ──────────────────────────────────────────────────
 
 export const ManagerDashboard: React.FC = () => {
@@ -129,6 +149,9 @@ export const ManagerDashboard: React.FC = () => {
   // Repatriation
   const [repatriateId, setRepatriateId] = useState('');
   const [repatriateLoading, setRepatriateLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const otherDepartment = department === 'MAINTENANCE' ? 'HOUSEKEEPING' : 'MAINTENANCE';
+  const otherDepartmentLabel = department === 'MAINTENANCE' ? 'Ménage' : 'Maintenance';
 
   // ── Data fetching ──────────────────────────────────────────────────
 
@@ -234,15 +257,38 @@ export const ManagerDashboard: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      await updateComplaintCategory(repatriateId.trim(), department);
-      setSuccess('Réclamation rapatriée avec succès dans votre service !');
+      // Accept both short code (8 chars) or full UUID
+      const inputId = repatriateId.trim();
+      await updateComplaintCategory(inputId, department);
+      setSuccess(`Réclamation ${inputId.slice(0, 8).toUpperCase()} transférée de ${otherDepartmentLabel} vers ${departmentLabel} !`);
       setRepatriateId('');
       await fetchComplaints();
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
-      setError((err as ApiError).error || 'Erreur lors du rapatriement. Vérifiez l\'identifiant.');
+      setError((err as ApiError).error || 'Erreur lors du transfert. Vérifiez le code.');
     } finally {
       setRepatriateLoading(false);
+    }
+  };
+
+  const handleCopyCode = (id: string) => {
+    copyToClipboard(id, () => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  /** Transfer a complaint to the OTHER department */
+  const handleTransferOut = async (complaintId: string) => {
+    setError('');
+    try {
+      await updateComplaintCategory(complaintId, otherDepartment);
+      setSuccess(`Réclamation ${shortCode(complaintId)} transférée vers ${otherDepartmentLabel}.`);
+      await fetchComplaints();
+      if (selectedComplaint?.id === complaintId) setSelectedComplaint(null);
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+      setError((err as ApiError).error || 'Erreur lors du transfert.');
     }
   };
 
@@ -297,28 +343,29 @@ export const ManagerDashboard: React.FC = () => {
 
     return (
       <div className="space-y-4">
-        {/* Repatriate Section */}
+        {/* Transfer IN from other department */}
         <div className="rounded-xl border bg-[hsl(var(--card))] p-4 shadow-sm space-y-3">
           <h3 className="text-xs font-bold flex items-center gap-2">
-            📥 Rapatrier une réclamation d'un autre service
+            🔄 Transférer une réclamation de {otherDepartmentLabel} → {departmentLabel}
           </h3>
           <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
-            Si une réclamation d'un autre service relève en réalité de la <strong>{departmentLabel.toLowerCase()}</strong>, saisissez son identifiant unique ci-dessous pour la transférer automatiquement.
+            Copiez le <strong>code</strong> de la réclamation depuis le dashboard <strong>{otherDepartmentLabel}</strong> et collez-le ci-dessous.
+            Le code est visible sur chaque carte de réclamation (ex: <code className="bg-[hsl(var(--muted))] px-1 rounded font-mono">A1B2C3D4</code>).
           </p>
           <form onSubmit={handleRepatriate} className="flex gap-2">
             <input
               type="text"
-              placeholder="Ex: 550e8400-e29b-41d4-a716-446655440000"
+              placeholder="Coller le code (ex: A1B2C3D4) ou l'ID complet"
               value={repatriateId}
               onChange={(e) => setRepatriateId(e.target.value)}
-              className="flex-1 h-9 rounded-md border bg-transparent px-3 text-xs placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 h-9 rounded-md border bg-transparent px-3 text-xs font-mono placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <button
               type="submit"
               disabled={repatriateLoading || !repatriateId.trim()}
               className="h-9 px-4 rounded-md bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors shrink-0"
             >
-              {repatriateLoading ? 'Rapatriement…' : 'Rapatrier'}
+              {repatriateLoading ? 'Transfert…' : '📥 Transférer ici'}
             </button>
           </form>
         </div>
@@ -340,6 +387,14 @@ export const ManagerDashboard: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
+                      {/* Complaint Code — copyable */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCopyCode(c.id); }}
+                        title={`Copier le code : ${c.id}`}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[hsl(var(--muted))]/40 hover:bg-[hsl(var(--muted))]/70 text-[10px] font-mono font-bold tracking-wider transition-colors"
+                      >
+                        {copiedId === c.id ? '✓ Copié' : shortCode(c.id)}
+                      </button>
                       <StatusBadge status={c.status} />
                       <CategoryBadge category={c.category} />
                       <span className="text-[10px] text-[hsl(var(--muted-foreground))]">·</span>
@@ -388,11 +443,20 @@ export const ManagerDashboard: React.FC = () => {
                     )
                   )}
 
-                  {/* Category correction */}
+                  {/* Transfer to other department */}
+                  <button
+                    onClick={() => handleTransferOut(c.id)}
+                    className="h-7 px-2 rounded-md border border-amber-200 bg-amber-50 text-amber-800 text-[10px] font-medium hover:bg-amber-100 transition-colors dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-300"
+                    title={`Transférer vers ${otherDepartmentLabel}`}
+                  >
+                    ↗️ Transférer → {otherDepartmentLabel}
+                  </button>
+
+                  {/* Category correction (if miscategorized) */}
                   {c.category !== department && (
                     <button
                       onClick={() => handleCategoryCorrection(c.id)}
-                      className="h-7 px-2 rounded-md border border-amber-200 bg-amber-50 text-amber-800 text-[10px] font-medium hover:bg-amber-100 transition-colors dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-300"
+                      className="h-7 px-2 rounded-md border border-orange-200 bg-orange-50 text-orange-800 text-[10px] font-medium hover:bg-orange-100 transition-colors dark:border-orange-900/30 dark:bg-orange-950/20 dark:text-orange-300"
                     >
                       🏷️ Corriger → {departmentLabel}
                     </button>
@@ -428,7 +492,17 @@ export const ManagerDashboard: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-base font-bold">Détail réclamation</h2>
-                  <p className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono mt-0.5">{c.id.slice(0, 8)}…</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-mono font-bold bg-[hsl(var(--muted))]/40 px-2 py-0.5 rounded tracking-wider">
+                      {shortCode(c.id)}
+                    </span>
+                    <button
+                      onClick={() => handleCopyCode(c.id)}
+                      className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      {copiedId === c.id ? '✓ Copié !' : '📋 Copier le code'}
+                    </button>
+                  </div>
                 </div>
                 <button onClick={() => setSelectedComplaint(null)} className="h-8 w-8 rounded-md border flex items-center justify-center hover:bg-[hsl(var(--accent))] transition-colors text-sm">✕</button>
               </div>
