@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { PwaInstallBanner } from '../components/PwaInstallBanner';
 
 export const RootLayout: React.FC = () => {
   return (
@@ -28,6 +29,8 @@ export const RootLayout: React.FC = () => {
           </p>
         </div>
       </footer>
+
+      <PwaInstallBanner />
     </div>
   );
 };
