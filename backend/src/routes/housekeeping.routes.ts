@@ -4,6 +4,8 @@ import {
   listOccupiedRooms,
   createHousekeepingTask,
   listHousekeepingTasks,
+  startHousekeepingTask,
+  finishHousekeepingTask,
 } from "../controllers/housekeeping.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
@@ -65,6 +67,52 @@ router.get(
   "/tasks",
   requireRole(UserRole.HOUSEKEEPING_MANAGER, UserRole.EMPLOYEE),
   listHousekeepingTasks
+);
+
+/**
+ * POST /api/housekeeping/tasks/:id/start
+ * Demarrer une tache (scan entree chambre).
+ * EMPLOYEE uniquement (verifie assignation dans le service).
+ */
+router.post(
+  "/tasks/:id/start",
+  requireRole(UserRole.EMPLOYEE),
+  [
+    body("workerRoomQrToken")
+      .isString()
+      .notEmpty()
+      .withMessage("Le token QR de la chambre est requis."),
+  ],
+  validateRequest,
+  startHousekeepingTask
+);
+
+/**
+ * POST /api/housekeeping/tasks/:id/finish
+ * Terminer une tache (scan sortie chambre).
+ * EMPLOYEE uniquement (verifie assignation dans le service).
+ */
+router.post(
+  "/tasks/:id/finish",
+  requireRole(UserRole.EMPLOYEE),
+  [
+    body("workerRoomQrToken")
+      .isString()
+      .notEmpty()
+      .withMessage("Le token QR de la chambre est requis."),
+    body("result")
+      .isString()
+      .isIn(["DONE", "NOT_DONE"])
+      .withMessage("Le resultat doit etre 'DONE' ou 'NOT_DONE'."),
+    body("workerComment")
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage("Le commentaire ne doit pas depasser 1000 caracteres."),
+  ],
+  validateRequest,
+  finishHousekeepingTask
 );
 
 export default router;

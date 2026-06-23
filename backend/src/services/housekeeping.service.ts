@@ -1,6 +1,7 @@
 import prisma from "../config/prisma";
 import {
   HousekeepingTaskStatus,
+  HousekeepingTaskResult,
   RoomStatus,
   ReservationStatus,
   Department,
@@ -8,6 +9,22 @@ import {
 } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
+import { verifyWorkerRoomQr } from "./qrToken.service";
+
+// Inclusions standard pour les requetes de tache
+const TASK_INCLUDE = {
+  room: { select: { id: true, roomNumber: true, floor: true, type: true } },
+  assignedTo: { select: { id: true, name: true } },
+  assignedBy: { select: { id: true, name: true } },
+  reservation: {
+    select: {
+      id: true,
+      reservationNumber: true,
+      guestFirstName: true,
+      guestLastName: true,
+    },
+  },
+} as const;
 
 /**
  * Service de gestion des taches de menage (housekeeping).
@@ -72,7 +89,6 @@ export class HousekeepingService {
     assignedById: string;
     note?: string;
   }) {
-    // Verifier que la chambre existe
     const room = await prisma.room.findUnique({
       where: { id: params.roomId },
     });
@@ -80,7 +96,6 @@ export class HousekeepingService {
       throw new AppError("Chambre introuvable.", 404);
     }
 
-    // Verifier que l'employe est bien un employe du departement HOUSEKEEPING
     const employee = await prisma.user.findUnique({
       where: { id: params.assignedToId },
       include: { employeeProfile: true },
@@ -98,7 +113,6 @@ export class HousekeepingService {
       );
     }
 
-    // Verifier la reservation si fournie
     if (params.reservationId) {
       const reservation = await prisma.reservation.findUnique({
         where: { id: params.reservationId },
@@ -108,7 +122,6 @@ export class HousekeepingService {
       }
     }
 
-    // Creer la tache
     const task = await prisma.housekeepingTask.create({
       data: {
         roomId: params.roomId,
@@ -118,19 +131,7 @@ export class HousekeepingService {
         note: params.note || null,
         status: HousekeepingTaskStatus.ASSIGNED,
       },
-      include: {
-        room: { select: { id: true, roomNumber: true, floor: true } },
-        assignedTo: { select: { id: true, name: true } },
-        assignedBy: { select: { id: true, name: true } },
-        reservation: {
-          select: {
-            id: true,
-            reservationNumber: true,
-            guestFirstName: true,
-            guestLastName: true,
-          },
-        },
-      },
+      include: TASK_INCLUDE,
     });
 
     await createAuditLog({
@@ -146,6 +147,142 @@ export class HousekeepingService {
     });
 
     return task;
+  }
+
+  /**
+   * Demarrer une tache housekeeping (scan entree chambre).
+   */
+  async startTask(params: {
+    taskId: string;
+    employeeId: string;
+    workerRoomQrToken: string;
+  }) {
+    const task = await prisma.housekeepingTask.findUnique({
+      where: { id: params.taskId },
+    });
+    if (!task) {
+      throw new AppError("Tache introuvable.", 404);
+    }
+
+    if (task.assignedToId !== params.employeeId) {
+      throw new AppError("Cette tache ne vous est pas assignee.", 403);
+    }
+
+    if (task.status === HousekeepingTaskStatus.COMPLETED) {
+      throw new AppError("Cette tache est deja terminee.", 400);
+    }
+    if (task.status === HousekeepingTaskStatus.CANCELLED) {
+      throw new AppError("Cette tache a ete annulee.", 400);
+    }
+    if (task.status === HousekeepingTaskStatus.IN_PROGRESS) {
+      throw new AppError("Cette tache est deja en cours.", 400);
+    }
+
+    // Valider le QR de la chambre (reuse existing worker QR system)
+    const roomData = await verifyWorkerRoomQr(params.workerRoomQrToken);
+    if (roomData.roomId !== task.roomId) {
+      throw new AppError(
+        "Mauvaise chambre. Le QR scanne ne correspond pas a la chambre de cette tache.",
+        400
+      );
+    }
+
+    const updated = await prisma.housekeepingTask.update({
+      where: { id: params.taskId },
+      data: {
+        status: HousekeepingTaskStatus.IN_PROGRESS,
+        entryTime: new Date(),
+      },
+      include: TASK_INCLUDE,
+    });
+
+    await createAuditLog({
+      actorId: params.employeeId,
+      action: "START_HOUSEKEEPING_TASK",
+      entity: "HousekeepingTask",
+      entityId: params.taskId,
+      metadata: { roomId: task.roomId },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Terminer une tache housekeeping (scan sortie chambre).
+   */
+  async finishTask(params: {
+    taskId: string;
+    employeeId: string;
+    workerRoomQrToken: string;
+    result: HousekeepingTaskResult;
+    workerComment?: string;
+  }) {
+    const task = await prisma.housekeepingTask.findUnique({
+      where: { id: params.taskId },
+    });
+    if (!task) {
+      throw new AppError("Tache introuvable.", 404);
+    }
+
+    if (task.assignedToId !== params.employeeId) {
+      throw new AppError("Cette tache ne vous est pas assignee.", 403);
+    }
+
+    if (task.status === HousekeepingTaskStatus.COMPLETED) {
+      throw new AppError("Cette tache est deja terminee.", 400);
+    }
+    if (task.status === HousekeepingTaskStatus.CANCELLED) {
+      throw new AppError("Cette tache a ete annulee.", 400);
+    }
+    if (task.status !== HousekeepingTaskStatus.IN_PROGRESS) {
+      throw new AppError(
+        "La tache doit etre en cours (IN_PROGRESS) avant de pouvoir la terminer. Scannez d'abord pour demarrer.",
+        400
+      );
+    }
+
+    // Valider le QR de la chambre
+    const roomData = await verifyWorkerRoomQr(params.workerRoomQrToken);
+    if (roomData.roomId !== task.roomId) {
+      throw new AppError(
+        "Mauvaise chambre. Le QR scanne ne correspond pas a la chambre de cette tache.",
+        400
+      );
+    }
+
+    // Determiner le nouveau statut selon le resultat
+    const newStatus =
+      params.result === HousekeepingTaskResult.DONE
+        ? HousekeepingTaskStatus.COMPLETED
+        : HousekeepingTaskStatus.NEEDS_REVIEW;
+
+    const updated = await prisma.housekeepingTask.update({
+      where: { id: params.taskId },
+      data: {
+        status: newStatus,
+        exitTime: new Date(),
+        result: params.result,
+        workerComment: params.workerComment || null,
+      },
+      include: TASK_INCLUDE,
+    });
+
+    await createAuditLog({
+      actorId: params.employeeId,
+      action:
+        newStatus === HousekeepingTaskStatus.COMPLETED
+          ? "COMPLETE_HOUSEKEEPING_TASK"
+          : "REVIEW_HOUSEKEEPING_TASK",
+      entity: "HousekeepingTask",
+      entityId: params.taskId,
+      metadata: {
+        roomId: task.roomId,
+        result: params.result,
+        workerComment: params.workerComment,
+      },
+    });
+
+    return { task: updated, newStatus };
   }
 
   /**
@@ -166,12 +303,10 @@ export class HousekeepingService {
 
     const where: any = {};
 
-    // Filtrer par role
     if (params.userRole === UserRole.EMPLOYEE) {
       where.assignedToId = params.userId;
     }
 
-    // Filtre optionnel par statut
     if (params.status) {
       where.status = params.status;
     }
@@ -182,19 +317,7 @@ export class HousekeepingService {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
-        include: {
-          room: { select: { id: true, roomNumber: true, floor: true, type: true } },
-          assignedTo: { select: { id: true, name: true } },
-          assignedBy: { select: { id: true, name: true } },
-          reservation: {
-            select: {
-              id: true,
-              reservationNumber: true,
-              guestFirstName: true,
-              guestLastName: true,
-            },
-          },
-        },
+        include: TASK_INCLUDE,
       }),
       prisma.housekeepingTask.count({ where }),
     ]);

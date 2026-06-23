@@ -1,7 +1,8 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { HousekeepingService } from "../services/housekeeping.service";
-import { HousekeepingTaskStatus, UserRole } from "@prisma/client";
+import { HousekeepingTaskStatus, HousekeepingTaskResult, UserRole } from "@prisma/client";
+import { getIO } from "../socket/socket";
 
 const housekeepingService = new HousekeepingService();
 
@@ -43,6 +44,12 @@ export const createHousekeepingTask = async (
       note,
     });
 
+    // Notify via Socket.IO
+    try {
+      const io = getIO();
+      io.emit("housekeepingTaskCreated", { task });
+    } catch { /* socket not initialized */ }
+
     res.status(201).json({ success: true, data: task });
   } catch (error) {
     next(error);
@@ -74,6 +81,76 @@ export const listHousekeepingTasks = async (
     });
 
     res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/housekeeping/tasks/:id/start
+ * Demarrer une tache (scan entree chambre).
+ */
+export const startHousekeepingTask = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const taskId = req.params.id as string;
+    const employeeId = req.userId as string;
+    const { workerRoomQrToken } = req.body;
+
+    const task = await housekeepingService.startTask({
+      taskId,
+      employeeId,
+      workerRoomQrToken,
+    });
+
+    // Notify via Socket.IO
+    try {
+      const io = getIO();
+      io.emit("housekeepingTaskStarted", { task });
+    } catch { /* socket not initialized */ }
+
+    res.status(200).json({ success: true, data: task });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/housekeeping/tasks/:id/finish
+ * Terminer une tache (scan sortie chambre).
+ */
+export const finishHousekeepingTask = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const taskId = req.params.id as string;
+    const employeeId = req.userId as string;
+    const { workerRoomQrToken, result, workerComment } = req.body;
+
+    const { task: updatedTask, newStatus } = await housekeepingService.finishTask({
+      taskId,
+      employeeId,
+      workerRoomQrToken,
+      result: result as HousekeepingTaskResult,
+      workerComment,
+    });
+
+    // Notify via Socket.IO
+    try {
+      const io = getIO();
+      const eventName =
+        newStatus === HousekeepingTaskStatus.COMPLETED
+          ? "housekeepingTaskCompleted"
+          : "housekeepingTaskNeedsReview";
+      io.emit(eventName, { task: updatedTask });
+    } catch { /* socket not initialized */ }
+
+    res.status(200).json({ success: true, data: updatedTask });
   } catch (error) {
     next(error);
   }
