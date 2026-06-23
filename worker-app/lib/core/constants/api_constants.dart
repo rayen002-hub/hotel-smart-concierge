@@ -35,6 +35,15 @@ class ApiConstants {
   /// Returns the messages path for task [id].
   static String taskMessages(String id) => '/mobile/tasks/$id/messages';
 
+  // ── Housekeeping Tasks (EMPLOYEE) ─────────────────────────────────────
+  static const String housekeepingTasks = '/housekeeping/tasks';
+
+  /// Returns the start path for housekeeping task [id].
+  static String housekeepingTaskStart(String id) => '/housekeeping/tasks/$id/start';
+
+  /// Returns the finish path for housekeeping task [id].
+  static String housekeepingTaskFinish(String id) => '/housekeeping/tasks/$id/finish';
+
   // ── Timeouts ─────────────────────────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);

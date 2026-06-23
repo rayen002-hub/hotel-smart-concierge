@@ -8,6 +8,9 @@ import {
   sendComplaintMessage,
   listEmployees,
   createEmployee,
+  listOccupiedRooms,
+  createHousekeepingTask,
+  listHousekeepingTasks,
 } from '../../api/staffApi';
 import { getStoredUser } from '../../components/AuthGuard';
 import type { ApiError } from '../../api/apiClient';
@@ -71,12 +74,14 @@ interface Message {
 
 // ─── Constants ───────────────────────────────────────────────────────
 
-type Tab = 'complaints' | 'employees';
+type Tab = 'complaints' | 'employees' | 'housekeeping';
 
-const tabs: { key: Tab; label: string; icon: string }[] = [
+const baseTabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'complaints', label: 'Réclamations', icon: '📢' },
   { key: 'employees', label: 'Employés', icon: '👷' },
 ];
+
+const housekeepingTab = { key: 'housekeeping' as Tab, label: 'Ménage', icon: '🏠' };
 
 const resultLabels: Record<string, string> = {
   RESOLVED: '✅ Résolu',
@@ -131,6 +136,44 @@ export const ManagerDashboard: React.FC = () => {
   // Transfer
   const otherDepartment = department === 'MAINTENANCE' ? 'HOUSEKEEPING' : 'MAINTENANCE';
   const otherDepartmentLabel = department === 'MAINTENANCE' ? 'Ménage' : 'Maintenance';
+
+  // Build tabs dynamically — housekeeping tab only for HOUSEKEEPING_MANAGER
+  const tabs = department === 'HOUSEKEEPING' ? [...baseTabs, housekeepingTab] : baseTabs;
+
+  // ── Housekeeping state ──────────────────────────────────────────────
+  interface OccupiedRoom {
+    id: string;
+    roomNumber: string;
+    floor: number;
+    type: string;
+    status: string;
+    activeReservation?: { id: string; reservationNumber: string; guestFirstName: string; guestLastName: string; checkInDate: string; checkOutDate: string } | null;
+    activeTask?: { id: string; status: string; note?: string | null; entryTime?: string | null; exitTime?: string | null; result?: string | null; workerComment?: string | null; createdAt: string; assignedTo?: { id: string; name: string } | null; assignedBy?: { id: string; name: string } | null } | null;
+  }
+
+  interface HkTask {
+    id: string;
+    status: string;
+    note?: string | null;
+    entryTime?: string | null;
+    exitTime?: string | null;
+    result?: string | null;
+    workerComment?: string | null;
+    createdAt: string;
+    room?: { id: string; roomNumber: string; floor: number; type?: string } | null;
+    assignedTo?: { id: string; name: string } | null;
+    assignedBy?: { id: string; name: string } | null;
+    reservation?: { id: string; reservationNumber: string; guestFirstName: string; guestLastName: string } | null;
+  }
+
+  const [occupiedRooms, setOccupiedRooms] = useState<OccupiedRoom[]>([]);
+  const [hkTasks, setHkTasks] = useState<HkTask[]>([]);
+  const [hkFilter, setHkFilter] = useState<string>('all');
+  const [hkLoading, setHkLoading] = useState(false);
+  const [assigningRoomId, setAssigningRoomId] = useState<string | null>(null);
+  const [hkAssignEmployeeId, setHkAssignEmployeeId] = useState('');
+  const [hkAssignNote, setHkAssignNote] = useState('');
+  const [hkAssignLoading, setHkAssignLoading] = useState(false);
 
   // ── Data fetching ──────────────────────────────────────────────────
 
@@ -637,6 +680,258 @@ export const ManagerDashboard: React.FC = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════
+  //  Housekeeping tab — data fetching & rendering
+  // ═══════════════════════════════════════════════════════════════════
+
+  const fetchOccupiedRooms = useCallback(async () => {
+    setHkLoading(true);
+    setError('');
+    try {
+      const res = await listOccupiedRooms();
+      setOccupiedRooms(res.data || []);
+    } catch (err) {
+      setError((err as ApiError).error || 'Erreur de chargement des chambres.');
+    } finally {
+      setHkLoading(false);
+    }
+  }, []);
+
+  const fetchHkTasks = useCallback(async () => {
+    try {
+      const res = await listHousekeepingTasks({ limit: 100 });
+      setHkTasks(res.data || []);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'housekeeping') {
+      fetchOccupiedRooms();
+      fetchHkTasks();
+      fetchEmployees();
+    }
+  }, [activeTab, fetchOccupiedRooms, fetchHkTasks, fetchEmployees]);
+
+  const handleHkAssign = async (roomId: string, reservationId?: string | null) => {
+    if (!hkAssignEmployeeId) return;
+    setHkAssignLoading(true);
+    setError('');
+    try {
+      await createHousekeepingTask({
+        roomId,
+        reservationId: reservationId || undefined,
+        assignedToId: hkAssignEmployeeId,
+        note: hkAssignNote || undefined,
+      });
+      setSuccess('Tâche de ménage assignée !');
+      setAssigningRoomId(null);
+      setHkAssignEmployeeId('');
+      setHkAssignNote('');
+      await Promise.all([fetchOccupiedRooms(), fetchHkTasks()]);
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+      setError((err as ApiError).error || 'Erreur lors de l\'assignation.');
+    } finally {
+      setHkAssignLoading(false);
+    }
+  };
+
+  const hkStatusFilters = [
+    { key: 'all', label: 'Toutes' },
+    { key: 'no_task', label: 'Sans tâche' },
+    { key: 'ASSIGNED', label: 'Assignée' },
+    { key: 'IN_PROGRESS', label: 'En cours' },
+    { key: 'COMPLETED', label: 'Terminée' },
+    { key: 'NEEDS_REVIEW', label: 'À revoir' },
+  ];
+
+  const filteredRooms = occupiedRooms.filter((r) => {
+    if (hkFilter === 'all') return true;
+    if (hkFilter === 'no_task') return !r.activeTask;
+    return r.activeTask?.status === hkFilter;
+  });
+
+  const hkStatusLabel = (s: string) => {
+    const map: Record<string, string> = { PENDING: '⏳ En attente', ASSIGNED: '👤 Assignée', IN_PROGRESS: '🔄 En cours', COMPLETED: '✅ Terminée', NEEDS_REVIEW: '⚠️ À revoir', CANCELLED: '❌ Annulée' };
+    return map[s] || s;
+  };
+
+  const hkResultLabel = (r: string | null | undefined) => {
+    if (!r) return '—';
+    return r === 'DONE' ? '✅ Fait' : '❌ Non fait';
+  };
+
+  const housekeepingEmployees = employees.filter(
+    (e) => e.employeeProfile?.department === 'HOUSEKEEPING'
+  );
+
+  const renderHousekeeping = () => {
+    if (hkLoading) return <LoadingSpinner message="Chargement des chambres..." />;
+
+    return (
+      <div className="space-y-6">
+        {/* Filter chips */}
+        <div className="flex flex-wrap gap-2">
+          {hkStatusFilters.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setHkFilter(f.key)}
+              className={`h-7 px-3 rounded-full text-[10px] font-semibold transition-all cursor-pointer ${
+                hkFilter === f.key
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-[hsl(var(--muted))]/30 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]/50'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Occupied rooms */}
+        <div>
+          <h3 className="text-sm font-bold mb-3">🏨 Chambres occupées ({filteredRooms.length})</h3>
+          {filteredRooms.length === 0 ? (
+            <EmptyState message="Aucune chambre pour ce filtre" icon="🏠" description="Changez de filtre ou vérifiez les réservations." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {filteredRooms.map((room) => (
+                <div key={room.id} className="rounded-xl border bg-[hsl(var(--card))] p-4 shadow-sm space-y-3">
+                  {/* Room header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🚪</span>
+                      <div>
+                        <p className="text-sm font-bold">Chambre {room.roomNumber}</p>
+                        <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Étage {room.floor} · {room.type}</p>
+                      </div>
+                    </div>
+                    {room.activeTask ? (
+                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                        room.activeTask.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                        room.activeTask.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400' :
+                        room.activeTask.status === 'NEEDS_REVIEW' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
+                        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400'
+                      }`}>
+                        {hkStatusLabel(room.activeTask.status)}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-[hsl(var(--muted))]/30 text-[hsl(var(--muted-foreground))]">Pas de tâche</span>
+                    )}
+                  </div>
+
+                  {/* Reservation info */}
+                  {room.activeReservation && (
+                    <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                      🏷️ {room.activeReservation.guestFirstName} {room.activeReservation.guestLastName} — #{room.activeReservation.reservationNumber}
+                    </p>
+                  )}
+
+                  {/* Active task details */}
+                  {room.activeTask && (
+                    <div className="text-[10px] space-y-1 bg-[hsl(var(--muted))]/10 rounded-lg p-2">
+                      <p>👤 <strong>{room.activeTask.assignedTo?.name || '—'}</strong></p>
+                      {room.activeTask.note && <p>📝 {room.activeTask.note}</p>}
+                      {room.activeTask.entryTime && <p>🔑 Entrée : {formatDateTime(room.activeTask.entryTime)}</p>}
+                      {room.activeTask.exitTime && <p>🚪 Sortie : {formatDateTime(room.activeTask.exitTime)}</p>}
+                      {room.activeTask.result && <p>📋 Résultat : {hkResultLabel(room.activeTask.result)}</p>}
+                      {room.activeTask.workerComment && <p>💬 {room.activeTask.workerComment}</p>}
+                    </div>
+                  )}
+
+                  {/* Assign button / form */}
+                  {!room.activeTask && (
+                    assigningRoomId === room.id ? (
+                      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={hkAssignEmployeeId}
+                          onChange={(e) => setHkAssignEmployeeId(e.target.value)}
+                          className="w-full h-8 rounded-md border bg-[hsl(var(--card))] text-[10px] px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                          <option value="">Choisir un(e) gouvernant(e)…</option>
+                          {housekeepingEmployees.map((emp) => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.name} {isOnline(emp.employeeProfile?.lastSeenAt) ? '🟢' : '⚪'}
+                            </option>
+                          ))}
+                        </select>
+                        <textarea
+                          placeholder="Note optionnelle…"
+                          value={hkAssignNote}
+                          onChange={(e) => setHkAssignNote(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-md border bg-transparent px-3 py-2 text-[10px] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleHkAssign(room.id, room.activeReservation?.id)}
+                            disabled={hkAssignLoading || !hkAssignEmployeeId}
+                            className="h-7 px-3 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                          >
+                            {hkAssignLoading ? 'Assignation…' : '✓ Assigner'}
+                          </button>
+                          <button
+                            onClick={() => { setAssigningRoomId(null); setHkAssignEmployeeId(''); setHkAssignNote(''); }}
+                            className="h-7 px-3 rounded-md border text-[10px] hover:bg-[hsl(var(--accent))] transition-colors"
+                          >
+                            ✕ Annuler
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAssigningRoomId(room.id)}
+                        className="w-full h-8 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 transition-colors"
+                      >
+                        👤 Assigner un(e) gouvernant(e)
+                      </button>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Task history */}
+        {hkTasks.length > 0 && (
+          <div>
+            <h3 className="text-sm font-bold mb-3">📋 Historique des tâches ({hkTasks.length})</h3>
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="bg-[hsl(var(--muted))]/25 border-b">
+                    <th className="px-3 py-2 text-left font-semibold">Chambre</th>
+                    <th className="px-3 py-2 text-left font-semibold">Employé(e)</th>
+                    <th className="px-3 py-2 text-left font-semibold">Note</th>
+                    <th className="px-3 py-2 text-left font-semibold">Statut</th>
+                    <th className="px-3 py-2 text-left font-semibold">Entrée</th>
+                    <th className="px-3 py-2 text-left font-semibold">Sortie</th>
+                    <th className="px-3 py-2 text-left font-semibold">Résultat</th>
+                    <th className="px-3 py-2 text-left font-semibold">Commentaire</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hkTasks.map((t) => (
+                    <tr key={t.id} className="border-b hover:bg-[hsl(var(--muted))]/10 transition-colors">
+                      <td className="px-3 py-2 font-bold">Ch. {t.room?.roomNumber || '—'}</td>
+                      <td className="px-3 py-2">{t.assignedTo?.name || '—'}</td>
+                      <td className="px-3 py-2 max-w-[120px] truncate" title={t.note || ''}>{t.note || '—'}</td>
+                      <td className="px-3 py-2">{hkStatusLabel(t.status)}</td>
+                      <td className="px-3 py-2">{t.entryTime ? formatDateTime(t.entryTime) : '—'}</td>
+                      <td className="px-3 py-2">{t.exitTime ? formatDateTime(t.exitTime) : '—'}</td>
+                      <td className="px-3 py-2">{hkResultLabel(t.result)}</td>
+                      <td className="px-3 py-2 max-w-[150px] truncate" title={t.workerComment || ''}>{t.workerComment || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
   //  Main render
   // ═══════════════════════════════════════════════════════════════════
 
@@ -651,7 +946,7 @@ export const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* Banners */}
-      <ErrorMessage message={error} onRetry={() => activeTab === 'complaints' ? fetchComplaints() : fetchEmployees()} />
+      <ErrorMessage message={error} onRetry={() => activeTab === 'complaints' ? fetchComplaints() : activeTab === 'housekeeping' ? fetchOccupiedRooms() : fetchEmployees()} />
       {success && (
         <div className="rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-4 text-xs dark:border-emerald-950/25 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 shadow-sm transition-all animate-in fade-in">
           <div className="flex items-start gap-2.5">
@@ -684,6 +979,7 @@ export const ManagerDashboard: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'complaints' && renderComplaints()}
       {activeTab === 'employees' && renderEmployees()}
+      {activeTab === 'housekeeping' && renderHousekeeping()}
 
       {/* Detail Drawer */}
       {renderDetailDrawer()}

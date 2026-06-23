@@ -8,6 +8,7 @@ import '../../features/tasks/presentation/task_detail_screen.dart';
 import '../../features/tasks/presentation/qr_scanner_screen.dart';
 import '../../features/tasks/presentation/qr_exit_scanner_screen.dart';
 import '../../features/tasks/presentation/messages_screen.dart';
+import '../../features/tasks/presentation/housekeeping_task_detail_screen.dart';
 import '../storage/auth_storage.dart';
 
 class AppRouter {
@@ -17,7 +18,7 @@ class AppRouter {
     initialLocation: '/splash',
     // Redirect unauthenticated access to /login.
     redirect: (BuildContext context, GoRouterState state) async {
-      final protectedRoutes = ['/tasks', '/home'];
+      final protectedRoutes = ['/tasks', '/home', '/housekeeping-tasks'];
       final isProtected = protectedRoutes.any(
         (r) => state.matchedLocation.startsWith(r),
       );
@@ -78,6 +79,13 @@ class AppRouter {
         path: '/home',
         builder: (BuildContext context, GoRouterState state) {
           return const HomeScreen();
+        },
+      ),
+      GoRoute(
+        path: '/housekeeping-tasks/:id',
+        builder: (BuildContext context, GoRouterState state) {
+          final id = state.pathParameters['id']!;
+          return HousekeepingTaskDetailScreen(taskId: id);
         },
       ),
     ],

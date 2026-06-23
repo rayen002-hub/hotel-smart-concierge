@@ -2,6 +2,7 @@
 export 'app_button.dart';
 export 'empty_state.dart';
 export 'error_view.dart';
+export 'housekeeping_task_card.dart';
 export 'loading_view.dart';
 export 'status_chip.dart';
 export 'task_card.dart';

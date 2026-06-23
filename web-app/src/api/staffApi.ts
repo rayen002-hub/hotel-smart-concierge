@@ -215,3 +215,25 @@ export async function deleteEvent(id: string) {
   const { data } = await staffClient.delete(`/events/${id}`);
   return data;
 }
+
+// ─── Housekeeping Tasks ──────────────────────────────────────────────
+
+export async function listOccupiedRooms() {
+  const { data } = await staffClient.get('/housekeeping/occupied-rooms');
+  return data;
+}
+
+export async function createHousekeepingTask(payload: {
+  roomId: string;
+  reservationId?: string;
+  assignedToId: string;
+  note?: string;
+}) {
+  const { data } = await staffClient.post('/housekeeping/tasks', payload);
+  return data;
+}
+
+export async function listHousekeepingTasks(filters?: { status?: string; page?: number; limit?: number }) {
+  const { data } = await staffClient.get('/housekeeping/tasks', { params: filters });
+  return data;
+}
