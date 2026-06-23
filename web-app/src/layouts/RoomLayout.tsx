@@ -1,6 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { setClientRoomToken, getClientRoomToken } from '../api/apiClient';
+import { PwaInstallBanner } from '../components/PwaInstallBanner';
+
+/**
+ * Register the service worker only when we're on the /room route.
+ * This keeps the PWA install prompt from appearing on admin/staff pages.
+ */
+function useRoomServiceWorker() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/room' })
+        .then((reg) => {
+          console.log('[PWA] Service worker registered for /room scope', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service worker registration failed:', err);
+        });
+    }
+  }, []);
+}
 
 export const RoomLayout: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -8,6 +28,9 @@ export const RoomLayout: React.FC = () => {
   const location = useLocation();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
+
+  // Register SW only for room guests
+  useRoomServiceWorker();
 
   useEffect(() => {
     // 1. Check for ?token= in the URL
@@ -59,5 +82,10 @@ export const RoomLayout: React.FC = () => {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <PwaInstallBanner />
+    </>
+  );
 };

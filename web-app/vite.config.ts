@@ -7,14 +7,16 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Manual registration — we register the SW only on /room routes
       registerType: 'autoUpdate',
+      injectRegister: false, // Don't auto-inject SW registration
       includeAssets: ['vite.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'Hotel Smart Concierge',
         short_name: 'Hotel Concierge',
-        description: 'Your personal hotel assistant — complaints, messaging, check-in, and more.',
-        start_url: '/',
-        scope: '/',
+        description: 'Your personal hotel room assistant — complaints, messaging, events, and more.',
+        start_url: '/room',
+        scope: '/room',
         display: 'standalone',
         orientation: 'portrait',
         theme_color: '#1a1f36',
@@ -39,9 +41,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache pages for offline navigation
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Don't cache API calls
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
@@ -52,7 +52,7 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
