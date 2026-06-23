@@ -15,6 +15,7 @@ import guestMessageRoutes from "./guestMessage.routes";
 import staffGuestMessageRoutes from "./staffGuestMessage.routes";
 import eventRoutes from "./event.routes";
 import eventPublicRoutes from "./eventPublic.routes";
+import housekeepingRoutes from "./housekeeping.routes";
 
 import rateLimit from "express-rate-limit";
 
@@ -32,6 +33,7 @@ router.use("/", hotelRoutes); // Provides /hotel-info and /currency-rates
 router.use("/checkin-qr", checkinQrRoutes);
 router.use("/guest-messages", staffGuestMessageRoutes);
 router.use("/events", eventRoutes);
+router.use("/housekeeping", housekeepingRoutes);
 
 // Rate limiting strict pour les routes publiques
 const publicLimiter = rateLimit({
