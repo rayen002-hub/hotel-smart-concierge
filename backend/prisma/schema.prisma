@@ -1,5 +1,5 @@
 // =============================================================
-//  Hotel Smart Concierge - Schema Prisma PostgreSQL
+//  LoomStay - Schema Prisma PostgreSQL
 //  Ne pas ajouter de champ priority dans Complaint.
 // =============================================================
 

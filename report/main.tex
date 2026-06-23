@@ -1,0 +1,68 @@
+% =============================================================
+%  Document principal — Hotel Smart Concierge — Rapport PFE
+% =============================================================
+
+\input{preamble}
+
+\begin{document}
+
+% =============================================================
+%  Page de garde
+% =============================================================
+\input{cover/page_de_garde}
+
+% =============================================================
+%  Pages liminaires (frontmatter)
+% =============================================================
+\pagenumbering{roman}
+
+\input{frontmatter/dedicace}
+\input{frontmatter/remerciements}
+\input{frontmatter/resume}
+\input{frontmatter/abstract}
+
+% --- Table des matières ---
+\tableofcontents
+\newpage
+
+% --- Liste des figures ---
+\listoffigures
+\newpage
+
+% --- Liste des tableaux ---
+\listoftables
+\newpage
+
+% --- Liste des sigles et acronymes ---
+\input{frontmatter/acronymes}
+\newpage
+
+% =============================================================
+%  Chapitres (mainmatter)
+% =============================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{chapters/introduction_generale}
+\input{chapters/chapitre1_contexte}
+\input{chapters/chapitre2_sprint0}
+\input{chapters/chapitre3_release1}
+\input{chapters/chapitre4_release2}
+\input{chapters/chapitre5_release3}
+\input{chapters/chapitre6_build_tests_validation}
+\input{chapters/chapitre7_installation_serveur_prive}
+\input{chapters/conclusion_generale}
+
+% =============================================================
+%  Webographie / Bibliographie
+% =============================================================
+\printbibliography[title={Webographie et Références}]
+
+% =============================================================
+%  Annexes
+% =============================================================
+\begin{appendices}
+\input{annexes/annexes}
+\end{appendices}
+
+\end{document}

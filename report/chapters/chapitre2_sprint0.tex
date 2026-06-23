@@ -1,0 +1,168 @@
+% =============================================================
+%  Chapitre 2 — Sprint 0 : Analyse et préparation
+% =============================================================
+
+\chapter{Sprint 0 : Analyse et préparation}
+\label{chap:sprint0}
+
+\section*{Introduction}
+
+Ce chapitre constitue le Sprint 0 du projet. Il regroupe l'ensemble des activités d'analyse et de préparation préalables au développement : l'identification des acteurs, la spécification des besoins fonctionnels et non fonctionnels, la constitution du backlog produit, la planification des releases, la définition de l'architecture logique et la mise en place de l'environnement de travail.
+
+% =============================================================
+\section{Analyse et spécification des besoins}
+\label{sec:analyse_besoins}
+
+L'analyse des besoins a été menée en collaboration avec les parties prenantes de l'hôtel afin d'identifier les fonctionnalités nécessaires et les contraintes techniques du système.
+
+% =============================================================
+\section{Identification des acteurs}
+\label{sec:acteurs}
+
+Le système identifie 8 acteurs, dont 7 acteurs humains et 1 acteur technique secondaire (le service IA). Le tableau~\ref{tab:acteurs} présente l'ensemble des acteurs du système.
+
+\input{tables/acteurs}
+
+% =============================================================
+\section{Besoins fonctionnels}
+\label{sec:besoins_fonctionnels}
+
+Les besoins fonctionnels ont été identifiés pour chaque acteur du système. Ils sont présentés dans les tableaux ci-dessous, organisés par acteur.
+
+\input{tables/besoins_fonctionnels}
+
+% =============================================================
+\section{Besoins non fonctionnels}
+\label{sec:besoins_non_fonctionnels}
+
+Les besoins non fonctionnels définissent les contraintes de qualité, de sécurité, de performance et de maintenabilité du système.
+
+\input{tables/besoins_non_fonctionnels}
+
+% =============================================================
+\section{Backlog du produit}
+\label{sec:backlog}
+
+Le backlog du produit regroupe l'ensemble des user stories identifiées, ordonnées par priorité et assignées aux releases et sprints correspondants. Le projet comprend \textbf{32 user stories} réparties sur \textbf{3 releases} et \textbf{9 sprints}.
+
+\input{tables/backlog_produit}
+
+% =============================================================
+\section{Planification des releases}
+\label{sec:planification_releases}
+
+Le projet est organisé en 3 releases, chacune regroupant un ensemble cohérent de sprints orientés vers un objectif fonctionnel précis.
+
+\input{tables/planification_releases}
+
+\begin{quote}
+\textbf{Note importante :} Le build, les tests et la validation ne constituent pas une release séparée. Ils sont traités comme des activités continues intégrées à chaque sprint (cf. section~\ref{sec:definition_done}) et détaillés dans un chapitre technique séparé (chapitre~\ref{chap:build_tests}).
+\end{quote}
+
+% =============================================================
+\section{Définition de Done}
+\label{sec:definition_done}
+
+Dans ce projet, un incrément de sprint est considéré comme terminé lorsque les fonctionnalités développées sont intégrées, testées, validées et documentées. Les tests, la construction de l'application et la validation ne sont donc pas traités comme une release séparée, mais comme des activités continues intégrées à chaque sprint, conformément aux principes Scrum.
+
+La \ac{DoD} de chaque sprint comprend :
+\begin{itemize}
+  \item Code développé et intégré dans la branche principale ;
+  \item Tests unitaires et/ou d'intégration passés avec succès ;
+  \item Fonctionnalité vérifiée manuellement selon le scénario de test ;
+  \item Code revu et documenté ;
+  \item Incrément potentiellement livrable.
+\end{itemize}
+
+Le chapitre~\ref{chap:build_tests} \textit{<<~Build, tests et validation~>>} est un chapitre de validation technique récapitulatif, et non une release Scrum.
+
+% =============================================================
+\section{Environnement de travail}
+\label{sec:environnement}
+
+\subsection{Technologies de développement}
+
+Les technologies utilisées dans ce projet sont présentées dans les tableaux ci-dessous, organisés par composant du système.
+
+\input{tables/technologies_developpement}
+
+\subsection{Technologies complémentaires}
+
+\input{tables/technologies_complementaires}
+
+% =============================================================
+\section{Architecture logique}
+\label{sec:architecture}
+
+\subsection{Architecture globale : SOA}
+
+Le système adopte une \textbf{Architecture Orientée Services (SOA)} composée de 4 modules indépendants communiquant via des API REST :
+
+\begin{enumerate}
+  \item \textbf{web-app} (React) — interfaces web (PWA client chambre + dashboards personnel) ;
+  \item \textbf{backend} (Express.js API) — logique métier centrale ;
+  \item \textbf{ai-service} (FastAPI) — intelligence artificielle (traduction et classification) ;
+  \item \textbf{worker-app} (Flutter) — application mobile pour les employés.
+\end{enumerate}
+
+% TODO: Insérer le diagramme d'architecture globale SOA
+\figplaceholder{Diagramme d'architecture globale du système (SOA, 4 modules)}
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{diagrams/images/architecture_global.png}
+%   \caption{Architecture globale du système — SOA}
+%   \label{fig:architecture_globale}
+% \end{figure}
+
+\subsection{Architecture par composant}
+
+% TODO: Détailler l'architecture en couches de chaque composant
+
+\begin{itemize}
+  \item \textbf{Backend API} : Architecture en couches — \texttt{routes/} → \texttt{controllers/} → \texttt{services/} → Prisma ORM → PostgreSQL.
+  \item \textbf{Frontend React} : SPA avec React Router, composants réutilisables, gestion d'état locale.
+  \item \textbf{Flutter App} : Architecture en couches par feature — \texttt{features/\{auth,tasks,splash\}/} avec sous-dossiers \texttt{data/} et \texttt{presentation/}.
+  \item \textbf{Service IA} : Architecture en couches — \texttt{main.py} (routes FastAPI) → \texttt{services/} → \texttt{models/}.
+\end{itemize}
+
+% =============================================================
+\section{Diagrammes d'analyse}
+\label{sec:diagrammes_analyse}
+
+\subsection{Diagramme de contexte}
+
+% TODO: Insérer le diagramme de contexte
+\figplaceholder{Diagramme de contexte du système (acteurs ↔ système)}
+
+\subsection{Diagramme de cas d'utilisation global}
+
+Le diagramme ci-dessous présente une vue simplifiée des cas d'utilisation globaux du système, regroupant tous les acteurs. Des diagrammes détaillés par acteur sont présentés dans les sections suivantes.
+
+% TODO: Exporter le diagramme PlantUML et l'insérer
+\figplaceholder{Diagramme de cas d'utilisation global simplifié}
+
+\subsection{Diagramme de cas d'utilisation — Client}
+% TODO: Insérer le diagramme
+\figplaceholder{Diagramme de cas d'utilisation — Client}
+
+\subsection{Diagramme de cas d'utilisation — Réception et Administration}
+% TODO: Insérer le diagramme
+\figplaceholder{Diagramme de cas d'utilisation — Réception et Administration}
+
+\subsection{Diagramme de cas d'utilisation — Responsables}
+% TODO: Insérer le diagramme
+\figplaceholder{Diagramme de cas d'utilisation — Responsables (Maintenance / Housekeeping)}
+
+\subsection{Diagramme de cas d'utilisation — Employé mobile}
+% TODO: Insérer le diagramme
+\figplaceholder{Diagramme de cas d'utilisation — Employé mobile}
+
+\subsection{Diagramme de classes global}
+
+% TODO: Insérer le diagramme de classes Prisma
+\figplaceholder{Diagramme de classes global (entités Prisma)}
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+Ce chapitre a présenté l'analyse complète du système : 8 acteurs identifiés, les besoins fonctionnels et non fonctionnels spécifiés, un backlog de 32 user stories organisé en 3 releases et 9 sprints, la définition de la \ac{DoD}, l'environnement technique et l'architecture SOA du système. Les chapitres suivants détaillent la réalisation de chaque release.

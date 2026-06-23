@@ -7,8 +7,8 @@ void main() {
     await tester.pumpWidget(const WorkerApp());
     await tester.pump(); // Let GoRouter resolve initial route
 
-    // Verify that splash screen displays Luxe branding
-    expect(find.text('LUXE CONCIERGE'), findsOneWidget);
+    // Verify that splash screen displays LoomStay branding
+    expect(find.text('LOOMSTAY'), findsOneWidget);
 
     // Advance time by 2 seconds to let the splash timer fire
     await tester.pump(const Duration(seconds: 2));

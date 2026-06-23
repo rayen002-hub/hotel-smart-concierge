@@ -1,0 +1,27 @@
+% =============================================================
+%  Annexe — Schéma de base de données
+% =============================================================
+
+% TODO: Insérer le diagramme de classes global Prisma (exporté en PNG ou PDF)
+\figplaceholder{Diagramme de classes global — Schéma Prisma complet}
+
+% TODO: Alternativement, insérer une capture d'écran de Prisma Studio ou un export du schéma
+
+Les principaux modèles de la base de données sont :
+
+\begin{itemize}
+  \item \textbf{User} : utilisateurs du système (staff), avec rôle et profil employé optionnel ;
+  \item \textbf{EmployeeProfile} : profil employé rattaché à un département (MAINTENANCE / HOUSEKEEPING) ;
+  \item \textbf{Room} : chambres de l'hôtel (numéro, étage, type, statut) ;
+  \item \textbf{Reservation} : réservations (dates, statut, référence client) ;
+  \item \textbf{GuestForm} : fiches voyageurs (adultes/enfants, passeport chiffré) ;
+  \item \textbf{Complaint} : réclamations (message original, traduction, catégorie IA, statut) ;
+  \item \textbf{InterventionLog} : journal d'intervention (entrée/sortie, résultat, commentaire) ;
+  \item \textbf{HousekeepingTask} : tâches de ménage de chambre ;
+  \item \textbf{GuestStaffMessage} : messages client-réception (bilingue) ;
+  \item \textbf{InternalMessage} : messages internes entre staff ;
+  \item \textbf{HotelInfo}, \textbf{HotelEvent}, \textbf{CurrencyRate} : contenus hôteliers ;
+  \item \textbf{AuditLog} : journaux d'audit.
+\end{itemize}
+
+% TODO: Copier les extraits pertinents du schema.prisma si nécessaire

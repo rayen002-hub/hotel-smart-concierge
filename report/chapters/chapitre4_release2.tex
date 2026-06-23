@@ -1,0 +1,227 @@
+% =============================================================
+%  Chapitre 4 — Release 2 : Parcours client et services numériques
+% =============================================================
+
+\chapter{Release 2 : Parcours client et services numériques}
+\label{chap:release2}
+
+\section*{Introduction}
+
+Ce chapitre détaille la deuxième release du projet, consacrée à l'expérience digitale côté client. Cette release comprend trois sprints : l'espace chambre PWA accessible par QR, les services hôteliers (informations, événements, devises) et la messagerie bilingue en temps réel avec traduction automatique par le modèle NLLB.
+
+\begin{quote}
+\textbf{Note :} La PWA installable concerne uniquement l'espace client chambre (\texttt{/room}). La page de check-in et les dashboards du personnel restent des interfaces web classiques accessibles via navigateur.
+\end{quote}
+
+
+% =============================================================
+%  SPRINT 4
+% =============================================================
+\section{Sprint 4 : Espace client PWA et accès chambre}
+\label{sec:sprint4}
+
+\subsection{Objectif du sprint}
+
+Mettre en place l'espace chambre PWA accessible uniquement par scan du QR code sécurisé généré lors du check-in.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 4}
+\label{tab:backlog_sprint4}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-08 & En tant que client, je veux accéder à mon espace chambre après validation du QR code & Must \\
+\hline
+US-09 & En tant que client, je veux naviguer dans l'espace chambre PWA pour accéder aux services & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Insérer le diagramme de séquence accès PWA via QR
+\figplaceholder{Diagramme de séquence — Accès espace chambre PWA via QR code}
+
+\subsection{Étude conceptuelle}
+
+Le mécanisme d'accès repose sur :
+\begin{itemize}
+  \item \textbf{Token gate} : le QR code contient un token JWT signé qui est validé côté serveur (signature, dates de validité, existence de la réservation) ;
+  \item \textbf{RoomLayout} : composant React protégeant toutes les routes \texttt{/room/*} ;
+  \item \textbf{PWA} : configuration \texttt{vite-plugin-pwa} avec manifest et service worker, permettant l'installation sur l'écran d'accueil du smartphone.
+\end{itemize}
+
+La PWA installable concerne uniquement l'espace client chambre. Les dashboards du personnel (admin, réception, managers) restent des interfaces web classiques non installables.
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran PWA
+\figplaceholder{Capture d'écran — Page d'accueil chambre PWA (mobile)}
+\figplaceholder{Capture d'écran — Menu de navigation vers les services}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Validation du token QR (cas valide, expiré, invalide) ;
+  \item Vérification de l'installation PWA sur mobile ;
+  \item Test de la navigation entre les pages de l'espace chambre.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+L'espace chambre PWA est fonctionnel et installable sur smartphone. L'accès est correctement protégé par le token QR.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 4.}
+
+
+% =============================================================
+%  SPRINT 5
+% =============================================================
+\section{Sprint 5 : Services hôteliers, événements et devise}
+\label{sec:sprint5}
+
+\subsection{Objectif du sprint}
+
+Enrichir l'expérience client avec les pages d'information hôtelière, les événements et le convertisseur de devises.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 5}
+\label{tab:backlog_sprint5}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-10 & En tant que client, je veux consulter les informations de l'hôtel & Should \\
+\hline
+US-11 & En tant que client, je veux consulter les événements de l'hôtel & Should \\
+\hline
+US-12 & En tant que client, je veux convertir des devises vers le TND & Could \\
+\hline
+US-13 & En tant qu'administrateur, je veux gérer les événements et les informations hôtelières & Should \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Diagramme de classes HotelInfo, HotelEvent, CurrencyRate
+\figplaceholder{Diagramme de classes — HotelInfo, HotelEvent, CurrencyRate}
+
+\subsection{Étude conceptuelle}
+
+Trois modules d'information client sont développés :
+\begin{itemize}
+  \item \textbf{HotelInfo} : informations hôtelières structurées (services, règlement, horaires) ;
+  \item \textbf{HotelEvent} : événements avec images et statut de publication ;
+  \item \textbf{CurrencyRate} : taux de change vers le TND, gérés par l'administrateur.
+\end{itemize}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran des pages services
+\figplaceholder{Capture d'écran — Page informations hôtel (PWA)}
+\figplaceholder{Capture d'écran — Page événements (PWA)}
+\figplaceholder{Capture d'écran — Page convertisseur de devises (PWA)}
+\figplaceholder{Capture d'écran — Dashboard admin — Gestion événements}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests CRUD des API HotelInfo, HotelEvent, CurrencyRate ;
+  \item Vérification de l'affichage côté client ;
+  \item Test de l'upload d'images pour les événements.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+Les trois pages client sont fonctionnelles. La gestion admin des contenus hôteliers est opérationnelle.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 5.}
+
+
+% =============================================================
+%  SPRINT 6
+% =============================================================
+\section{Sprint 6 : Messagerie client-réception et traduction IA}
+\label{sec:sprint6}
+
+\subsection{Objectif du sprint}
+
+Permettre la communication bilingue en temps réel entre le client et la réception, avec traduction automatique par le modèle pré-entraîné NLLB-200.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 6}
+\label{tab:backlog_sprint6}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-14 & En tant que client, je veux envoyer des messages à la réception dans ma langue & Should \\
+\hline
+US-15 & En tant que réceptionniste, je veux répondre aux messages avec traduction automatique & Should \\
+\hline
+US-16 & En tant que système IA, je veux détecter la langue et traduire via NLLB & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Diagramme de séquence messagerie avec traduction
+\figplaceholder{Diagramme de séquence — Envoi message client → traduction NLLB → réception staff}
+
+\subsection{Étude conceptuelle}
+
+Le système de messagerie bilingue repose sur :
+\begin{itemize}
+  \item \textbf{Modèle GuestStaffMessage} : messages bidirectionnels avec champs \texttt{originalMessage}, \texttt{detectedLanguage}, \texttt{staffMessage}, \texttt{clientMessage} ;
+  \item \textbf{Service IA — Détection de langue} : bibliothèque \texttt{langdetect} avec mapping vers les codes NLLB ;
+  \item \textbf{Service IA — Traduction} : modèle pré-entraîné NLLB-200-distilled-600M (Hugging Face Transformers), avec cache de traduction et lazy loading ;
+  \item \textbf{Socket.IO} : communication temps réel pour les notifications de nouveaux messages.
+\end{itemize}
+
+\begin{quote}
+\textbf{Note :} Le modèle NLLB-200 est un modèle pré-entraîné par Meta AI. Il n'a pas été entraîné ou fine-tuné dans le cadre de ce projet. Il est chargé et utilisé tel quel via la bibliothèque Hugging Face Transformers.
+\end{quote}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran messagerie
+\figplaceholder{Capture d'écran — Messagerie client (PWA)}
+\figplaceholder{Capture d'écran — Messagerie réception (dashboard)}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests de l'API messagerie ;
+  \item Tests de détection de langue et traduction via le service IA ;
+  \item Vérification de la communication temps réel via Socket.IO.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+La messagerie bilingue est fonctionnelle en temps réel. La traduction automatique fonctionne correctement pour les langues supportées par NLLB.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 6.}
+
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+La Release 2 a permis de mettre en place l'expérience digitale complète côté client : l'espace chambre PWA installable avec accès sécurisé par QR, les pages de services hôteliers (informations, événements, devises) et la messagerie bilingue en temps réel avec traduction automatique par le modèle NLLB-200. Le chapitre suivant présente la Release 3, consacrée aux réclamations, aux interventions et à l'intelligence artificielle intégrée.

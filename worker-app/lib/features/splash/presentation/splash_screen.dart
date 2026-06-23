@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       const SizedBox(height: 24),
                       // Text branding
                       Text(
-                        'LUXE CONCIERGE',
+                        'LOOMSTAY',
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.w800,

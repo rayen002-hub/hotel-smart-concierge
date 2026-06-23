@@ -1,0 +1,77 @@
+% =============================================================
+%  Conclusion générale
+% =============================================================
+
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+
+% --- Synthèse du travail réalisé ---
+\section*{Synthèse du travail réalisé}
+
+Ce projet de fin d'études a abouti à la conception et au développement complet de la plateforme \textbf{Hotel Smart Concierge}, une solution intelligente de services numériques pour établissements hôteliers. Le développement a suivi la méthodologie Scrum avec 3 releases et 9 sprints, produisant un système fonctionnel de bout en bout.
+
+% --- Apports fonctionnels ---
+\section*{Apports fonctionnels}
+
+La plateforme offre un ensemble complet de fonctionnalités couvrant l'intégralité du parcours client et de la gestion opérationnelle de l'hôtel :
+
+\begin{itemize}
+  \item \textbf{Check-in numérique} avec génération de QR codes sécurisés et fiches voyageurs ;
+  \item \textbf{Espace client chambre} (PWA installable) avec accès aux services hôteliers ;
+  \item \textbf{Messagerie bilingue en temps réel} avec traduction automatique ;
+  \item \textbf{Gestion des réclamations} avec classification automatique par IA ;
+  \item \textbf{Application mobile Flutter} pour les agents d'intervention terrain ;
+  \item \textbf{Gestion des tâches de ménage} avec suivi par scan QR.
+\end{itemize}
+
+% --- Apports techniques ---
+\section*{Apports techniques}
+
+Sur le plan technique, le projet a permis de :
+
+\begin{itemize}
+  \item Mettre en place une \textbf{architecture SOA modulaire} avec 4 composants indépendants ;
+  \item Implémenter une \textbf{authentification JWT avec RBAC} pour 5 rôles différents ;
+  \item Développer un \textbf{système de QR codes sécurisés} avec tokens signés et versionnement ;
+  \item Intégrer la \textbf{communication temps réel} via Socket.IO ;
+  \item Concevoir une architecture orientée \textbf{installation sur serveur privé}.
+\end{itemize}
+
+% --- Apports IA/ML ---
+\section*{Apports IA/ML}
+
+Le volet intelligence artificielle a permis d'intégrer :
+
+\begin{itemize}
+  \item Un \textbf{classifieur de réclamations} basé sur Logistic Regression + TF-IDF, atteignant une accuracy de $\sim$86\% sur le jeu de test ;
+  \item Un \textbf{service de traduction multilingue} utilisant le modèle pré-entraîné NLLB-200 ;
+  \item Un \textbf{pipeline combinée} (détection de langue + traduction + classification) en un seul appel API.
+\end{itemize}
+
+% --- Limites ---
+\section*{Limites}
+
+Malgré les résultats obtenus, le projet présente certaines limites :
+
+\begin{itemize}
+  \item Le dataset d'entraînement du classifieur ($\sim$500 exemples) reste limité et devrait être enrichi avec des données réelles de l'hôtel ;
+  \item La validation croisée (CV F1 macro $\sim$77\%) montre une dépendance au jeu de données ;
+  \item Le modèle NLLB-200 est utilisé tel quel sans fine-tuning spécifique au domaine hôtelier ;
+  \item L'application Flutter n'a pas été testée sur un large panel d'appareils Android ;
+  \item \todo{Ajouter d'autres limites identifiées.}
+\end{itemize}
+
+% --- Perspectives ---
+\section*{Perspectives}
+
+Plusieurs pistes d'amélioration et d'extension sont envisageables :
+
+\begin{itemize}
+  \item \textbf{Enrichissement du dataset ML} avec des réclamations réelles pour améliorer la généralisation ;
+  \item \textbf{Fine-tuning du modèle de traduction} sur le vocabulaire hôtelier spécifique ;
+  \item \textbf{Ajout d'un système de notation} (rating) pour les services de l'hôtel ;
+  \item \textbf{Intégration d'un chatbot IA} pour l'assistance client automatisée ;
+  \item \textbf{Application iOS} via le framework Flutter existant ;
+  \item \textbf{Tableau de bord analytique} avec statistiques et indicateurs de performance ;
+  \item \todo{Ajouter d'autres perspectives.}
+\end{itemize}

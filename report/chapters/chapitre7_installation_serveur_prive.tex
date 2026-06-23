@@ -1,0 +1,156 @@
+% =============================================================
+%  Chapitre 7 — Installation cible sur serveur privé hôtelier
+% =============================================================
+
+\chapter{Installation cible sur serveur privé hôtelier}
+\label{chap:installation}
+
+\section*{Introduction}
+
+Ce chapitre décrit l'architecture de déploiement cible du système Hotel Smart Concierge sur le serveur physique privé de l'hôtel. Il distingue clairement le déploiement temporaire de démonstration (utilisé pour la soutenance) de l'installation réelle prévue sur l'infrastructure interne de l'hôtel.
+
+% =============================================================
+\section{Objectif du déploiement cible}
+\label{sec:objectif_deploiement}
+
+L'objectif est de permettre à l'hôtel de fonctionner de manière \textbf{autonome et indépendante de tout service cloud public}. Tous les composants du système (backend, base de données, service IA, stockage de fichiers) sont conçus pour être installés sur un serveur physique privé situé dans les locaux de l'hôtel.
+
+% =============================================================
+\section{Architecture physique cible}
+\label{sec:architecture_physique}
+
+% TODO: Insérer le diagramme d'architecture cible serveur privé
+\figplaceholder{Diagramme d'architecture cible — Serveur privé de l'hôtel}
+
+L'architecture cible repose sur un serveur physique unique ou un petit cluster, hébergeant :
+\begin{itemize}
+  \item \textbf{Node.js + Express} : backend API ;
+  \item \textbf{PostgreSQL} : base de données relationnelle ;
+  \item \textbf{Python + FastAPI} : service d'intelligence artificielle ;
+  \item \textbf{Nginx} : reverse proxy et serveur de fichiers statiques (frontend React build) ;
+  \item \textbf{Stockage local} : remplacement de Supabase Storage par un stockage de fichiers local.
+\end{itemize}
+
+% =============================================================
+\section{Installation sur serveur privé}
+\label{sec:installation_serveur}
+
+\subsection{Prérequis}
+
+\begin{itemize}
+  \item Serveur Linux (Ubuntu 22.04 LTS recommandé) ;
+  \item Node.js 18+ ;
+  \item PostgreSQL 15+ ;
+  \item Python 3.10+ ;
+  \item Docker (optionnel, pour le service IA) ;
+  \item Nginx.
+\end{itemize}
+
+\subsection{Étapes d'installation}
+
+\todo{Détailler les commandes d'installation pas à pas.}
+
+% =============================================================
+\section{Réseau local hôtelier et accès staff}
+\label{sec:reseau_local}
+
+Le système est accessible sur le réseau local de l'hôtel :
+\begin{itemize}
+  \item Les dashboards du personnel sont accessibles depuis les postes de travail connectés au réseau local ;
+  \item L'espace client PWA est accessible via le Wi-Fi de l'hôtel après scan du QR code ;
+  \item L'application Flutter se connecte au backend via le réseau local.
+\end{itemize}
+
+% =============================================================
+\section{Base de données et stockage interne}
+\label{sec:bdd_stockage}
+
+PostgreSQL est le SGBD principal du système. Dans le déploiement cible réel, la base de données est installée localement sur le serveur de l'hôtel. Le stockage des images (événements, etc.) est assuré par un répertoire local du serveur, remplaçant Supabase Storage utilisé dans l'environnement de démonstration.
+
+% =============================================================
+\section{Sécurité et confidentialité}
+\label{sec:securite}
+
+\begin{itemize}
+  \item Toutes les communications internes sont sur le réseau local de l'hôtel ;
+  \item Les données sensibles (passeports) sont chiffrées en base de données ;
+  \item Les secrets (JWT secret, credentials DB) sont stockés dans des variables d'environnement ;
+  \item L'accès externe peut être limité ou désactivé selon la politique de l'hôtel.
+\end{itemize}
+
+% =============================================================
+\section{Sauvegarde et maintenance}
+\label{sec:sauvegarde}
+
+\begin{itemize}
+  \item \textbf{Base de données} : sauvegarde régulière via \texttt{pg\_dump} ;
+  \item \textbf{Fichiers} : sauvegarde du répertoire de stockage local ;
+  \item \textbf{Mise à jour} : procédure de mise à jour du code via \texttt{git pull} et redémarrage des services.
+\end{itemize}
+
+\todo{Fournir les commandes de sauvegarde et de restauration.}
+
+% =============================================================
+\section{Déploiement temporaire de démonstration}
+\label{sec:deploiement_demo}
+
+Pour les besoins de la démonstration et de la soutenance, le système a été déployé temporairement sur des plateformes cloud publiques :
+
+\begin{table}[H]
+\centering
+\caption{Plateformes de déploiement temporaire (démonstration uniquement)}
+\label{tab:deploiement_demo}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Plateforme} & \textbf{Usage temporaire} \\
+\hline
+Supabase & Hébergement PostgreSQL de démonstration + stockage d'images \\
+\hline
+Vercel & Hébergement temporaire de la web-app (frontend React/PWA) \\
+\hline
+Render & Hébergement temporaire du backend Node.js/Express \\
+\hline
+Hugging Face Spaces & Hébergement temporaire du service IA FastAPI (avec Docker) \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{quote}
+\textbf{Important :} Vercel, Render, Hugging Face Spaces et Supabase ont été utilisés \textbf{uniquement pour le déploiement temporaire de démonstration et de soutenance}. Le déploiement cible réel est prévu sur un \textbf{serveur physique privé de l'hôtel}, sans dépendance au cloud public.
+\end{quote}
+
+% =============================================================
+\section{Différence entre démonstration cloud et installation réelle}
+\label{sec:difference_demo_prod}
+
+\begin{table}[H]
+\centering
+\caption{Comparaison démonstration cloud vs installation réelle}
+\label{tab:comparaison_demo_prod}
+\begin{tabular}{|p{4cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspect} & \textbf{Démonstration cloud} & \textbf{Installation réelle} \\
+\hline
+Hébergement backend & Render (cloud public) & Serveur privé de l'hôtel \\
+\hline
+Base de données & Supabase (cloud) & PostgreSQL local \\
+\hline
+Stockage images & Supabase Storage & Répertoire local du serveur \\
+\hline
+Service IA & Hugging Face Spaces & Serveur privé (Docker ou natif) \\
+\hline
+Frontend & Vercel (cloud) & Nginx + fichiers statiques locaux \\
+\hline
+Réseau & Internet public & Réseau local de l'hôtel \\
+\hline
+Confidentialité & Données transitant par le cloud & Données restant dans l'hôtel \\
+\hline
+Coût récurrent & Gratuit (free tier) & Aucun (infrastructure propre) \\
+\hline
+\end{tabular}
+\end{table}
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+Ce chapitre a présenté l'architecture de déploiement cible du système sur le serveur privé de l'hôtel. Il a clairement distingué le déploiement temporaire de démonstration (Vercel, Render, Hugging Face, Supabase) de l'installation réelle prévue sur l'infrastructure interne, garantissant l'autonomie, la confidentialité des données et l'absence de dépendance au cloud public.

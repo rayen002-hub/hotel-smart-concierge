@@ -1,0 +1,161 @@
+% =============================================================
+%  Chapitre 6 — Build, tests et validation
+% =============================================================
+
+\chapter{Build, tests et validation}
+\label{chap:build_tests}
+
+\section*{Introduction}
+
+Ce chapitre n'est pas une release Scrum. Il constitue un récapitulatif technique des activités de build, de test et de validation réalisées tout au long des sprints dans le cadre de la Definition of Done. Il présente les commandes de build, les résultats des tests automatisés et la validation fonctionnelle globale du système.
+
+% =============================================================
+\section{Rappel de la Definition of Done}
+\label{sec:rappel_dod}
+
+Conformément aux principes Scrum adoptés dans ce projet, chaque sprint a produit un incrément fonctionnel intégré, testé et validé. Les activités de build et de test ne constituent donc pas une release séparée, mais des activités continues intégrées à chaque sprint.
+
+Ce chapitre récapitule les résultats cumulés de ces activités.
+
+% =============================================================
+\section{Build frontend React/Vite}
+\label{sec:build_frontend}
+
+\begin{lstlisting}[language=bash, caption={Build de production — Frontend React}]
+cd web-app
+npm run build
+\end{lstlisting}
+
+% TODO: Ajouter une capture d'écran du résultat du build Vite
+\figplaceholder{Capture d'écran — Résultat du build Vite (production)}
+
+Le build de production génère les fichiers optimisés dans le répertoire \texttt{dist/}, incluant le manifest PWA et le service worker.
+
+% =============================================================
+\section{Build backend Node/Express}
+\label{sec:build_backend}
+
+\begin{lstlisting}[language=bash, caption={Compilation TypeScript — Backend}]
+cd backend
+npx tsc
+\end{lstlisting}
+
+Le backend utilise TypeScript avec compilation vers JavaScript. Le serveur Express est lancé via \texttt{node dist/index.js} en production.
+
+% =============================================================
+\section{Build service IA FastAPI}
+\label{sec:build_ia}
+
+\begin{lstlisting}[language=bash, caption={Lancement du service IA}]
+cd ai-service
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+\end{lstlisting}
+
+Le service IA est conteneurisé via Docker pour le déploiement :
+
+\begin{lstlisting}[language=bash, caption={Build Docker — Service IA}]
+cd ai-service
+docker build -t hotel-ai-service .
+docker run -p 8000:8000 hotel-ai-service
+\end{lstlisting}
+
+% =============================================================
+\section{Build APK Flutter}
+\label{sec:build_apk}
+
+\begin{lstlisting}[language=bash, caption={Build APK release — Flutter}]
+cd worker-app
+flutter build apk --release
+\end{lstlisting}
+
+% TODO: Ajouter les informations sur la taille de l'APK et la version
+\todo{Indiquer la taille de l'APK release et la version.}
+
+% =============================================================
+\section{Tests backend}
+\label{sec:tests_backend}
+
+Le backend dispose de \textbf{7 suites de tests} et \textbf{25 tests} automatisés utilisant Jest et Supertest :
+
+\begin{table}[H]
+\centering
+\caption{Suites de tests backend}
+\label{tab:tests_backend}
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Suite de tests} & \textbf{Nb tests} & \textbf{Description} \\
+\hline
+auth & \todo{N} & Authentification JWT, login, tokens \\
+\hline
+checkin & \todo{N} & Check-in numérique, vérification réservation \\
+\hline
+complaints & \todo{N} & Réclamations, classification, workflow \\
+\hline
+employeeScan & \todo{N} & Scan QR employé, entrée/sortie \\
+\hline
+health & \todo{N} & Health check endpoints \\
+\hline
+websocket & \todo{N} & Connexion Socket.IO, événements \\
+\hline
+supabase & \todo{N} & Connexion et stockage Supabase \\
+\hline
+\textbf{Total} & \textbf{25} & \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=bash, caption={Exécution des tests backend}]
+cd backend
+npm test
+\end{lstlisting}
+
+% TODO: Ajouter une capture d'écran des résultats des tests Jest
+\figplaceholder{Capture d'écran — Résultats des tests Jest (backend)}
+
+% =============================================================
+\section{Tests service IA}
+\label{sec:tests_ia}
+
+Le service IA dispose de tests automatisés via pytest :
+
+\begin{lstlisting}[language=bash, caption={Exécution des tests IA}]
+cd ai-service
+pytest
+\end{lstlisting}
+
+% TODO: Ajouter les résultats des tests pytest
+\figplaceholder{Capture d'écran — Résultats des tests pytest (service IA)}
+
+% =============================================================
+\section{Tests fonctionnels globaux}
+\label{sec:tests_fonctionnels}
+
+Les tests fonctionnels globaux ont été réalisés manuellement selon le scénario de démonstration couvrant l'ensemble du workflow :
+
+\begin{enumerate}
+  \item Connexion admin → création de chambres et réservations ;
+  \item Connexion réceptionniste → check-in → génération QR ;
+  \item Scan QR client → accès PWA → navigation services ;
+  \item Envoi réclamation → classification IA → affichage catégorie ;
+  \item Connexion manager → assignation → transfert ;
+  \item Connexion employé Flutter → scan QR → intervention → résultat ;
+  \item Confirmation client ;
+  \item Assignation tâche ménage → scan → résultat.
+\end{enumerate}
+
+% TODO: Ajouter les résultats des tests fonctionnels
+\todo{Documenter les résultats des tests fonctionnels globaux.}
+
+% =============================================================
+\section{Validation du scénario de démonstration}
+\label{sec:validation_demo}
+
+Le scénario de démonstration complet a été validé de bout en bout, couvrant tous les acteurs et tous les workflows du système.
+
+% TODO: Ajouter une description détaillée du scénario de démo
+\todo{Décrire le scénario de démonstration complet utilisé pour la soutenance.}
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+Ce chapitre a présenté les activités de build, de test et de validation réalisées tout au long du projet. Le backend dispose de 25 tests automatisés, le service IA est testé via pytest, et l'application Flutter est validée sur émulateur Android. Le scénario de démonstration complet couvre l'ensemble des workflows du système. Le chapitre suivant décrit l'installation cible sur le serveur privé de l'hôtel.

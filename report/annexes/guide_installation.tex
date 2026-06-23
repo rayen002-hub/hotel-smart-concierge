@@ -1,0 +1,77 @@
+% =============================================================
+%  Annexe — Guide d'installation sur serveur privé
+% =============================================================
+
+% TODO: Compléter avec les commandes d'installation réelles
+
+\subsection*{Prérequis}
+
+\begin{itemize}
+  \item Ubuntu 22.04 LTS (ou distribution Linux équivalente)
+  \item Node.js 18+ (\texttt{curl -fsSL https://deb.nodesource.com/setup\_18.x | sudo bash -})
+  \item PostgreSQL 15+
+  \item Python 3.10+
+  \item Nginx
+  \item Docker (optionnel, pour le service IA)
+\end{itemize}
+
+\subsection*{Installation du backend}
+
+\begin{lstlisting}[language=bash]
+# Cloner le projet
+git clone <repository-url> /opt/hotel-smart-concierge
+cd /opt/hotel-smart-concierge/backend
+
+# Installer les dépendances
+npm install
+
+# Configurer les variables d'environnement
+cp .env.example .env
+# TODO: Éditer .env avec les valeurs réelles
+
+# Initialiser la base de données
+npx prisma migrate deploy
+npx prisma db seed
+
+# Compiler TypeScript
+npx tsc
+
+# Démarrer le serveur
+node dist/index.js
+\end{lstlisting}
+
+\subsection*{Installation du service IA}
+
+\begin{lstlisting}[language=bash]
+cd /opt/hotel-smart-concierge/ai-service
+
+# Option 1 : Installation native
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Option 2 : Docker
+docker build -t hotel-ai-service .
+docker run -d -p 8000:8000 hotel-ai-service
+\end{lstlisting}
+
+\subsection*{Installation du frontend}
+
+\begin{lstlisting}[language=bash]
+cd /opt/hotel-smart-concierge/web-app
+
+# Build de production
+npm install
+npm run build
+
+# Copier les fichiers vers Nginx
+sudo cp -r dist/* /var/www/hotel-concierge/
+\end{lstlisting}
+
+\subsection*{Configuration Nginx}
+
+\begin{lstlisting}[language=bash]
+# TODO: Ajouter la configuration Nginx
+# /etc/nginx/sites-available/hotel-concierge
+\end{lstlisting}
+
+\todo{Compléter la configuration Nginx avec reverse proxy vers le backend et le service IA.}

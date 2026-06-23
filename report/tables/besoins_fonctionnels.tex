@@ -1,0 +1,241 @@
+% =============================================================
+%  Tableaux des besoins fonctionnels par acteur
+% =============================================================
+
+% --- Client ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Client (Guest)} \label{tab:bf_client} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-C01 & Accéder à l'espace chambre PWA via le scan d'un QR code sécurisé \\
+\hline
+BF-C02 & Consulter les informations de la chambre et de la réservation \\
+\hline
+BF-C03 & Envoyer une réclamation en texte libre dans sa langue \\
+\hline
+BF-C04 & Suivre le statut de ses réclamations en temps réel \\
+\hline
+BF-C05 & Confirmer la résolution d'une réclamation \\
+\hline
+BF-C06 & Rouvrir une réclamation non résolue de manière satisfaisante \\
+\hline
+BF-C07 & Consulter les informations de l'hôtel (services, règlement, etc.) \\
+\hline
+BF-C08 & Consulter les événements de l'hôtel \\
+\hline
+BF-C09 & Utiliser le convertisseur de devises (vers TND) \\
+\hline
+BF-C10 & Envoyer et recevoir des messages avec la réception (messagerie bilingue) \\
+\hline
+BF-C11 & Effectuer le check-in numérique (formulaires voyageurs) \\
+\hline
+\end{longtable}
+
+% --- Réceptionniste ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Réceptionniste} \label{tab:bf_receptionniste} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-R01 & Se connecter au dashboard web avec email et mot de passe \\
+\hline
+BF-R02 & Gérer les réservations (créer, modifier, consulter) \\
+\hline
+BF-R03 & Effectuer le check-in d'un client (passage en statut CHECKED\_IN) \\
+\hline
+BF-R04 & Générer le QR code sécurisé de chambre pour le client \\
+\hline
+BF-R05 & Effectuer le check-out d'un client \\
+\hline
+BF-R06 & Consulter la liste des réclamations toutes catégories \\
+\hline
+BF-R07 & Envoyer et recevoir des messages avec les clients (messagerie bilingue) \\
+\hline
+BF-R08 & Gérer les fiches voyageurs (GuestForm) \\
+\hline
+BF-R09 & Consulter les chambres et leur état \\
+\hline
+\end{longtable}
+
+% --- Administrateur ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Administrateur} \label{tab:bf_admin} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-A01 & Se connecter au dashboard web avec email et mot de passe \\
+\hline
+BF-A02 & Gérer les utilisateurs du système (CRUD) \\
+\hline
+BF-A03 & Gérer les chambres de l'hôtel (CRUD) \\
+\hline
+BF-A04 & Régénérer le QR code worker d'une chambre \\
+\hline
+BF-A05 & Gérer les informations de l'hôtel (CRUD HotelInfo) \\
+\hline
+BF-A06 & Gérer les événements de l'hôtel (CRUD HotelEvent avec images) \\
+\hline
+BF-A07 & Gérer les taux de change (CurrencyRate) \\
+\hline
+BF-A08 & Consulter les journaux d'audit (AuditLog) \\
+\hline
+BF-A09 & Accéder à une vue globale de toutes les réclamations et interventions \\
+\hline
+\end{longtable}
+
+% --- Responsable maintenance ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Responsable maintenance} \label{tab:bf_maintenance_mgr} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-M01 & Se connecter au dashboard web \\
+\hline
+BF-M02 & Consulter les réclamations de catégorie MAINTENANCE \\
+\hline
+BF-M03 & Assigner une réclamation à un employé de maintenance \\
+\hline
+BF-M04 & Suivre l'avancement des interventions en temps réel \\
+\hline
+BF-M05 & Consulter les détails d'une intervention (entrée, sortie, résultat, commentaire) \\
+\hline
+BF-M06 & Créer un employé de maintenance \\
+\hline
+BF-M07 & Visualiser la disponibilité et le statut en ligne des employés \\
+\hline
+BF-M08 & Transférer une réclamation vers le service ménage \\
+\hline
+BF-M09 & Envoyer des messages internes concernant une réclamation \\
+\hline
+\end{longtable}
+
+% --- Gouvernante ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Gouvernante générale} \label{tab:bf_housekeeping_mgr} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-H01 & Se connecter au dashboard web \\
+\hline
+BF-H02 & Consulter les réclamations de catégorie HOUSEKEEPING \\
+\hline
+BF-H03 & Assigner une réclamation à un employé de ménage \\
+\hline
+BF-H04 & Suivre l'avancement des interventions en temps réel \\
+\hline
+BF-H05 & Créer un employé de ménage \\
+\hline
+BF-H06 & Transférer une réclamation vers le service maintenance \\
+\hline
+BF-H07 & Consulter la liste des chambres occupées \\
+\hline
+BF-H08 & Assigner une tâche de ménage de chambre (HousekeepingTask) \\
+\hline
+BF-H09 & Suivre le statut des tâches de ménage \\
+\hline
+BF-H10 & Consulter l'historique des tâches de ménage avec résultat et commentaire \\
+\hline
+\end{longtable}
+
+% --- Employé maintenance ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Employé maintenance} \label{tab:bf_employee_maint} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-EM01 & Se connecter à l'application Flutter mobile \\
+\hline
+BF-EM02 & Consulter la liste des tâches d'intervention assignées \\
+\hline
+BF-EM03 & Scanner le QR code de chambre pour démarrer l'intervention (scan entrée) \\
+\hline
+BF-EM04 & Scanner le QR code de chambre pour terminer l'intervention (scan sortie) \\
+\hline
+BF-EM05 & Saisir le résultat de l'intervention (FIXED / NOT\_FIXED) \\
+\hline
+BF-EM06 & Ajouter un commentaire sur l'intervention \\
+\hline
+BF-EM07 & Consulter les messages liés à une tâche \\
+\hline
+\end{longtable}
+
+% --- Employé housekeeping ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Employé housekeeping} \label{tab:bf_employee_hk} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-EH01 & Se connecter à l'application Flutter mobile \\
+\hline
+BF-EH02 & Consulter la liste des tâches (réclamations + ménage de chambre) \\
+\hline
+BF-EH03 & Scanner le QR code pour démarrer une tâche de ménage (scan entrée) \\
+\hline
+BF-EH04 & Scanner le QR code pour terminer une tâche de ménage (scan sortie) \\
+\hline
+BF-EH05 & Saisir le résultat de la tâche de ménage (DONE / NOT\_DONE) \\
+\hline
+BF-EH06 & Ajouter un commentaire sur la tâche \\
+\hline
+\end{longtable}
+
+% --- Système IA ---
+\begin{longtable}{|c|p{12cm}|}
+\caption{Besoins fonctionnels — Système IA (acteur technique secondaire)} \label{tab:bf_ia} \\
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{Besoin fonctionnel} \\
+\hline
+\endhead
+BF-IA01 & Détecter automatiquement la langue du message client (langdetect) \\
+\hline
+BF-IA02 & Traduire le message vers le français (modèle NLLB-200) \\
+\hline
+BF-IA03 & Traduire la réponse du staff vers la langue du client \\
+\hline
+BF-IA04 & Classifier la réclamation dans une catégorie (Logistic Regression + TF-IDF) \\
+\hline
+BF-IA05 & Retourner un score de confiance pour la classification \\
+\hline
+BF-IA06 & Pipeline combiné : analyser un message (détecter + traduire + classifier) \\
+\hline
+\end{longtable}

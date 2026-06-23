@@ -1,0 +1,52 @@
+% =============================================================
+%  Introduction générale
+% =============================================================
+
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
+
+% --- Contexte général ---
+\section*{Contexte général}
+
+L'industrie hôtelière connaît une transformation numérique majeure, accélérée par les nouvelles attentes des voyageurs en matière de services digitaux. Les clients recherchent désormais des expériences fluides, personnalisées et accessibles depuis leur smartphone. Dans ce contexte, la digitalisation des services hôteliers n'est plus un luxe mais une nécessité concurrentielle.
+
+% TODO: Enrichir avec des statistiques du secteur hôtelier tunisien/mondial
+
+% --- Motivation ---
+\section*{Motivation}
+
+La motivation principale de ce projet réside dans le constat d'un écart significatif entre les attentes des clients modernes et les processus encore largement manuels dans de nombreux établissements hôteliers. Les procédures de check-in sur papier, la gestion des réclamations par téléphone ou en personne, et l'absence de communication multilingue efficace constituent autant de points de friction dans l'expérience client.
+
+% TODO: Personnaliser avec les observations faites dans l'hôtel d'accueil
+
+% --- Problématique ---
+\section*{Problématique}
+
+Comment concevoir et développer une plateforme numérique intégrée qui digitalise l'ensemble du parcours client en hôtellerie, automatise le traitement des réclamations par intelligence artificielle, et facilite la coordination des équipes d'intervention sur le terrain, tout en garantissant une installation autonome sur l'infrastructure privée de l'établissement~?
+
+% --- Solution proposée ---
+\section*{Solution proposée}
+
+Pour répondre à cette problématique, nous proposons \textbf{Hotel Smart Concierge}, une plateforme intelligente de services numériques composée de quatre modules indépendants :
+
+\begin{itemize}
+  \item Une \textbf{application web React} offrant un espace client chambre installable en tant que PWA et des dashboards pour le personnel hôtelier ;
+  \item Un \textbf{backend Node.js/Express} centralisant la logique métier avec une base de données PostgreSQL ;
+  \item Un \textbf{service d'intelligence artificielle FastAPI} assurant la classification automatique des réclamations et la traduction multilingue ;
+  \item Une \textbf{application mobile Flutter} permettant aux agents de terrain de gérer leurs interventions par scan QR.
+\end{itemize}
+
+% --- Organisation du rapport ---
+\section*{Organisation du rapport}
+
+Ce rapport est organisé comme suit :
+
+\begin{itemize}
+  \item \textbf{Chapitre 1} présente le contexte général du projet, la problématique, l'étude de l'existant et la méthodologie adoptée.
+  \item \textbf{Chapitre 2} détaille l'analyse et la préparation du projet (Sprint 0) : identification des acteurs, spécification des besoins, backlog produit, architecture logique et environnement de travail.
+  \item \textbf{Chapitre 3} couvre la Release 1 (Sprints 1 à 3) : socle système, authentification, gestion des chambres, réservations et check-in numérique.
+  \item \textbf{Chapitre 4} couvre la Release 2 (Sprints 4 à 6) : parcours client PWA, services hôteliers et messagerie bilingue avec traduction IA.
+  \item \textbf{Chapitre 5} couvre la Release 3 (Sprints 7 à 9) : réclamations avec classification IA, application Flutter worker et tâches housekeeping.
+  \item \textbf{Chapitre 6} présente le build, les tests et la validation technique du système.
+  \item \textbf{Chapitre 7} décrit l'installation cible sur le serveur privé de l'hôtel et compare avec le déploiement temporaire de démonstration.
+\end{itemize}

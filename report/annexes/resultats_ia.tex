@@ -1,0 +1,72 @@
+% =============================================================
+%  Annexe — Résultats détaillés de la classification IA
+% =============================================================
+
+% TODO: Copier les résultats exacts depuis ai-service/reports/classification_report.txt
+
+\subsection*{Pipelines évalués}
+
+11 pipelines de classification ont été évalués. Le tableau ci-dessous présente les résultats comparatifs :
+
+% TODO: Insérer le tableau complet des 11 pipelines
+\figplaceholder{Tableau comparatif des 11 pipelines de classification}
+
+\subsection*{Meilleur modèle : LR\_combined}
+
+\begin{table}[H]
+\centering
+\caption{Métriques détaillées du modèle LR\_combined}
+\label{tab:metriques_lr_combined}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Métrique} & \textbf{Valeur} \\
+\hline
+Accuracy (jeu de test) & 0,8595 \\
+\hline
+F1 macro & 0,8605 \\
+\hline
+F1 weighted & 0,8604 \\
+\hline
+CV F1 macro (5-fold) & 0,7702 $\pm$ 0,0450 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{Rapport de classification par catégorie}
+
+\begin{table}[H]
+\centering
+\caption{Rapport de classification par catégorie}
+\label{tab:classification_par_categorie}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Catégorie} & \textbf{Précision} & \textbf{Rappel} & \textbf{F1-score} & \textbf{Support} \\
+\hline
+COMPLAINT & 1,00 & 0,81 & 0,89 & 21 \\
+\hline
+HOUSEKEEPING & 0,89 & 0,84 & 0,86 & 19 \\
+\hline
+MAINTENANCE & 0,95 & 1,00 & 0,98 & 20 \\
+\hline
+OTHER & 0,78 & 0,86 & 0,82 & 21 \\
+\hline
+RECEPTION & 0,76 & 0,80 & 0,78 & 20 \\
+\hline
+RESTAURANT & 0,81 & 0,85 & 0,83 & 20 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{Matrice de confusion}
+
+% TODO: Insérer l'image de la matrice de confusion
+\figplaceholder{Matrice de confusion — Modèle LR\_combined (6 catégories)}
+
+\subsection*{Limitations identifiées}
+
+\begin{itemize}
+  \item Messages courts ou ambigus difficiles à classifier ;
+  \item Confusion entre les catégories RECEPTION et RESTAURANT ;
+  \item Dataset limité ($\sim$500 exemples) — nécessité d'enrichir avec des données réelles ;
+  \item La validation croisée (CV F1 macro $\sim$77\%) montre une dépendance au jeu de données.
+\end{itemize}

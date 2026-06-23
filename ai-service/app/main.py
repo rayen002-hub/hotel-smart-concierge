@@ -16,7 +16,7 @@ from app.services.translation_service import TranslationService
 from app.utils.language_mapping import get_supported_languages
 
 app = FastAPI(
-    title="Hotel Smart Concierge - AI Service",
+    title="LoomStay - AI Service",
     description="Service IA pour la traduction (NLLB) et la classification des reclamations hotelieres.",
     version="2.0.0",
 )

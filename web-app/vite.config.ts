@@ -12,9 +12,9 @@ export default defineConfig({
       injectRegister: false, // Don't auto-inject SW registration
       includeAssets: ['vite.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Hotel Smart Concierge',
-        short_name: 'Hotel Concierge',
-        description: 'Your personal hotel room assistant — complaints, messaging, events, and more.',
+        name: 'LoomStay',
+        short_name: 'LoomStay',
+        description: 'Your personal hotel room assistant — services, messaging, events, and more.',
         start_url: '/room',
         scope: '/room',
         display: 'standalone',

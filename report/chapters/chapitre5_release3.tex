@@ -1,0 +1,295 @@
+% =============================================================
+%  Chapitre 5 — Release 3 : Réclamations, interventions et intelligence intégrée
+% =============================================================
+
+\chapter{Release 3 : Réclamations, interventions et intelligence intégrée}
+\label{chap:release3}
+
+\section*{Introduction}
+
+Ce chapitre détaille la troisième et dernière release du projet. Elle couvre le workflow complet des réclamations avec classification automatique par intelligence artificielle, l'application Flutter mobile pour les agents d'intervention terrain, et le module de gestion des tâches de ménage de chambre (housekeeping). L'intelligence artificielle (classification par apprentissage automatique) est intégrée directement dans le Sprint 7, et non traitée comme une release séparée.
+
+
+% =============================================================
+%  SPRINT 7
+% =============================================================
+\section{Sprint 7 : Réclamations clients et classification IA}
+\label{sec:sprint7}
+
+\subsection{Objectif du sprint}
+
+Permettre au client d'envoyer une réclamation en texte libre dans sa langue, automatiquement traduite et classifiée dans la bonne catégorie par le service d'intelligence artificielle.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 7}
+\label{tab:backlog_sprint7}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-17 & En tant que client, je veux envoyer une réclamation en texte libre dans ma langue & Must \\
+\hline
+US-18 & En tant que système IA, je veux classifier la réclamation automatiquement & Must \\
+\hline
+US-19 & En tant que système IA, je veux fournir un pipeline combiné (détecter + traduire + classifier) & Must \\
+\hline
+US-20 & En tant que client, je veux suivre le statut de ma réclamation en temps réel & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Diagramme de séquence réclamation avec pipeline IA
+\figplaceholder{Diagramme de séquence — Réclamation avec pipeline IA (détection + traduction + classification)}
+
+% TODO: Diagramme d'activité workflow réclamation
+\figplaceholder{Diagramme d'activité — Workflow complet d'une réclamation}
+
+\subsection{Étude conceptuelle}
+
+\subsubsection{Modèle de données}
+
+Le modèle \texttt{Complaint} comprend les champs principaux : \texttt{originalMessage}, \texttt{detectedLanguage}, \texttt{normalizedMessageEn}, \texttt{staffMessage}, \texttt{category}, \texttt{status}, ainsi que les timestamps de suivi.
+
+Le workflow de statut suit le cycle : PENDING → ASSIGNED → IN\_PROGRESS → RESOLVED → CONFIRMED.
+
+\subsubsection{Pipeline IA combinée}
+
+La route \texttt{/analyze} du service IA exécute trois étapes en un seul appel :
+\begin{enumerate}
+  \item \textbf{Détection de langue} : bibliothèque \texttt{langdetect} ;
+  \item \textbf{Traduction} : modèle pré-entraîné NLLB-200-distilled-600M ;
+  \item \textbf{Classification} : modèle entraîné Logistic Regression + TF-IDF.
+\end{enumerate}
+
+\subsubsection{Classification par apprentissage automatique}
+
+Le classifieur a été entraîné sur un dataset hôtelier de $\sim$500 exemples répartis en 6 catégories : MAINTENANCE, HOUSEKEEPING, RECEPTION, RESTAURANT, COMPLAINT, OTHER.
+
+\textbf{Approche :} pipeline scikit-learn combinant des features TF-IDF word et char n-grams avec un classifieur Logistic Regression.
+
+\textbf{Évaluation :} 11 pipelines ont été testés. Le meilleur modèle retenu est \textbf{LR\_combined} :
+
+\begin{table}[H]
+\centering
+\caption{Métriques du modèle de classification LR\_combined}
+\label{tab:metriques_ml}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Métrique} & \textbf{Valeur} \\
+\hline
+Accuracy (jeu de test) & 0,8595 ($\sim$86\%) \\
+\hline
+F1 macro & 0,8605 \\
+\hline
+F1 weighted & 0,8604 \\
+\hline
+CV F1 macro (validation croisée 5-fold) & 0,7702 $\pm$ 0,0450 \\
+\hline
+\end{tabular}
+\end{table}
+
+% TODO: Insérer la matrice de confusion
+\figplaceholder{Matrice de confusion du modèle LR\_combined}
+
+\begin{quote}
+\textbf{Note de prudence :} La validation croisée présente un F1 macro moyen d'environ 77\%, ce qui montre que les résultats restent dépendants du jeu de données et doivent être interprétés avec prudence. Les limitations identifiées incluent : messages courts ou ambigus, confusion entre les catégories RECEPTION et RESTAURANT, et nécessité d'enrichir le dataset avec des données réelles de l'hôtel pour améliorer la généralisation du modèle.
+\end{quote}
+
+% TODO: Architecture IA/ML
+\figplaceholder{Architecture du service IA/ML (pipeline classification + traduction)}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran
+\figplaceholder{Capture d'écran — Page d'envoi de réclamation (PWA client)}
+\figplaceholder{Capture d'écran — Page de suivi des réclamations (PWA client)}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests de l'API réclamations (Jest/Supertest) ;
+  \item Tests du service IA : classification, traduction, pipeline combinée (pytest) ;
+  \item Vérification du workflow complet : envoi → IA → catégorisation → affichage.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+Le workflow de réclamation est fonctionnel de bout en bout. Le service IA classifie correctement les réclamations dans les catégories attendues avec une accuracy de $\sim$86\%.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 7.}
+
+
+% =============================================================
+%  SPRINT 8
+% =============================================================
+\section{Sprint 8 : Affectation des réclamations et application Flutter agents}
+\label{sec:sprint8}
+
+\subsection{Objectif du sprint}
+
+Permettre aux managers d'assigner les réclamations et aux employés d'exécuter les interventions via l'application Flutter mobile avec scan QR.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 8}
+\label{tab:backlog_sprint8}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-21 & En tant que responsable, je veux assigner les réclamations à un employé & Must \\
+\hline
+US-22 & En tant que responsable, je veux transférer une réclamation entre services & Should \\
+\hline
+US-23 & En tant que responsable, je veux créer des employés dans mon département & Must \\
+\hline
+US-24 & En tant qu'employé, je veux me connecter à l'app Flutter et voir mes tâches & Must \\
+\hline
+US-25 & En tant qu'employé, je veux scanner le QR pour démarrer/terminer l'intervention & Must \\
+\hline
+US-26 & En tant qu'employé, je veux rapporter le résultat et ajouter un commentaire & Must \\
+\hline
+US-27 & En tant que client, je veux confirmer la résolution ou rouvrir & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Diagramme de séquence intervention worker
+\figplaceholder{Diagramme de séquence — Intervention worker (assignation → scan entrée → scan sortie → résultat)}
+
+% TODO: Diagramme d'activité scan QR worker
+\figplaceholder{Diagramme d'activité — Scan QR worker (validation + traitement)}
+
+\subsection{Étude conceptuelle}
+
+\subsubsection{Dashboard manager}
+
+Le dashboard manager comprend :
+\begin{itemize}
+  \item Onglet \textbf{Réclamations} : liste filtrée par catégorie, assignation à un employé, transfert entre services, suivi du statut ;
+  \item Onglet \textbf{Employés} : création, liste avec statut en ligne (\texttt{lastSeenAt}), disponibilité.
+\end{itemize}
+
+\subsubsection{Application Flutter mobile}
+
+L'application Flutter est organisée en architecture feature-layered :
+\begin{itemize}
+  \item \textbf{Authentification} : login employé, stockage sécurisé du token JWT ;
+  \item \textbf{Liste des tâches} : réclamations assignées avec statut et détails ;
+  \item \textbf{Scanner QR} : scan entrée (\texttt{entryTime}) et scan sortie (\texttt{exitTime}) ;
+  \item \textbf{Résultat} : saisie FIXED/NOT\_FIXED avec commentaire.
+\end{itemize}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran
+\figplaceholder{Capture d'écran — Dashboard manager — Onglet réclamations}
+\figplaceholder{Capture d'écran — Dashboard manager — Onglet employés}
+\figplaceholder{Capture d'écran — App Flutter — Liste des tâches}
+\figplaceholder{Capture d'écran — App Flutter — Scanner QR entrée}
+\figplaceholder{Capture d'écran — App Flutter — Résultat intervention}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests de l'API assignation et scan QR (Jest/Supertest) ;
+  \item Tests manuels de l'app Flutter sur émulateur Android ;
+  \item Vérification du workflow complet : assignation → scan → résultat → confirmation client.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+Le dashboard manager et l'application Flutter sont fonctionnels. Le workflow complet d'intervention est opérationnel.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 8.}
+
+
+% =============================================================
+%  SPRINT 9
+% =============================================================
+\section{Sprint 9 : Tâches housekeeping et suivi gouvernante}
+\label{sec:sprint9}
+
+\subsection{Objectif du sprint}
+
+Mettre en place le workflow de ménage de chambre, séparé des réclamations, avec assignation par la gouvernante et exécution par l'employé via scan QR.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 9}
+\label{tab:backlog_sprint9}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-28 & En tant que gouvernante, je veux assigner une tâche de ménage & Must \\
+\hline
+US-29 & En tant que gouvernante, je veux suivre le statut et consulter l'historique & Must \\
+\hline
+US-30 & En tant qu'employé HK, je veux démarrer/terminer une tâche par scan QR & Must \\
+\hline
+US-31 & En tant qu'employé HK, je veux rapporter le résultat (DONE/NOT\_DONE) & Must \\
+\hline
+US-32 & En tant que système, je veux enregistrer un journal d'audit & Should \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Diagramme de séquence tâche housekeeping
+\figplaceholder{Diagramme de séquence — Tâche housekeeping (assignation → scan → résultat)}
+
+\subsection{Étude conceptuelle}
+
+Le modèle \texttt{HousekeepingTask} comprend : \texttt{roomId}, \texttt{assignedToId}, \texttt{assignedById}, \texttt{note}, \texttt{status}, \texttt{entryTime}, \texttt{exitTime}, \texttt{result} (DONE/NOT\_DONE), \texttt{workerComment}.
+
+\begin{itemize}
+  \item Résultat DONE → statut COMPLETED ;
+  \item Résultat NOT\_DONE → statut NEEDS\_REVIEW ;
+  \item Contrairement aux réclamations, les tâches de ménage ne requièrent pas de confirmation du client.
+\end{itemize}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran
+\figplaceholder{Capture d'écran — Dashboard gouvernante — Onglet Ménage}
+\figplaceholder{Capture d'écran — App Flutter — Tâche housekeeping}
+\figplaceholder{Capture d'écran — App Flutter — Scanner QR ménage}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests de l'API housekeeping (Jest/Supertest) ;
+  \item Tests manuels du workflow complet sur émulateur ;
+  \item Vérification du journal d'audit (AuditLog).
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+Le workflow housekeeping est pleinement fonctionnel : assignation, scan QR, résultat, suivi gouvernante. Le journal d'audit enregistre les actions critiques.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 9.}
+
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+La Release 3 a permis de compléter le système avec les fonctionnalités les plus avancées : réclamations avec classification IA automatique ($\sim$86\% d'accuracy), dashboard manager avec assignation et transfert, application Flutter mobile pour les interventions terrain avec scan QR, et workflow de ménage de chambre avec suivi gouvernante. L'ensemble du système est désormais fonctionnel de bout en bout. Le chapitre suivant présente le build, les tests et la validation technique.

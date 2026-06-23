@@ -1,0 +1,109 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as C
+actor "Réceptionniste" as R
+actor "Administrateur" as A
+actor "Resp. Maintenance" as MM
+actor "Gouvernante Générale" as HM
+actor "Employé" as E
+actor "Système IA\n(acteur technique\nsecondaire)" as IA <<secondary>>
+
+rectangle "Hotel Smart Concierge" {
+  ' Client
+  usecase "Scanner QR chambre" as UC1
+  usecase "Accéder espace chambre" as UC2
+  usecase "Check-in numérique" as UC3
+  usecase "Envoyer réclamation" as UC4
+  usecase "Suivre réclamation" as UC5
+  usecase "Confirmer résolution" as UC6
+  usecase "Consulter infos hôtel" as UC7
+  usecase "Convertir devises" as UC8
+  usecase "Messagerie réception" as UC9
+  usecase "Consulter événements" as UC10
+
+  ' Réceptionniste
+  usecase "Effectuer check-in" as UC11
+  usecase "Générer QR client" as UC12
+  usecase "Gérer réservations" as UC13
+  usecase "Répondre messages clients" as UC14
+
+  ' Admin
+  usecase "Gérer utilisateurs" as UC15
+  usecase "Gérer chambres" as UC16
+  usecase "Gérer événements" as UC17
+  usecase "Gérer infos hôtel" as UC18
+
+  ' Manager
+  usecase "Consulter réclamations" as UC19
+  usecase "Assigner tâche employé" as UC20
+  usecase "Transférer réclamation" as UC21
+  usecase "Créer employé" as UC22
+
+  ' Gouvernante
+  usecase "Assigner ménage chambre" as UC23
+  usecase "Consulter chambres occupées" as UC24
+
+  ' Employé
+  usecase "Consulter tâches assignées" as UC25
+  usecase "Scanner QR entrée" as UC26
+  usecase "Scanner QR sortie" as UC27
+  usecase "Rapporter résultat" as UC28
+
+  ' IA (technique)
+  usecase "Détecter langue" as UC29
+  usecase "Traduire message" as UC30
+  usecase "Classifier réclamation" as UC31
+}
+
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+C --> UC7
+C --> UC8
+C --> UC9
+C --> UC10
+
+R --> UC11
+R --> UC12
+R --> UC13
+R --> UC14
+
+A --> UC15
+A --> UC16
+A --> UC17
+A --> UC18
+
+MM --> UC19
+MM --> UC20
+MM --> UC21
+MM --> UC22
+
+HM --> UC19
+HM --> UC20
+HM --> UC21
+HM --> UC22
+HM --> UC23
+HM --> UC24
+
+E --> UC25
+E --> UC26
+E --> UC27
+E --> UC28
+
+UC4 ..> UC29 : <<include>>
+UC4 ..> UC30 : <<include>>
+UC4 ..> UC31 : <<include>>
+
+UC9 ..> UC29 : <<include>>
+UC9 ..> UC30 : <<include>>
+
+UC29 <-- IA
+UC30 <-- IA
+UC31 <-- IA
+
+@enduml

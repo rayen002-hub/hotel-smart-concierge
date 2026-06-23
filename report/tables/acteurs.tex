@@ -1,0 +1,33 @@
+% =============================================================
+%  Tableau des acteurs du système
+% =============================================================
+
+\begin{table}[H]
+\centering
+\caption{Acteurs du système Hotel Smart Concierge}
+\label{tab:acteurs}
+\small
+\begin{tabular}{|c|p{3cm}|p{3cm}|p{2cm}|p{4.5cm}|}
+\hline
+\textbf{\#} & \textbf{Acteur} & \textbf{Rôle technique} & \textbf{Interface} & \textbf{Description} \\
+\hline
+1 & Client (Guest) & Aucun compte — accès par QR token & PWA mobile & Invité ayant effectué son check-in. Accède aux services via QR code. \\
+\hline
+2 & Réceptionniste & \texttt{RECEPTIONIST} & Dashboard web & Gère l'accueil, le check-in, les réservations et les fiches voyageurs. \\
+\hline
+3 & Administrateur & \texttt{ADMIN} & Dashboard web & Accès complet : utilisateurs, chambres, événements, configuration. \\
+\hline
+4 & Resp. maintenance & \texttt{MAINTENANCE\_MANAGER} & Dashboard web & Supervise les réclamations MAINTENANCE. Assigne et transfère. \\
+\hline
+5 & Gouvernante & \texttt{HOUSEKEEPING\_MANAGER} & Dashboard web & Supervise les réclamations HOUSEKEEPING et les tâches de ménage. \\
+\hline
+6 & Employé maintenance & \texttt{EMPLOYEE} (MAINTENANCE) & App Flutter & Exécute les interventions par scan QR. Rapporte FIXED/NOT\_FIXED. \\
+\hline
+7 & Employé housekeeping & \texttt{EMPLOYEE} (HOUSEKEEPING) & App Flutter & Exécute les tâches ménage et interventions. Rapporte DONE/NOT\_DONE. \\
+\hline
+8 & Système IA\textsuperscript{*} & Service FastAPI & API interne & Acteur technique secondaire. Détecte la langue, traduit et classifie. \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent\textsuperscript{*} \textit{Le service IA est un acteur technique secondaire, appelé par le backend lors du traitement des messages et des réclamations. Il n'interagit pas directement avec les utilisateurs humains.}

@@ -1,0 +1,157 @@
+% =============================================================
+%  Chapitre 1 — Contexte général du projet
+% =============================================================
+
+\chapter{Contexte général du projet}
+\label{chap:contexte}
+
+\section*{Introduction}
+
+Ce chapitre présente le cadre général dans lequel s'inscrit notre projet de fin d'études. Nous commençons par la présentation de l'organisme d'accueil, puis nous définissons le projet et sa problématique. Nous effectuons ensuite une étude de l'existant avec une analyse comparative des solutions concurrentes, avant de présenter notre solution et la méthodologie de gestion de projet adoptée.
+
+% =============================================================
+\section{Présentation de l'organisme d'accueil}
+\label{sec:organisme}
+
+% TODO: Remplacer par les informations réelles de l'hôtel
+\todo{Insérer le logo de l'hôtel / entreprise d'accueil.}
+
+\todo{Présenter l'organisme d'accueil : nom, localisation, catégorie, capacité, historique, services proposés.}
+
+% TODO: Ajouter une photo ou le logo de l'hôtel
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=0.4\textwidth]{figures/images/logo_hotel.png}
+%   \caption{Logo de l'organisme d'accueil}
+%   \label{fig:logo_hotel}
+% \end{figure}
+
+% =============================================================
+\section{Contexte et définition du projet}
+\label{sec:definition_projet}
+
+Le projet \textbf{Hotel Smart Concierge} s'inscrit dans la dynamique de transformation numérique du secteur hôtelier. Il vise à concevoir et développer une plateforme intelligente de services numériques qui digitalise l'ensemble du parcours client, depuis le check-in jusqu'à la gestion des réclamations et le suivi des interventions terrain.
+
+Le projet couvre les axes fonctionnels suivants :
+\begin{itemize}
+  \item \textbf{Check-in numérique} avec génération de QR codes sécurisés pour l'accès aux services ;
+  \item \textbf{Espace client chambre} accessible via PWA installable sur smartphone ;
+  \item \textbf{Messagerie bilingue en temps réel} entre clients et réception avec traduction automatique ;
+  \item \textbf{Gestion des réclamations} avec classification automatique par intelligence artificielle ;
+  \item \textbf{Application mobile} pour les agents d'intervention terrain (maintenance et ménage) ;
+  \item \textbf{Gestion des tâches de ménage de chambre} (housekeeping) avec suivi par scan QR.
+\end{itemize}
+
+% =============================================================
+\section{Problématique}
+\label{sec:problematique}
+
+La gestion traditionnelle des services hôteliers présente plusieurs limitations :
+
+\begin{enumerate}
+  \item \textbf{Check-in manuel} : processus papier lent, source d'erreurs et d'attente pour les clients ;
+  \item \textbf{Barrière linguistique} : difficulté de communication avec les clients internationaux ;
+  \item \textbf{Gestion réactive des réclamations} : absence de classification automatique et de suivi structuré ;
+  \item \textbf{Coordination terrain inefficace} : absence d'outil mobile pour les équipes d'intervention ;
+  \item \textbf{Manque de traçabilité} : absence de suivi horodaté des interventions et des tâches de ménage.
+\end{enumerate}
+
+% TODO: Enrichir avec des observations spécifiques à l'hôtel d'accueil
+
+% =============================================================
+\section{Étude de l'existant}
+\label{sec:etude_existant}
+
+% TODO: Décrire les solutions existantes dans le secteur hôtelier
+% Exemples : Mews, Cloudbeds, Hotelogix, etc.
+
+\todo{Présenter 3 à 5 solutions existantes dans le domaine de la gestion hôtelière numérique.}
+
+\todo{Pour chaque solution : nom, description, fonctionnalités principales, points forts, points faibles.}
+
+% =============================================================
+\section{Étude comparative et critique}
+\label{sec:etude_comparative}
+
+% TODO: Créer un tableau comparatif des solutions existantes
+\todo{Insérer un tableau comparatif des solutions existantes vs notre solution.}
+
+% \begin{table}[H]
+%   \centering
+%   \caption{Tableau comparatif des solutions existantes}
+%   \label{tab:comparatif}
+%   \begin{tabular}{|l|c|c|c|c|c|}
+%     \hline
+%     \textbf{Critère} & \textbf{Solution A} & \textbf{Solution B} & \textbf{Solution C} & \textbf{Notre solution} \\
+%     \hline
+%     Check-in numérique & & & & \\
+%     \hline
+%     Classification IA & & & & \\
+%     \hline
+%     Traduction automatique & & & & \\
+%     \hline
+%     App mobile terrain & & & & \\
+%     \hline
+%     Installation serveur privé & & & & \\
+%     \hline
+%   \end{tabular}
+% \end{table}
+
+La critique de l'existant révèle que les solutions actuelles présentent principalement les lacunes suivantes :
+
+\begin{itemize}
+  \item Dépendance au cloud public sans possibilité d'installation sur serveur privé ;
+  \item Absence de classification automatique des réclamations par IA ;
+  \item Absence de traduction automatique intégrée pour la communication multilingue ;
+  \item Coûts d'abonnement élevés inadaptés aux établissements de taille moyenne.
+\end{itemize}
+
+% =============================================================
+\section{Solution proposée}
+\label{sec:solution_proposee}
+
+Notre solution, \textbf{Hotel Smart Concierge}, se distingue par :
+
+\begin{itemize}
+  \item Une \textbf{architecture modulaire SOA} composée de 4 modules indépendants ;
+  \item Un \textbf{service d'intelligence artificielle} intégrant la classification des réclamations (Logistic Regression + TF-IDF) et la traduction multilingue (NLLB-200) ;
+  \item Une \textbf{PWA installable} pour l'espace client chambre, accessible via QR code sécurisé ;
+  \item Une \textbf{application Flutter mobile} pour les agents de terrain avec scan QR ;
+  \item Une conception orientée \textbf{installation sur serveur privé} de l'hôtel, sans dépendance au cloud public.
+\end{itemize}
+
+% =============================================================
+\section{Méthodologie de gestion du projet}
+\label{sec:methodologie}
+
+\subsection{Choix de la méthodologie Scrum}
+
+Pour la gestion de ce projet, nous avons adopté la méthodologie agile \textbf{Scrum}. Ce choix se justifie par :
+
+\begin{itemize}
+  \item La nature itérative et incrémentale du développement ;
+  \item Le besoin de livraisons fréquentes et de feedback continu ;
+  \item La complexité fonctionnelle du projet nécessitant une approche progressive ;
+  \item La conformité avec les pratiques académiques de gestion de projet.
+\end{itemize}
+
+\subsection{Organisation en releases et sprints}
+
+Le projet a été organisé en \textbf{3 releases} et \textbf{9 sprints}, chaque sprint produisant un incrément fonctionnel potentiellement livrable :
+
+\begin{itemize}
+  \item \textbf{Release 1} — Socle système et gestion hôtelière (Sprints 1 à 3) ;
+  \item \textbf{Release 2} — Parcours client et services numériques (Sprints 4 à 6) ;
+  \item \textbf{Release 3} — Réclamations, interventions et intelligence intégrée (Sprints 7 à 9).
+\end{itemize}
+
+Les fonctionnalités d'intelligence artificielle (traduction et classification) ont été intégrées directement dans les sprints fonctionnels où elles sont utilisées, conformément au principe Scrum de livraison d'incréments complets et testés.
+
+% TODO: Ajouter un diagramme de Gantt
+\figplaceholder{Diagramme de Gantt — Planification des 3 releases et 9 sprints}
+% TODO: Créer et insérer le diagramme de Gantt réel
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+Dans ce chapitre, nous avons présenté l'organisme d'accueil, défini le contexte et la problématique du projet, effectué une étude de l'existant avec une analyse comparative, présenté notre solution Hotel Smart Concierge et justifié le choix de la méthodologie Scrum avec une planification en 3 releases et 9 sprints. Le chapitre suivant détaille l'analyse et la préparation du projet (Sprint 0).

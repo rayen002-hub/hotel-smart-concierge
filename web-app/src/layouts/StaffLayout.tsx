@@ -35,7 +35,7 @@ export const StaffLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <span className="text-xl">🏨</span>
             <div className="hidden sm:block">
-              <h1 className="text-sm font-bold leading-none">Smart Concierge</h1>
+              <h1 className="text-sm font-bold leading-none">LoomStay</h1>
               <p className="text-[10px] text-[hsl(var(--muted-foreground))] leading-tight mt-0.5">
                 {roleLabels[user?.role || ''] || 'Personnel'}
               </p>

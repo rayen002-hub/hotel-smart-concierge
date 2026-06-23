@@ -1,0 +1,120 @@
+% =============================================================
+%  Préambule — Hotel Smart Concierge — Rapport PFE
+% =============================================================
+
+\documentclass[a4paper,12pt,oneside]{report}
+
+% --- Encodage et langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% --- Géométrie ---
+\usepackage[
+  top=2.5cm,
+  bottom=2.5cm,
+  left=2.5cm,
+  right=2.5cm
+]{geometry}
+
+% --- Polices ---
+\usepackage{lmodern}
+
+% --- Images ---
+\usepackage{graphicx}
+\graphicspath{{figures/}{diagrams/images/}{figures/screenshots/}}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Tableaux ---
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+
+% --- Couleurs ---
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{linkblue}{HTML}{1a5276}
+\definecolor{codegreen}{HTML}{28a745}
+\definecolor{codegray}{HTML}{6c757d}
+\definecolor{codeblue}{HTML}{007bff}
+\definecolor{codebg}{HTML}{f8f9fa}
+
+% --- Listings (code source) ---
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegray}\itshape,
+  stringstyle=\color{codegreen},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codegray!30},
+  tabsize=2,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  captionpos=b
+}
+
+% --- Acronymes ---
+\usepackage[printonlyused]{acronym}
+
+% --- Hyperliens ---
+\usepackage[
+  colorlinks=true,
+  linkcolor=linkblue,
+  citecolor=linkblue,
+  urlcolor=linkblue,
+  bookmarks=true,
+  pdfauthor={TODO: Votre nom},
+  pdftitle={Hotel Smart Concierge — Rapport PFE},
+  pdfsubject={Projet de Fin d'Études}
+]{hyperref}
+
+% --- Bibliographie ---
+\usepackage[
+  backend=biber,
+  style=ieee,
+  sorting=nyt
+]{biblatex}
+\addbibresource{bibliography/references.bib}
+
+% --- En-têtes et pieds de page ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Espacement ---
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Légendes ---
+\usepackage{caption}
+\captionsetup{
+  font=small,
+  labelfont=bf,
+  justification=centering
+}
+
+% --- Divers ---
+\usepackage{enumitem}
+\usepackage{pdfpages}
+\usepackage{appendix}
+
+% --- Commandes personnalisées ---
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\figplaceholder}[1]{%
+  \begin{center}
+    \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textcolor{codegray}{\textit{#1}}\vspace{2cm}}}
+  \end{center}
+}
+
+% --- Profondeur de la table des matières ---
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}

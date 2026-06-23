@@ -1,0 +1,33 @@
+% =============================================================
+%  Sprints par release
+% =============================================================
+
+\begin{longtable}{|c|c|p{5.5cm}|p{6cm}|}
+\caption{Sprints par release} \label{tab:sprints} \\
+\hline
+\textbf{Rel.} & \textbf{Sprint} & \textbf{Titre} & \textbf{Livrables} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Rel.} & \textbf{Sprint} & \textbf{Titre} & \textbf{Livrables} \\
+\hline
+\endhead
+\multirow{3}{*}{R1} & S1 & Authentification, rôles et sécurité & API auth JWT, RBAC, login web, middlewares sécurité \\
+\cline{2-4}
+ & S2 & Gestion des chambres, réservations et QR codes & API rooms/reservations, QR codes sécurisés, dashboards \\
+\cline{2-4}
+ & S3 & Check-in numérique et fiches voyageurs & Check-in complet, GuestForm, QR client \\
+\hline
+\multirow{3}{*}{R2} & S4 & Espace client PWA et accès chambre & PWA installable, token gate, page d'accueil chambre \\
+\cline{2-4}
+ & S5 & Services hôteliers, événements et devise & Infos hôtel, événements, convertisseur devises \\
+\cline{2-4}
+ & S6 & Messagerie client-réception et traduction IA & Messagerie bilingue temps réel, traduction NLLB \\
+\hline
+\multirow{3}{*}{R3} & S7 & Réclamations clients et classification IA & Réclamations, pipeline IA, classification ML \\
+\cline{2-4}
+ & S8 & Affectation et application Flutter agents & Dashboard manager, app Flutter, scan QR, interventions \\
+\cline{2-4}
+ & S9 & Tâches housekeeping et suivi gouvernante & Workflow ménage, onglet gouvernante, audit \\
+\hline
+\end{longtable}

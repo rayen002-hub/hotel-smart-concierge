@@ -1,0 +1,43 @@
+% =============================================================
+%  Tableau des besoins non fonctionnels
+% =============================================================
+
+\begin{longtable}{|c|p{3cm}|p{10cm}|}
+\caption{Besoins non fonctionnels du système} \label{tab:bnf} \\
+\hline
+\textbf{\#} & \textbf{Catégorie} & \textbf{Description} \\
+\hline
+\endfirsthead
+\hline
+\textbf{\#} & \textbf{Catégorie} & \textbf{Description} \\
+\hline
+\endhead
+BNF-01 & Sécurité & Authentification JWT, tokens signés QR, hachage bcrypt, RBAC \\
+\hline
+BNF-02 & Confidentialité & Chiffrement des données sensibles (passeport), variables d'environnement pour les secrets \\
+\hline
+BNF-03 & Disponibilité & Architecture découplée, redémarrage indépendant des modules, health check endpoints \\
+\hline
+BNF-04 & Performance & Lazy loading NLLB, cache de traduction, pagination, express-rate-limit \\
+\hline
+BNF-05 & Traçabilité & Journaux d'audit (AuditLog), horodatage des interventions, historique des messages \\
+\hline
+BNF-06 & Maintenabilité & Architecture en couches, ORM Prisma, code TypeScript typé \\
+\hline
+BNF-07 & Ergonomie & PWA responsive pour l'espace client chambre, dark mode Flutter, dashboards modernes \\
+\hline
+BNF-08 & Compatibilité mobile & PWA installable (espace client chambre uniquement), app Flutter native Android \\
+\hline
+BNF-09 & Temps réel & Socket.IO pour notifications (réclamations, statuts, messages) \\
+\hline
+BNF-10 & Installation privée & Architecture conçue pour serveur physique privé (Node.js + PostgreSQL + Python) \\
+\hline
+BNF-11 & Sauvegarde & PostgreSQL sauvegardable par pg\_dump, stockage d'images local ou externe \\
+\hline
+BNF-12 & Évolutivité & Architecture modulaire SOA, API REST standardisée, service IA indépendant \\
+\hline
+BNF-13 & Validation & Validation côté serveur (express-validator), protection injections (Prisma ORM) \\
+\hline
+BNF-14 & Internationalisation & Support multilingue automatique via NLLB-200, messagerie bilingue \\
+\hline
+\end{longtable}

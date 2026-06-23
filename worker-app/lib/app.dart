@@ -8,7 +8,7 @@ class WorkerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Luxe Concierge Worker',
+      title: 'LoomStay Worker',
       debugShowCheckedModeBanner: false,
       routerConfig: AppRouter.router,
       themeMode: ThemeMode.dark, // Defaulting to dark mode for premium look

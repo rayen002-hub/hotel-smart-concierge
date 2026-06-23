@@ -1,0 +1,223 @@
+% =============================================================
+%  Chapitre 3 — Release 1 : Socle système et gestion hôtelière
+% =============================================================
+
+\chapter{Release 1 : Socle système et gestion hôtelière}
+\label{chap:release1}
+
+\section*{Introduction}
+
+Ce chapitre détaille la première release du projet, consacrée à la mise en place des fondations techniques et fonctionnelles du système. Cette release comprend trois sprints : l'authentification et la sécurité, la gestion des chambres et réservations avec les QR codes, et le check-in numérique avec les fiches voyageurs.
+
+% =============================================================
+%  SPRINT 1
+% =============================================================
+\section{Sprint 1 : Authentification, rôles et sécurité}
+\label{sec:sprint1}
+
+\subsection{Objectif du sprint}
+
+Mettre en place le système d'authentification JWT et le contrôle d'accès basé sur les rôles (RBAC), constituant le socle sécuritaire de l'ensemble de la plateforme.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 1}
+\label{tab:backlog_sprint1}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-01 & En tant qu'utilisateur du personnel, je veux me connecter avec email/mot de passe pour accéder à mon espace & Must \\
+\hline
+US-02 & En tant qu'administrateur, je veux gérer les utilisateurs pour administrer le personnel & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Insérer le diagramme de classes User/EmployeeProfile
+\figplaceholder{Diagramme de classes — User, EmployeeProfile, enums UserRole, Department}
+
+% TODO: Insérer le diagramme de séquence login
+\figplaceholder{Diagramme de séquence — Flux d'authentification JWT}
+
+\subsection{Étude conceptuelle}
+
+Le système d'authentification repose sur :
+\begin{itemize}
+  \item \textbf{JWT (JSON Web Token)} pour la gestion des sessions sans état ;
+  \item \textbf{bcrypt} pour le hachage sécurisé des mots de passe ;
+  \item \textbf{RBAC} avec 5 rôles : ADMIN, RECEPTIONIST, MAINTENANCE\_MANAGER, HOUSEKEEPING\_MANAGER, EMPLOYEE ;
+  \item \textbf{Middlewares de sécurité} : Helmet (headers HTTP), express-rate-limit, CORS.
+\end{itemize}
+
+\subsection{Réalisation}
+
+% TODO: Ajouter des captures d'écran de la page de login
+\figplaceholder{Capture d'écran — Page de connexion}
+
+% TODO: Ajouter des captures d'écran du dashboard admin (gestion utilisateurs)
+\figplaceholder{Capture d'écran — Dashboard admin — Gestion des utilisateurs}
+
+% TODO: Ajouter des extraits de code pertinents si nécessaire
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests unitaires du service d'authentification (Jest) ;
+  \item Tests d'intégration de l'API auth (Supertest) ;
+  \item Vérification manuelle du login et de la redirection par rôle.
+\end{itemize}
+
+% TODO: Ajouter les résultats des tests
+
+\subsection{Revue du sprint}
+
+L'objectif du sprint a été atteint : le système d'authentification JWT est opérationnel avec les 5 rôles configurés, le login web fonctionne avec redirection par rôle, et les middlewares de sécurité sont en place.
+
+\subsection{Rétrospective}
+
+% TODO: Personnaliser la rétrospective
+\todo{Compléter la rétrospective du Sprint 1 : ce qui a bien fonctionné, les difficultés rencontrées, les améliorations identifiées.}
+
+
+% =============================================================
+%  SPRINT 2
+% =============================================================
+\section{Sprint 2 : Gestion des chambres, réservations et QR codes}
+\label{sec:sprint2}
+
+\subsection{Objectif du sprint}
+
+Implémenter la gestion des chambres et des réservations, ainsi que la génération des QR codes sécurisés (client et worker).
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 2}
+\label{tab:backlog_sprint2}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-03 & En tant qu'administrateur, je veux gérer les chambres de l'hôtel & Must \\
+\hline
+US-04 & En tant que réceptionniste, je veux gérer les réservations & Must \\
+\hline
+US-05 & En tant que système, je veux générer des QR codes sécurisés & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Insérer le diagramme de classes Room, Reservation
+\figplaceholder{Diagramme de classes — Room, Reservation, enums RoomStatus, ReservationStatus}
+
+\subsection{Étude conceptuelle}
+
+\begin{itemize}
+  \item \textbf{QR code client} : token JWT signé contenant \texttt{reservationId}, \texttt{roomId}, dates de validité ;
+  \item \textbf{QR code worker} : token signé pour le scan d'entrée/sortie des employés, avec versionnement (\texttt{workerQrVersion}).
+\end{itemize}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran
+\figplaceholder{Capture d'écran — Dashboard admin — Gestion des chambres}
+\figplaceholder{Capture d'écran — Dashboard réception — Liste des réservations}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests des routes API chambres et réservations ;
+  \item Vérification de la génération et de la validation des QR codes.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+L'API de gestion des chambres et réservations est opérationnelle, les QR codes sécurisés sont générés correctement.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 2.}
+
+
+% =============================================================
+%  SPRINT 3
+% =============================================================
+\section{Sprint 3 : Check-in numérique et fiches voyageurs}
+\label{sec:sprint3}
+
+\subsection{Objectif du sprint}
+
+Permettre le check-in numérique complet avec vérification du numéro de réservation, saisie des fiches voyageurs multiples (adultes et enfants) et génération du QR client.
+
+\subsection{Backlog du sprint}
+
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 3}
+\label{tab:backlog_sprint3}
+\begin{tabular}{|c|p{10cm}|c|}
+\hline
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+US-06 & En tant que réceptionniste, je veux effectuer le check-in numérique et remettre un QR code au client & Must \\
+\hline
+US-07 & En tant que réceptionniste, je veux gérer les fiches voyageurs pour la conformité légale & Must \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Analyse}
+
+% TODO: Insérer le diagramme de séquence check-in
+\figplaceholder{Diagramme de séquence — Check-in numérique (réceptionniste → système → QR)}
+
+% TODO: Insérer le diagramme de classes GuestForm
+\figplaceholder{Diagramme de classes — GuestForm}
+
+\subsection{Étude conceptuelle}
+
+Le workflow de check-in comprend :
+\begin{enumerate}
+  \item Vérification du numéro de réservation ;
+  \item Passage de la réservation en statut \texttt{CHECKED\_IN} ;
+  \item Saisie des fiches voyageurs multiples (adultes + enfants) ;
+  \item Suivi de la complétion (\texttt{checkinCompletionStatus} : NOT\_STARTED, PARTIAL, COMPLETED) ;
+  \item Génération du QR code sécurisé pour le client ;
+  \item Le client peut également compléter ses formulaires voyageurs depuis son téléphone.
+\end{enumerate}
+
+\subsection{Réalisation}
+
+% TODO: Captures d'écran du workflow check-in
+\figplaceholder{Capture d'écran — Réception — Workflow check-in}
+\figplaceholder{Capture d'écran — QR code généré pour le client}
+\figplaceholder{Capture d'écran — Check-in numérique côté client (mobile)}
+
+\subsection{Tests et validation du sprint}
+
+\begin{itemize}
+  \item Tests d'intégration du service check-in (Jest/Supertest) ;
+  \item Vérification du workflow complet : réservation → check-in → QR → accès.
+\end{itemize}
+
+\subsection{Revue du sprint}
+
+Le check-in numérique est pleinement fonctionnel. Le QR code est généré et validé correctement. Les fiches voyageurs sont enregistrées avec le suivi de complétion.
+
+\subsection{Rétrospective}
+
+\todo{Compléter la rétrospective du Sprint 3.}
+
+
+% =============================================================
+\section*{Résumé du chapitre}
+
+La Release 1 a permis de mettre en place le socle technique du système : authentification JWT avec RBAC, gestion des chambres et réservations, génération de QR codes sécurisés, et check-in numérique avec fiches voyageurs. L'ensemble constitue la base fonctionnelle sur laquelle les releases suivantes s'appuient. Le chapitre suivant présente la Release 2 consacrée au parcours client et aux services numériques.

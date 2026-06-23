@@ -1,0 +1,25 @@
+% =============================================================
+%  Planification des releases
+% =============================================================
+
+\begin{table}[H]
+\centering
+\caption{Planification des releases}
+\label{tab:releases}
+\small
+\begin{tabular}{|c|p{3.5cm}|p{4.5cm}|c|p{4cm}|}
+\hline
+\textbf{Rel.} & \textbf{Titre} & \textbf{Objectif} & \textbf{Sprints} & \textbf{Livrables principaux} \\
+\hline
+R1 & Socle système et gestion hôtelière & Auth, sécurité, chambres, réservations, check-in QR & S1--S3 & Backend API, schéma DB, dashboards admin et réception, QR codes \\
+\hline
+R2 & Parcours client et services numériques & Espace chambre PWA, services hôteliers, messagerie bilingue + traduction IA & S4--S6 & Espace chambre PWA, services client, messagerie NLLB \\
+\hline
+R3 & Réclamations, interventions et intelligence intégrée & Réclamations + classification IA, Flutter worker, housekeeping & S7--S9 & Classification IA, dashboard manager, app Flutter, workflow housekeeping \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{quote}
+\textit{Build, tests et validation} ne constituent pas une release séparée. Ils sont traités comme des activités continues (Definition of Done) et détaillés dans un chapitre technique séparé.
+\end{quote}

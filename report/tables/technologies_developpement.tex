@@ -1,0 +1,167 @@
+% =============================================================
+%  Technologies de développement
+% =============================================================
+
+% --- Frontend Web ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Frontend Web (web-app)}
+\label{tab:tech_frontend}
+\begin{tabular}{|l|c|p{7cm}|}
+\hline
+\textbf{Technologie} & \textbf{Version} & \textbf{Rôle} \\
+\hline
+React.js & 18.3 & Framework UI \\
+\hline
+TypeScript & $\sim$5.6 & Langage typé \\
+\hline
+Vite & 5.4 & Bundler et serveur de développement \\
+\hline
+React Router DOM & 7.15 & Routage SPA \\
+\hline
+Tailwind CSS & 4.3 & Framework CSS utilitaire \\
+\hline
+Axios & 1.16 & Client HTTP \\
+\hline
+Socket.IO Client & 4.8 & Communication temps réel \\
+\hline
+QRCode.react & 4.2 & Génération de QR codes \\
+\hline
+vite-plugin-pwa & 1.3 & PWA installable (espace client chambre uniquement) \\
+\hline
+\end{tabular}
+\end{table}
+
+% --- Backend ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Backend (API principale)}
+\label{tab:tech_backend}
+\begin{tabular}{|l|c|p{7cm}|}
+\hline
+\textbf{Technologie} & \textbf{Version} & \textbf{Rôle} \\
+\hline
+Node.js & — & Runtime JavaScript \\
+\hline
+Express.js & 5.2 & Framework web API REST \\
+\hline
+TypeScript & 6.0 & Langage typé \\
+\hline
+Prisma ORM & 5.22 & ORM pour PostgreSQL \\
+\hline
+JSON Web Token & 9.0 & Authentification JWT \\
+\hline
+bcrypt & 6.0 & Hachage des mots de passe \\
+\hline
+Socket.IO & 4.8 & WebSocket temps réel \\
+\hline
+Helmet & 8.1 & Sécurité HTTP headers \\
+\hline
+express-rate-limit & 8.5 & Limitation de débit \\
+\hline
+express-validator & 7.3 & Validation des entrées \\
+\hline
+Multer & 2.2 & Upload de fichiers \\
+\hline
+Axios & 1.16 & Appels HTTP vers le service IA \\
+\hline
+\end{tabular}
+\end{table}
+
+% --- Base de données ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Base de données}
+\label{tab:tech_db}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Technologie} & \textbf{Rôle} \\
+\hline
+PostgreSQL & SGBD relationnel principal \\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent\textit{Note : Supabase a été utilisé comme environnement temporaire de démonstration pour l'hébergement PostgreSQL et le stockage des images. Dans le déploiement cible réel, la base de données et le stockage sont installés sur le serveur privé de l'hôtel.}
+
+% --- Service IA ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Service IA (ai-service)}
+\label{tab:tech_ia}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Technologie} & \textbf{Rôle} \\
+\hline
+Python & Langage \\
+\hline
+FastAPI & Framework API REST \\
+\hline
+Uvicorn & Serveur ASGI \\
+\hline
+scikit-learn & Entraînement ML (Logistic Regression, TF-IDF) \\
+\hline
+joblib & Sérialisation du modèle entraîné \\
+\hline
+langdetect & Détection automatique de la langue \\
+\hline
+Transformers (Hugging Face) & Chargement du modèle pré-entraîné NLLB-200 \\
+\hline
+PyTorch & Backend deep learning pour NLLB \\
+\hline
+SentencePiece & Tokenizer pour NLLB \\
+\hline
+pandas & Manipulation du dataset \\
+\hline
+matplotlib & Visualisation des résultats \\
+\hline
+\end{tabular}
+\end{table}
+
+% --- Flutter ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Application Flutter mobile (worker-app)}
+\label{tab:tech_flutter}
+\begin{tabular}{|l|c|p{7cm}|}
+\hline
+\textbf{Technologie} & \textbf{Version} & \textbf{Rôle} \\
+\hline
+Flutter & SDK \^{}3.11 & Framework mobile cross-platform \\
+\hline
+Dart & \^{}3.11 & Langage \\
+\hline
+Dio & 5.4 & Client HTTP \\
+\hline
+Go Router & 14.0 & Navigation déclarative \\
+\hline
+Flutter Secure Storage & 9.0 & Stockage sécurisé du token JWT \\
+\hline
+Mobile Scanner & 5.0 & Scan QR code caméra \\
+\hline
+intl & 0.19 & Internationalisation et formatage dates \\
+\hline
+\end{tabular}
+\end{table}
+
+% --- Tests ---
+\begin{table}[H]
+\centering
+\caption{Technologies — Tests}
+\label{tab:tech_tests}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Technologie} & \textbf{Rôle} \\
+\hline
+Jest & Tests unitaires/intégration backend \\
+\hline
+ts-jest & Support TypeScript pour Jest \\
+\hline
+Supertest & Tests HTTP API \\
+\hline
+pytest & Tests du service IA \\
+\hline
+sacrebleu & Évaluation de la qualité de traduction (BLEU score) \\
+\hline
+\end{tabular}
+\end{table}

@@ -67,7 +67,7 @@ export const LoginPage: React.FC = () => {
             🏨
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Smart Concierge</h1>
+            <h1 className="text-2xl font-bold tracking-tight">LoomStay</h1>
             <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
               Espace personnel — Connectez-vous pour continuer
             </p>
@@ -177,7 +177,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Footer */}
         <p className="text-center text-[10px] text-[hsl(var(--muted-foreground))]">
-          © {new Date().getFullYear()} Hotel Smart Concierge
+          © {new Date().getFullYear()} LoomStay
         </p>
       </div>
     </div>

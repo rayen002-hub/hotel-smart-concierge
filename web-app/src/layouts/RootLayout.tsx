@@ -7,7 +7,7 @@ export const RootLayout: React.FC = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-xl tracking-tight text-primary">Smart Concierge</span>
+            <span className="font-bold text-xl tracking-tight text-primary">LoomStay</span>
           </div>
           <nav className="flex items-center gap-4 text-sm font-medium">
             <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
@@ -24,7 +24,7 @@ export const RootLayout: React.FC = () => {
       <footer className="border-t py-6 md:py-0">
         <div className="container flex flex-col items-center justify-center gap-4 md:h-16 md:flex-row">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} Hotel Smart Concierge. All rights reserved.
+            &copy; {new Date().getFullYear()} LoomStay. All rights reserved.
           </p>
         </div>
       </footer>
