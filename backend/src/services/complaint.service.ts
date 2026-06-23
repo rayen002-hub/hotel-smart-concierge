@@ -247,6 +247,28 @@ export class ComplaintService {
   }
 
   /**
+   * Résoudre un ID de réclamation ou un code court (les 8 premiers caractères) en UUID complet.
+   */
+  async resolveId(idOrShortCode: string): Promise<string> {
+    const trimmed = idOrShortCode.trim();
+    if (trimmed.length === 36) {
+      return trimmed;
+    }
+
+    try {
+      const matches = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Complaint" WHERE CAST(id AS TEXT) ILIKE ${trimmed.toLowerCase() + "%"} LIMIT 1
+      `;
+      if (matches && matches.length > 0) {
+        return matches[0].id;
+      }
+    } catch (e) {
+      // Si la requête brute échoue (ex: table non existante ou format inattendu), on retourne la valeur d'origine
+    }
+    return trimmed;
+  }
+
+  /**
    * Recuperer une reclamation par ID (vue staff).
    */
   async getById(complaintId: string) {

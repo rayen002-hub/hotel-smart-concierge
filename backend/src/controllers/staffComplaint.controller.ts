@@ -68,7 +68,8 @@ export const getStaffComplaint = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const complaint = await complaintService.getById(req.params.id as string);
+    const resolvedId = await complaintService.resolveId(req.params.id as string);
+    const complaint = await complaintService.getById(resolvedId);
 
     // Verifier que le role a acces a cette categorie
     const userRole = req.userRole as UserRole;
@@ -104,30 +105,37 @@ export const updateStaffComplaintCategory = async (
   try {
     const newCategory = req.body.category as ComplaintCategory;
     const userRole = req.userRole as UserRole;
+    const inputId = req.params.id as string;
 
-    // Verifier les permissions de correction
-    if (
-      userRole === UserRole.MAINTENANCE_MANAGER &&
-      newCategory !== ComplaintCategory.MAINTENANCE
-    ) {
-      throw new AppError(
-        "En tant que responsable maintenance, vous ne pouvez corriger que vers MAINTENANCE.",
-        403
-      );
-    }
+    // Résoudre le code court ou l'UUID complet
+    const resolvedId = await complaintService.resolveId(inputId);
 
+    // Récupérer la réclamation pour vérifier sa catégorie actuelle
+    const complaint = await complaintService.getById(resolvedId);
+
+    // Verifier les permissions de correction / transfert
     if (
-      userRole === UserRole.HOUSEKEEPING_MANAGER &&
-      newCategory !== ComplaintCategory.HOUSEKEEPING
+      userRole === UserRole.MAINTENANCE_MANAGER ||
+      userRole === UserRole.HOUSEKEEPING_MANAGER
     ) {
-      throw new AppError(
-        "En tant que responsable housekeeping, vous ne pouvez corriger que vers HOUSEKEEPING.",
-        403
-      );
+      const isCurrentCategoryAllowed =
+        complaint.category === ComplaintCategory.MAINTENANCE ||
+        complaint.category === ComplaintCategory.HOUSEKEEPING;
+
+      const isNewCategoryAllowed =
+        newCategory === ComplaintCategory.MAINTENANCE ||
+        newCategory === ComplaintCategory.HOUSEKEEPING;
+
+      if (!isCurrentCategoryAllowed || !isNewCategoryAllowed) {
+        throw new AppError(
+          "Le transfert de réclamation pour votre rôle est restreint uniquement entre Maintenance et Housekeeping.",
+          403
+        );
+      }
     }
 
     const updated = await complaintService.updateCategory(
-      req.params.id as string,
+      resolvedId,
       newCategory,
       req.userId as string
     );
