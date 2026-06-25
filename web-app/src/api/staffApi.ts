@@ -82,6 +82,11 @@ export async function generateClientRoomLink(reservationId: string) {
   return data;
 }
 
+export async function getGuestForms(reservationId: string) {
+  const { data } = await staffClient.get(`/reservations/${reservationId}/guest-forms`);
+  return data;
+}
+
 // ─── Complaints (staff view) ─────────────────────────────────────────
 
 export interface ComplaintFilters {

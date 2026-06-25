@@ -5,6 +5,7 @@ import {
   createReservation,
   updateReservation,
   deleteReservation,
+  getReservationGuestForms,
 } from "../controllers/reservation.controller";
 import { generateClientRoomLink } from "../controllers/qr.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -119,6 +120,13 @@ router.patch(
  * DELETE /api/reservations/:id
  */
 router.delete("/:id", deleteReservation);
+
+/**
+ * GET /api/reservations/:id/guest-forms
+ * Recuperer les fiches voyageurs soumises d'une reservation (pour la reception).
+ * Le numero de passeport est dechiffre et renvoye masque partiellement.
+ */
+router.get("/:id/guest-forms", getReservationGuestForms);
 
 /**
  * POST /api/reservations/:id/client-room-link

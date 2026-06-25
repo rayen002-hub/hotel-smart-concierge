@@ -14,6 +14,7 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  getGuestForms,
 } from '../../api/staffApi';
 import type { ApiError } from '../../api/apiClient';
 import { connectStaffSocket, disconnectSocket, getSocket } from '../../api/socketClient';
@@ -68,6 +69,40 @@ interface Complaint {
   room?: { id: string; roomNumber: string } | null;
   reservation?: { id: string; reservationNumber: string; guestFirstName: string; guestLastName: string } | null;
   assignedTo?: { id: string; name: string } | null;
+}
+
+interface GuestFormEntry {
+  id: string;
+  travelerIndex: number;
+  travelerType: 'ADULT' | 'CHILD';
+  isCompleted: boolean;
+  fullName: string;
+  nationality: string;
+  passportMasked: string | null;
+  phone: string | null;
+  address: string | null;
+  submittedAt: string;
+}
+
+interface GuestFormsDetail {
+  reservation: {
+    id: string;
+    reservationNumber: string;
+    guestFirstName: string;
+    guestLastName: string;
+    guestEmail: string | null;
+    guestPhone: string | null;
+    nationality: string | null;
+    checkInDate: string;
+    checkOutDate: string;
+    status: string;
+    adultsCount: number;
+    childrenCount: number;
+    totalGuests: number;
+    checkinCompletionStatus: string;
+    room: { id: string; roomNumber: string; type: string } | null;
+  };
+  guestForms: GuestFormEntry[];
 }
 
 // ─── Tabs ────────────────────────────────────────────────────────────
@@ -163,6 +198,15 @@ export const ReceptionDashboard: React.FC = () => {
   const [eventImage, setEventImage] = useState<File | null>(null);
   const [eventSaving, setEventSaving] = useState(false);
 
+  // Fiches voyageurs — search / filter / modal
+  const [ficheSearch, setFicheSearch] = useState('');
+  const [ficheRoomFilter, setFicheRoomFilter] = useState('');
+  const [ficheStatusFilter, setFicheStatusFilter] = useState('');
+  const [ficheDetail, setFicheDetail] = useState<GuestFormsDetail | null>(null);
+  const [ficheDetailLoading, setFicheDetailLoading] = useState(false);
+  const [ficheDetailError, setFicheDetailError] = useState('');
+  const [ficheRefreshing, setFicheRefreshing] = useState(false);
+
   // ── Data fetching ──────────────────────────────────────────────────
 
   const fetchData = useCallback(async (tab: Tab) => {
@@ -206,6 +250,37 @@ export const ReceptionDashboard: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  // Refresh only fiches section without full reload
+  const handleFicheRefresh = async () => {
+    setFicheRefreshing(true);
+    setError('');
+    try {
+      const res = await listReservations();
+      setReservations(res.data || []);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr.error || 'Erreur lors du rafraîchissement.');
+    } finally {
+      setFicheRefreshing(false);
+    }
+  };
+
+  // Open fiche detail modal
+  const handleOpenFicheDetail = async (reservationId: string) => {
+    setFicheDetail(null);
+    setFicheDetailError('');
+    setFicheDetailLoading(true);
+    try {
+      const res = await getGuestForms(reservationId);
+      setFicheDetail(res.data);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setFicheDetailError(apiErr.error || 'Impossible de charger les fiches.');
+    } finally {
+      setFicheDetailLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Sync local tab when sidebar changes URL param
@@ -431,65 +506,339 @@ export const ReceptionDashboard: React.FC = () => {
 
   const renderFiches = () => {
     if (loading) return <LoadingSpinner message="Chargement des fiches voyageurs..." />;
-    const withGuests = reservations.filter((r) => r.status === 'CHECKED_IN' || r.status === 'CHECKED_OUT' || r.status === 'PENDING');
-    if (withGuests.length === 0) {
-      return (
-        <EmptyState
-          message="Aucune fiche voyageur"
-          icon="🛂"
-          description="Aucune réservation disponible."
-        />
-      );
-    }
+
+    // All reservations regardless of status (filter below)
+    const allRes = reservations;
+
+    // --- Search & filter ---
+    const filtered = allRes.filter((r) => {
+      const fullName = `${r.guestFirstName} ${r.guestLastName}`.toLowerCase();
+      const resNum = r.reservationNumber.toLowerCase();
+      const q = ficheSearch.toLowerCase().trim();
+
+      const matchSearch = !q || fullName.includes(q) || resNum.includes(q);
+      const matchRoom = !ficheRoomFilter || (r.room?.roomNumber || '') === ficheRoomFilter;
+      const matchStatus = !ficheStatusFilter || r.checkinCompletionStatus === ficheStatusFilter;
+      return matchSearch && matchRoom && matchStatus;
+    });
+
+    // Unique room numbers for filter dropdown
+    const roomNumbers = Array.from(
+      new Set(reservations.map((r) => r.room?.roomNumber).filter(Boolean) as string[])
+    ).sort();
+
+    const completionStatusLabel = (s?: string) => {
+      if (s === 'COMPLETED') return { label: 'Complète', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', icon: '✅' };
+      if (s === 'PARTIAL')   return { label: 'Partielle', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', icon: '🟡' };
+      return { label: 'Non commencée', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: '⬜' };
+    };
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {withGuests.map((r) => {
-          const total = r.totalGuests ?? 1;
-          const filled = r._count?.guestForms ?? 0;
-          const cStatus = r.checkinCompletionStatus ?? 'NOT_STARTED';
-          return (
-          <div key={r.id} className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between border-b border-[hsl(var(--border))] pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-[hsl(var(--foreground))]">{r.guestFirstName} {r.guestLastName}</h3>
-                <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">{r.reservationNumber} · Chambre {r.room?.roomNumber || '—'}</p>
+      <div className="space-y-4">
+        {/* ── Toolbar ───────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] text-xs select-none">🔍</span>
+            <input
+              type="text"
+              value={ficheSearch}
+              onChange={(e) => setFicheSearch(e.target.value)}
+              placeholder="Rechercher par nom ou N° réservation..."
+              className="w-full h-9 pl-8 pr-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+            />
+          </div>
+
+          {/* Room filter */}
+          <select
+            value={ficheRoomFilter}
+            onChange={(e) => setFicheRoomFilter(e.target.value)}
+            className="h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+          >
+            <option value="">Toutes les chambres</option>
+            {roomNumbers.map((rn) => (
+              <option key={rn} value={rn}>Ch. {rn}</option>
+            ))}
+          </select>
+
+          {/* Status filter */}
+          <select
+            value={ficheStatusFilter}
+            onChange={(e) => setFicheStatusFilter(e.target.value)}
+            className="h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+          >
+            <option value="">Tous les statuts</option>
+            <option value="COMPLETED">Complète</option>
+            <option value="PARTIAL">Partielle</option>
+            <option value="NOT_STARTED">Non commencée</option>
+          </select>
+
+          {/* Refresh */}
+          <button
+            onClick={handleFicheRefresh}
+            disabled={ficheRefreshing}
+            className="h-9 px-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-xs font-semibold hover:bg-[hsl(var(--accent))] disabled:opacity-50 transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <span className={ficheRefreshing ? 'animate-spin inline-block' : ''}>🔄</span>
+            {ficheRefreshing ? 'Chargement...' : 'Rafraîchir'}
+          </button>
+        </div>
+
+        {/* Result count */}
+        <p className="text-[10px] text-[hsl(var(--muted-foreground))]"
+        >{filtered.length} résultat{filtered.length !== 1 ? 's' : ''} sur {allRes.length} réservations</p>
+
+        {/* ── List ──────────────────────────────────────────────── */}
+        {filtered.length === 0 ? (
+          <EmptyState
+            message="Aucune fiche trouvée"
+            icon="🛂"
+            description="Aucune réservation ne correspond aux filtres sélectionnés."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.map((r) => {
+              const total = r.totalGuests ?? 1;
+              const filled = r._count?.guestForms ?? 0;
+              const cStatus = r.checkinCompletionStatus ?? 'NOT_STARTED';
+              const { label: csLabel, cls: csCls, icon: csIcon } = completionStatusLabel(cStatus);
+              return (
+                <div
+                  key={r.id}
+                  className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3 border-b border-[hsl(var(--border))] pb-3">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-[hsl(var(--foreground))] truncate">
+                        {r.guestFirstName} {r.guestLastName}
+                      </h3>
+                      <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5 font-mono">
+                        {r.reservationNumber} · Chambre {r.room?.roomNumber || '—'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${csCls}`}>
+                        {csIcon} {filled}/{total} {csLabel}
+                      </span>
+                      <StatusBadge status={r.status} />
+                    </div>
+                  </div>
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Voyageurs</span>
+                      <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">
+                        {r.adultsCount ?? 1} adulte{(r.adultsCount ?? 1) > 1 ? 's' : ''}
+                        {(r.childrenCount ?? 0) > 0 ? ` + ${r.childrenCount} enfant${(r.childrenCount ?? 0) > 1 ? 's' : ''}` : ''}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Nationalité</span>
+                      <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{r.nationality || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Arrivée</span>
+                      <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{formatDate(r.checkInDate)}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Départ</span>
+                      <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{formatDate(r.checkOutDate)}</p>
+                    </div>
+                  </div>
+
+                  {/* Voir fiches button */}
+                  <button
+                    onClick={() => handleOpenFicheDetail(r.id)}
+                    className="w-full h-9 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold shadow-sm hover:from-amber-600 hover:to-amber-700 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    🛂 Voir les fiches voyageurs ({filled}/{total})
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Fiche detail modal ─────────────────────────────────── */}
+        {(ficheDetail !== null || ficheDetailLoading) && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) { setFicheDetail(null); setFicheDetailError(''); } }}
+          >
+            <div className="bg-[hsl(var(--card))] rounded-2xl shadow-2xl border border-[hsl(var(--border))] w-full max-w-2xl max-h-[90vh] flex flex-col">
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[hsl(var(--border))] shrink-0">
+                <div>
+                  <h2 className="text-base font-bold text-[hsl(var(--foreground))]">Fiches voyageurs</h2>
+                  {ficheDetail && (
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5 font-mono">
+                      {ficheDetail.reservation.reservationNumber} · {ficheDetail.reservation.guestFirstName} {ficheDetail.reservation.guestLastName}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => { setFicheDetail(null); setFicheDetailError(''); }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  cStatus === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-                  cStatus === 'PARTIAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' :
-                  'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                }`}>
-                  {cStatus === 'COMPLETED' ? '✅' : cStatus === 'PARTIAL' ? '🟡' : '⬜'} {filled}/{total}
-                </span>
-                <StatusBadge status={r.status} />
+
+              {/* Modal body */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+                {ficheDetailLoading && <LoadingSpinner message="Chargement des fiches..." />}
+
+                {ficheDetailError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20 p-4 text-xs text-red-700 dark:text-red-300">
+                    {ficheDetailError}
+                  </div>
+                )}
+
+                {ficheDetail && (
+                  <>
+                    {/* Reservation summary */}
+                    <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 p-4 space-y-3">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Réservation</h3>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">N° Réservation</span>
+                          <p className="font-mono font-bold">{ficheDetail.reservation.reservationNumber}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Chambre</span>
+                          <p className="font-bold">{ficheDetail.reservation.room?.roomNumber || '—'} {ficheDetail.reservation.room?.type ? `(${ficheDetail.reservation.room.type})` : ''}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Arrivée</span>
+                          <p className="font-medium">{formatDate(ficheDetail.reservation.checkInDate)}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Départ</span>
+                          <p className="font-medium">{formatDate(ficheDetail.reservation.checkOutDate)}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Statut check-in</span>
+                          <p className="font-medium">{ficheDetail.reservation.checkinCompletionStatus}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Voyageurs</span>
+                          <p className="font-medium">{ficheDetail.reservation.adultsCount}A + {ficheDetail.reservation.childrenCount}E = {ficheDetail.reservation.totalGuests}</p>
+                        </div>
+                        {ficheDetail.reservation.guestEmail && (
+                          <div className="col-span-2">
+                            <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Email</span>
+                            <p className="font-medium">{ficheDetail.reservation.guestEmail}</p>
+                          </div>
+                        )}
+                        {ficheDetail.reservation.guestPhone && (
+                          <div>
+                            <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Téléphone</span>
+                            <p className="font-medium">{ficheDetail.reservation.guestPhone}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Guest forms */}
+                    {ficheDetail.guestForms.length === 0 ? (
+                      <EmptyState
+                        message="Aucune fiche soumise"
+                        icon="🛂"
+                        description="Aucun voyageur n'a encore rempli sa fiche pour cette réservation."
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]"
+                        >Fiches soumises ({ficheDetail.guestForms.length}/{ficheDetail.reservation.totalGuests})</h3>
+
+                        {ficheDetail.guestForms.map((form) => (
+                          <div
+                            key={form.id}
+                            className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-sm space-y-3"
+                          >
+                            {/* Form header */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold flex items-center justify-center shadow-sm shrink-0">
+                                  {form.travelerIndex}
+                                </span>
+                                <div>
+                                  <p className="text-sm font-bold text-[hsl(var(--foreground))]">{form.fullName}</p>
+                                  <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
+                                    {form.travelerType === 'ADULT' ? '👤 Adulte' : '👶 Enfant'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {form.isCompleted ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                    ✅ Soumise
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                    ⏳ En attente
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Form fields */}
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs pt-2 border-t border-[hsl(var(--border))]/60">
+                              <div>
+                                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Nationalité</span>
+                                <p className="font-medium mt-0.5">{form.nationality || '—'}</p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Passeport</span>
+                                <p className="font-mono font-medium mt-0.5">
+                                  {form.passportMasked
+                                    ? <span className="inline-flex items-center gap-1">
+                                        <span className="text-[hsl(var(--foreground))]">{form.passportMasked}</span>
+                                        <span className="text-[9px] text-[hsl(var(--muted-foreground))]">(masqué)</span>
+                                      </span>
+                                    : <span className="text-[hsl(var(--muted-foreground))]">Non fourni</span>
+                                  }
+                                </p>
+                              </div>
+                              {form.phone && (
+                                <div>
+                                  <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Téléphone</span>
+                                  <p className="font-medium mt-0.5">{form.phone}</p>
+                                </div>
+                              )}
+                              {form.address && (
+                                <div className="col-span-2">
+                                  <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Adresse</span>
+                                  <p className="font-medium mt-0.5">{form.address}</p>
+                                </div>
+                              )}
+                              <div className="col-span-2">
+                                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Soumis le</span>
+                                <p className="font-medium mt-0.5">{formatDateTime(form.submittedAt)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Voyageurs</span>
-                <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">
-                  {r.adultsCount ?? 1} adulte{(r.adultsCount ?? 1) > 1 ? 's' : ''}
-                  {(r.childrenCount ?? 0) > 0 ? ` + ${r.childrenCount} enfant${(r.childrenCount ?? 0) > 1 ? 's' : ''}` : ''}
-                </p>
-              </div>
-              <div>
-                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Nationalité</span>
-                <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{r.nationality || '—'}</p>
-              </div>
-              <div>
-                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Arrivée</span>
-                <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{formatDate(r.checkInDate)}</p>
-              </div>
-              <div>
-                <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Départ</span>
-                <p className="font-medium text-[hsl(var(--foreground))] mt-0.5">{formatDate(r.checkOutDate)}</p>
+
+              {/* Modal footer */}
+              <div className="px-6 py-4 border-t border-[hsl(var(--border))] shrink-0 flex justify-end">
+                <button
+                  onClick={() => { setFicheDetail(null); setFicheDetailError(''); }}
+                  className="h-9 px-6 rounded-lg bg-[hsl(var(--muted))] text-xs font-bold hover:bg-[hsl(var(--accent))] transition-colors cursor-pointer"
+                >
+                  Fermer
+                </button>
               </div>
             </div>
           </div>
-          );
-        })}
+        )}
       </div>
     );
   };
