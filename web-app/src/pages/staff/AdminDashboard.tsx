@@ -16,6 +16,9 @@ import {
   EmptyState,
   ErrorMessage,
 } from '../../components';
+import { TabNav } from '../../components/ui/TabNav';
+import { StatCard } from '../../components/ui/StatCard';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -201,46 +204,39 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Console d'Administration</h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-          Supervision simple de l'établissement : utilisateurs, chambres, réclamations, logs système, et configuration globale.
-        </p>
+      <PageHeader
+        icon="⚙️"
+        title="Console d'Administration"
+        description="Supervision de l'établissement : utilisateurs, chambres, réclamations, logs et configuration."
+      />
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard label="Utilisateurs" value={users.length || '—'} icon="👷" accent="indigo" />
+        <StatCard label="Chambres" value={rooms.length || '—'} icon="🚪" accent="gold" />
+        <StatCard label="Réclamations" value={complaints.length || '—'} icon="📢" accent="red" />
       </div>
 
       {/* Banners */}
       <ErrorMessage message={error} onRetry={() => fetchTabContent(activeTab)} />
       {success && (
-        <div className="rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-4 text-xs dark:border-emerald-950/25 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 shadow-sm transition-all animate-in fade-in">
-          <div className="flex items-start gap-2.5">
-            <span className="text-sm select-none" role="img" aria-label="success">✅</span>
-            <div className="space-y-0.5">
-              <span className="font-bold text-[10px] uppercase tracking-wider block text-emerald-900 dark:text-emerald-200">Succès</span>
-              <p className="leading-relaxed text-[11px] text-emerald-700 dark:text-emerald-400/90">{success}</p>
-            </div>
+        <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 p-4 text-sm dark:border-emerald-900/30 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base select-none">✅</span>
+            <p className="font-medium">{success}</p>
           </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-1 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/25 p-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 min-w-[120px] h-9 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
-              activeTab === tab.key
-                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))]'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-            }`}
-          >
-            <span className="mr-1">{tab.icon}</span>{tab.label}
-          </button>
-        ))}
-      </div>
+      <TabNav
+        tabs={tabs}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* Tab Content */}
-      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
+      <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
         {loading ? (
           <LoadingSpinner message="Chargement des données..." />
         ) : (
@@ -257,9 +253,9 @@ export const AdminDashboard: React.FC = () => {
                   />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left border-collapse">
+                    <table className="w-full text-sm text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))]">
+                        <tr className="border-b-2 border-[hsl(var(--border))] bg-[hsl(var(--muted))]/40 text-[hsl(var(--muted-foreground))]">
                           <th className="py-2.5 font-semibold">Nom</th>
                           <th className="py-2.5 font-semibold">Email</th>
                           <th className="py-2.5 font-semibold">Rôle</th>

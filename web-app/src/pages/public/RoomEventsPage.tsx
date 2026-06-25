@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPublicEvents } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage } from '../../components';
 
 interface HotelEvent {
   id: string;
@@ -66,11 +67,7 @@ export const RoomEventsPage: React.FC = () => {
         </div>
 
         {/* Error */}
-        {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-            ⚠️ {error}
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
         {/* Content */}
         {loading ? (

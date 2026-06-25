@@ -24,6 +24,9 @@ import {
   ErrorMessage,
   QRCodeCard,
 } from '../../components';
+import { TabNav } from '../../components/ui/TabNav';
+import { StatCard } from '../../components/ui/StatCard';
+import { PageHeader } from '../../components/ui/PageHeader';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -1180,33 +1183,50 @@ export const ReceptionDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Dashboard Réception</h1>
-        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-          Vue d'ensemble des réservations, chambres, réclamations et QR codes.
-        </p>
+      <PageHeader
+        icon="🏨"
+        title="Dashboard Réception"
+        description="Vue d'ensemble des réservations, chambres, réclamations et QR codes."
+      />
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Réservations"
+          value={reservations.length || '—'}
+          icon="📋"
+          accent="blue"
+        />
+        <StatCard
+          label="Chambres disponibles"
+          value={rooms.filter(r => r.status === 'AVAILABLE').length || '—'}
+          icon="🚪"
+          accent="emerald"
+        />
+        <StatCard
+          label="Réclamations"
+          value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'}
+          icon="📢"
+          accent="red"
+        />
+        <StatCard
+          label="Messages"
+          value={conversations.filter(c => c.unreadCount > 0).length || '—'}
+          icon="💬"
+          accent="gold"
+          sub="non lus"
+        />
       </div>
 
       {/* Error banner */}
       <ErrorMessage message={error} onRetry={() => fetchData(activeTab)} />
 
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-1 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/25 p-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 min-w-[100px] h-9 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
-              activeTab === tab.key
-                ? 'bg-[hsl(var(--card))] shadow-sm text-[hsl(var(--foreground))]'
-                : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
-            }`}
-          >
-            <span className="mr-1">{tab.icon}</span>
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      <TabNav
+        tabs={tabs}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* Tab Content */}
       {renderTabContent()}
