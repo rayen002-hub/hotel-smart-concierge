@@ -9,19 +9,28 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Toutes les routes rooms necessitent auth + ADMIN ou RECEPTIONIST
-router.use(authMiddleware, requireRole(UserRole.RECEPTIONIST));
-
 /**
- * GET /api/rooms
+ * GET /api/rooms  (read-only for all staff roles)
  */
-router.get("/", listRooms);
+router.get(
+  "/",
+  authMiddleware,
+  requireRole(
+    UserRole.RECEPTIONIST,
+    UserRole.MAINTENANCE_MANAGER,
+    UserRole.HOUSEKEEPING_MANAGER
+  ),
+  listRooms
+);
+
 
 /**
  * POST /api/rooms
  */
 router.post(
   "/",
+  authMiddleware,
+  requireRole(UserRole.RECEPTIONIST),
   [
     body("roomNumber")
       .isString()
@@ -50,6 +59,8 @@ router.post(
  */
 router.patch(
   "/:id",
+  authMiddleware,
+  requireRole(UserRole.RECEPTIONIST),
   [
     body("roomNumber")
       .optional()
@@ -79,18 +90,18 @@ router.patch(
 /**
  * DELETE /api/rooms/:id
  */
-router.delete("/:id", deleteRoom);
+router.delete("/:id", authMiddleware, requireRole(UserRole.RECEPTIONIST), deleteRoom);
 
 /**
  * POST /api/rooms/:id/worker-qr
  * Generer un QR code pour le scan employe.
  */
-router.post("/:id/worker-qr", generateWorkerQr);
+router.post("/:id/worker-qr", authMiddleware, requireRole(UserRole.RECEPTIONIST), generateWorkerQr);
 
 /**
  * POST /api/rooms/:id/regenerate-worker-qr
  * Regenerer le QR employe (invalide l'ancien).
  */
-router.post("/:id/regenerate-worker-qr", regenerateWorkerQr);
+router.post("/:id/regenerate-worker-qr", authMiddleware, requireRole(UserRole.RECEPTIONIST), regenerateWorkerQr);
 
 export default router;

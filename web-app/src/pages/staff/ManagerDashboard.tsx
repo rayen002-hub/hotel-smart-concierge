@@ -280,7 +280,8 @@ export const ManagerDashboard: React.FC = () => {
     if (activeTab === 'complaints') { fetchComplaints(); fetchEmployees(); }
     if (activeTab === 'employees') fetchEmployees();
     if (activeTab === 'planification') fetchShifts();
-    if (activeTab === 'daily_cleaning') { fetchDailyTasks(); fetchEmployees(); fetchAllRooms(); }
+    if (activeTab === 'daily_cleaning') { fetchDailyTasks(); fetchEmployees(); fetchAllRooms(); fetchShifts(); }
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
@@ -318,7 +319,9 @@ export const ManagerDashboard: React.FC = () => {
     try {
       const res = await listRooms();
       setAllRooms(res.data || []);
-    } catch { /* silent */ }
+    } catch (err) {
+      setError((err as ApiError).error || 'Erreur chargement des chambres.');
+    }
   }, []);
 
   const fetchDailyTasks = useCallback(async (isRefresh = false) => {
@@ -728,14 +731,23 @@ export const ManagerDashboard: React.FC = () => {
 
     return (
       <div className="space-y-4">
-        {/* Create button */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="h-9 px-4 rounded-lg bg-indigo-600 text-white text-xs font-semibold shadow-sm hover:bg-indigo-700 transition-colors"
-          >
-            {showCreateForm ? '✕ Annuler' : '+ Créer un employé'}
-          </button>
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-sm font-bold">👷 Employés — {departmentLabel}</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchEmployees}
+              className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] text-xs font-semibold hover:bg-[hsl(var(--accent))] cursor-pointer transition-colors"
+            >
+              🔄 Rafraîchir
+            </button>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="h-9 px-4 rounded-lg bg-indigo-600 text-white text-xs font-semibold shadow-sm hover:bg-indigo-700 transition-colors cursor-pointer"
+            >
+              {showCreateForm ? '✕ Annuler' : '+ Créer un employé'}
+            </button>
+          </div>
         </div>
 
         {/* Create form */}
@@ -780,7 +792,7 @@ export const ManagerDashboard: React.FC = () => {
           <EmptyState
             message="Aucun employé"
             icon="👷"
-            description="Utilisez le bouton ci-dessus pour ajouter des employés à votre service."
+            description="Les employés sont créés par le responsable ou l'administrateur."
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1192,20 +1204,62 @@ export const ManagerDashboard: React.FC = () => {
                 <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Chambre</label>
                 <select required value={dailyFormRoomId} onChange={e => setDailyFormRoomId(e.target.value)}
                   className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
-                  <option value="">-- Sélectionner --</option>
-                  {allRooms.map(r => <option key={r.id} value={r.id}>Ch. {r.roomNumber} (Étage {r.floor}{r.type ? ` · ${r.type}` : ''})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Agent de ménage</label>
-                <select required value={dailyFormWorkerId} onChange={e => setDailyFormWorkerId(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
-                  <option value="">-- Sélectionner --</option>
-                  {housekeepingWorkers.map(w => {
-                    const wShift = shiftWorkers.find(s => s.id === w.id)?.shift;
-                    return <option key={w.id} value={w.id}>{w.name}{wShift ? ` — ${SHIFT_LABELS[wShift].split('–')[0]}` : ''}</option>;
+                  <option value="">-- Sélectionner une chambre --</option>
+                  {allRooms.length === 0 && (
+                    <option disabled>Aucune chambre disponible (chargement en cours...)</option>
+                  )}
+                  {allRooms.map(r => {
+                    const roomLabel = `Ch. ${r.roomNumber} — Étage ${r.floor}${r.type ? ` · ${r.type}` : ''}`;
+                    return <option key={r.id} value={r.id}>{roomLabel}</option>;
                   })}
                 </select>
+                {allRooms.length === 0 && (
+                  <p className="text-[10px] text-red-600 dark:text-red-400 mt-1">❌ Aucune chambre chargée. Rafraîchissez la page.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Agent de ménage</label>
+                {(() => {
+                  // Determine current shift for availability check
+                  const hour = new Date().getUTCHours();
+                  const currentShift: typeof shiftWorkers[0]['shift'] = hour >= 7 && hour < 15 ? 'MORNING' : hour >= 15 && hour < 23 ? 'EVENING' : 'NIGHT';
+                  const availableWorkers = housekeepingWorkers.filter(w => {
+                    const wShift = shiftWorkers.find(s => s.id === w.id)?.shift;
+                    if (wShift === 'DAY_OFF') return false;
+                    if (!w.employeeProfile?.isAvailable) return false;
+                    return true;
+                  });
+                  return (
+                    <>
+                      <select required value={dailyFormWorkerId} onChange={e => setDailyFormWorkerId(e.target.value)}
+                        className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
+                        <option value="">-- Sélectionner un agent --</option>
+                        {housekeepingWorkers.length === 0 && (
+                          <option disabled>Aucun agent de ménage disponible</option>
+                        )}
+                        {housekeepingWorkers.map(w => {
+                          const wShift = shiftWorkers.find(s => s.id === w.id)?.shift;
+                          const isDayOff = wShift === 'DAY_OFF';
+                          const isUnavailable = !w.employeeProfile?.isAvailable;
+                          const wrongShift = wShift && wShift !== 'DAY_OFF' && wShift !== currentShift;
+                          const blocked = isDayOff || isUnavailable;
+                          const label = isDayOff ? `${w.name} — 😴 Repos (non assignable)`
+                            : isUnavailable ? `${w.name} — ⚠️ Indisponible`
+                            : wrongShift ? `${w.name} — ⚠️ Shift ${wShift ? SHIFT_LABELS[wShift].split('–')[0] : ''} (hors shift actuel)`
+                            : `${w.name}${wShift ? ` — ${SHIFT_LABELS[wShift]}` : ' — ⬜ Shift non défini'}`;
+                          return <option key={w.id} value={w.id} disabled={blocked}>{label}</option>;
+                        })}
+                      </select>
+                      {availableWorkers.length === 0 && housekeepingWorkers.length > 0 && (
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">⚠️ Tous les agents sont en repos ou indisponibles pour le shift actuel.</p>
+                      )}
+                      {housekeepingWorkers.length === 0 && (
+                        <p className="text-[10px] text-red-600 dark:text-red-400 mt-1">❌ Aucun agent de ménage trouvé. Vérifiez l'onglet Employés.</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Note (optionnelle)</label>
