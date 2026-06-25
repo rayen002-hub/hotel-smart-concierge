@@ -127,7 +127,9 @@ model User {
   passwordHash String
   role         UserRole
   createdAt    DateTime @default(now())
+  isActive     Boolean  @default(true)
   updatedAt    DateTime @updatedAt
+
 
   // Relations
   employeeProfile    EmployeeProfile?

@@ -293,3 +293,57 @@ export async function deleteDailyCleaningTask(id: string) {
   return data;
 }
 
+// ─── Admin User Management ────────────────────────────────────────────
+
+export interface AdminUserFilters {
+  search?: string;
+  role?: string;
+  department?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminCreateUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  department?: string;
+}
+
+export interface AdminUpdateUserPayload {
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  department?: string;
+  isAvailable?: boolean;
+}
+
+export async function adminListUsers(filters?: AdminUserFilters) {
+  const { data } = await staffClient.get('/admin/users', { params: filters });
+  return data;
+}
+
+export async function adminCreateUser(payload: AdminCreateUserPayload) {
+  const { data } = await staffClient.post('/admin/users', payload);
+  return data;
+}
+
+export async function adminUpdateUser(id: string, payload: AdminUpdateUserPayload) {
+  const { data } = await staffClient.patch(`/admin/users/${id}`, payload);
+  return data;
+}
+
+export async function adminDeactivateUser(id: string) {
+  const { data } = await staffClient.patch(`/admin/users/${id}/deactivate`);
+  return data;
+}
+
+export async function adminReactivateUser(id: string) {
+  const { data } = await staffClient.patch(`/admin/users/${id}/reactivate`);
+  return data;
+}
+
+
