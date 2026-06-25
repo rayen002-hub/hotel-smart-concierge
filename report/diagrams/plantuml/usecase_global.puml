@@ -10,7 +10,7 @@ actor "Gouvernante Générale" as HM
 actor "Employé" as E
 actor "Système IA\n(acteur technique\nsecondaire)" as IA <<secondary>>
 
-rectangle "Hotel Smart Concierge" {
+rectangle "LoomStay" {
   ' Client
   usecase "Scanner QR chambre" as UC1
   usecase "Accéder espace chambre" as UC2

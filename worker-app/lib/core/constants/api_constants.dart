@@ -1,7 +1,7 @@
-/// API configuration constants.
-///
-/// The base URL comes from [Env.current] in `env.dart`.
-/// To change environments, edit `env.dart` (not this file).
+// API configuration constants.
+//
+// The base URL comes from Env.current in env.dart.
+// To change environments, edit env.dart (not this file).
 import 'env.dart';
 
 class ApiConstants {

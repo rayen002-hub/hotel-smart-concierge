@@ -7,12 +7,9 @@
 
 \section*{Introduction}
 
-Ce chapitre détaille la deuxième release du projet, consacrée à l'expérience digitale côté client. Cette release comprend trois sprints : l'espace chambre PWA accessible par QR, les services hôteliers (informations, événements, devises) et la messagerie bilingue en temps réel avec traduction automatique par le modèle NLLB.
+Ce chapitre présente la deuxième release du projet LoomStay, centrée sur l'expérience digitale du client hôtelier. Elle regroupe trois sprints : le Sprint 4 met en place l'espace client chambre PWA accessible par QR code, le Sprint 5 enrichit cet espace avec les services d'information hôteliers, les événements et la conversion de devises, et le Sprint 6 implémente la messagerie bilingue en temps réel entre le client et la réception, avec traduction automatique par le service IA.
 
-\begin{quote}
-\textbf{Note :} La PWA installable concerne uniquement l'espace client chambre (\texttt{/room}). La page de check-in et les dashboards du personnel restent des interfaces web classiques accessibles via navigateur.
-\end{quote}
-
+L'objectif de la Release 2 est de fournir une expérience client digitale complète, autonome et multilingue, directement accessible depuis le smartphone du client sans installation d'application.
 
 % =============================================================
 %  SPRINT 4
@@ -22,7 +19,11 @@ Ce chapitre détaille la deuxième release du projet, consacrée à l'expérienc
 
 \subsection{Objectif du sprint}
 
-Mettre en place l'espace chambre PWA accessible uniquement par scan du QR code sécurisé généré lors du check-in.
+Mettre en place l'espace chambre installable en tant que PWA (\textit{Progressive Web App}), accessible uniquement après validation du QR code sécurisé remis lors du check-in.
+
+\begin{quote}
+\textbf{Note architecturale :} La PWA installable concerne uniquement l'espace client chambre (routes \texttt{/room/*}). La page de check-in et les dashboards du personnel restent des interfaces web classiques accessibles via navigateur.
+\end{quote}
 
 \subsection{Backlog du sprint}
 
@@ -30,65 +31,85 @@ Mettre en place l'espace chambre PWA accessible uniquement par scan du QR code s
 \centering
 \caption{Backlog du Sprint 4}
 \label{tab:backlog_sprint4}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-08 & En tant que client, je veux accéder à mon espace chambre après validation du QR code & Must \\
+US-08 & En tant que client, je veux accéder à mon espace chambre après validation du QR code pour consulter les services disponibles & Must & Client \\
 \hline
-US-09 & En tant que client, je veux naviguer dans l'espace chambre PWA pour accéder aux services & Must \\
+US-09 & En tant que client, je veux naviguer dans l'espace chambre PWA pour accéder aux services de l'hôtel & Must & Client \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Insérer le diagramme de séquence accès PWA via QR
-\figplaceholder{Diagramme de séquence — Accès espace chambre PWA via QR code}
+\subsubsection{Diagramme de séquence — Accès PWA via QR code}
+
+\figplaceholder{Diagramme de séquence — Accès espace chambre PWA via scan QR code}
+
+Le flux d'accès à l'espace chambre se déroule comme suit :
+\begin{enumerate}
+  \item Le client scanne le QR code remis lors du check-in avec son smartphone ;
+  \item Le navigateur ouvre l'URL contenant le token JWT encodé (\texttt{/room?token=...}) ;
+  \item Le composant \texttt{RoomLayout} extrait le token de l'URL, l'envoie au backend pour validation ;
+  \item Le backend vérifie la signature JWT, les dates de validité et le statut CHECKED\_IN de la réservation ;
+  \item Si le token est valide, le client accède à l'espace chambre et le token est stocké en session ;
+  \item Toutes les routes \texttt{/room/*} sont protégées par ce mécanisme de \textit{token gate}.
+\end{enumerate}
 
 \subsection{Étude conceptuelle}
 
-Le mécanisme d'accès repose sur :
-\begin{itemize}
-  \item \textbf{Token gate} : le QR code contient un token JWT signé qui est validé côté serveur (signature, dates de validité, existence de la réservation) ;
-  \item \textbf{RoomLayout} : composant React protégeant toutes les routes \texttt{/room/*} ;
-  \item \textbf{PWA} : configuration \texttt{vite-plugin-pwa} avec manifest et service worker, permettant l'installation sur l'écran d'accueil du smartphone.
-\end{itemize}
+\subsubsection{Configuration PWA}
 
-La PWA installable concerne uniquement l'espace client chambre. Les dashboards du personnel (admin, réception, managers) restent des interfaces web classiques non installables.
+La PWA est configurée via le plugin \texttt{vite-plugin-pwa} dans le projet React/Vite. Le fichier \texttt{manifest.webmanifest} définit le nom de l'application (\textit{LoomStay}), les icônes, les couleurs et le mode d'affichage standalone. Un service worker généré automatiquement assure la mise en cache des ressources statiques et permet l'installation de l'application sur l'écran d'accueil du smartphone.
+
+\subsubsection{Architecture de l'espace chambre}
+
+L'espace chambre est structuré autour du composant \texttt{RoomLayout}, qui joue le rôle de \textit{token gate} :
+\begin{itemize}
+  \item À la première visite, il extrait le token du paramètre d'URL et le valide auprès du backend ;
+  \item Le token validé est stocké en mémoire de session pour les requêtes suivantes ;
+  \item Si le token est absent, expiré ou invalide, le client est redirigé vers une page d'erreur explicative ;
+  \item La page d'accueil (\texttt{RoomHomePage}) affiche les informations de la chambre et de la réservation, et propose un menu de navigation vers tous les services.
+\end{itemize}
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran PWA
-\figplaceholder{Capture d'écran — Page d'accueil chambre PWA (mobile)}
-\figplaceholder{Capture d'écran — Menu de navigation vers les services}
+\figplaceholder{Capture d'écran — Page d'accueil de l'espace chambre PWA (RoomHomePage)}
+\figplaceholder{Capture d'écran — Invite d'installation de la PWA sur smartphone}
+\figplaceholder{Capture d'écran — Menu de navigation de l'espace chambre (services disponibles)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Validation du token QR (cas valide, expiré, invalide) ;
-  \item Vérification de l'installation PWA sur mobile ;
+  \item Test de validation du QR code : token valide, token expiré, token de mauvaise chambre ;
+  \item Test de l'installation de la PWA sur Android Chrome ;
+  \item Vérification du comportement offline (cache des ressources statiques) ;
   \item Test de la navigation entre les pages de l'espace chambre.
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-L'espace chambre PWA est fonctionnel et installable sur smartphone. L'accès est correctement protégé par le token QR.
+L'espace chambre PWA est opérationnel. Le mécanisme de token gate fonctionne correctement : un QR code invalide ou expiré est refusé avec un message d'erreur clair. La PWA s'installe correctement sur Android et fonctionne en mode standalone.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 4.}
+\textbf{Ce qui a bien fonctionné :} L'utilisation de \texttt{vite-plugin-pwa} a considérablement simplifié la configuration du service worker et du manifest. L'implémentation du \textit{token gate} dans le composant \texttt{RoomLayout} a centralisé la logique d'authentification client en un seul endroit.
 
+\textbf{Difficultés rencontrées :} Les restrictions de sécurité du navigateur (HTTPS obligatoire pour le service worker) ont nécessité une configuration spécifique lors du développement local et du déploiement de démonstration.
+
+\textbf{Améliorations identifiées :} Un mécanisme de renouvellement automatique du token avant expiration améliorerait l'expérience lors de longs séjours.
 
 % =============================================================
 %  SPRINT 5
 % =============================================================
-\section{Sprint 5 : Services hôteliers, événements et devise}
+\section{Sprint 5 : Services hôteliers, événements et conversion de devises}
 \label{sec:sprint5}
 
 \subsection{Objectif du sprint}
 
-Enrichir l'expérience client avec les pages d'information hôtelière, les événements et le convertisseur de devises.
+Enrichir l'expérience client de l'espace chambre PWA avec les services d'information hôteliers, la consultation des événements et un convertisseur de devises vers le dinar tunisien (TND).
 
 \subsection{Backlog du sprint}
 
@@ -96,59 +117,69 @@ Enrichir l'expérience client avec les pages d'information hôtelière, les év�
 \centering
 \caption{Backlog du Sprint 5}
 \label{tab:backlog_sprint5}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-10 & En tant que client, je veux consulter les informations de l'hôtel & Should \\
+US-10 & En tant que client, je veux consulter les informations de l'hôtel (services, règlement, horaires) & Should & Client \\
 \hline
-US-11 & En tant que client, je veux consulter les événements de l'hôtel & Should \\
+US-11 & En tant que client, je veux consulter les événements organisés par l'hôtel & Should & Client \\
 \hline
-US-12 & En tant que client, je veux convertir des devises vers le TND & Could \\
+US-12 & En tant que client, je veux convertir des devises étrangères vers le dinar tunisien & Could & Client \\
 \hline
-US-13 & En tant qu'administrateur, je veux gérer les événements et les informations hôtelières & Should \\
+US-13 & En tant qu'administrateur, je veux gérer les événements et les informations hôtelières & Should & Admin \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Diagramme de classes HotelInfo, HotelEvent, CurrencyRate
+\subsubsection{Diagramme de classes}
+
 \figplaceholder{Diagramme de classes — HotelInfo, HotelEvent, CurrencyRate}
+
+Trois nouveaux modèles Prisma sont introduits dans ce sprint :
+\begin{itemize}
+  \item \texttt{HotelInfo} : informations hôtelières générales (nom, adresse, services, règlement intérieur, horaires). Un seul enregistrement est maintenu et mis à jour par l'administrateur ;
+  \item \texttt{HotelEvent} : événements avec titre, description, date, heure, lieu, image (URL stockée dans Supabase Storage pour la démonstration) et indicateur de publication (\texttt{isPublished}) ;
+  \item \texttt{CurrencyRate} : taux de change vers le TND, gérés manuellement par l'administrateur (code devise ISO, taux, date de mise à jour).
+\end{itemize}
 
 \subsection{Étude conceptuelle}
 
-Trois modules d'information client sont développés :
+Les trois services sont implémentés selon le patron en couches du backend :
 \begin{itemize}
-  \item \textbf{HotelInfo} : informations hôtelières structurées (services, règlement, horaires) ;
-  \item \textbf{HotelEvent} : événements avec images et statut de publication ;
-  \item \textbf{CurrencyRate} : taux de change vers le TND, gérés par l'administrateur.
+  \item Route API $\rightarrow$ Controller $\rightarrow$ Service $\rightarrow$ Prisma $\rightarrow$ PostgreSQL ;
+  \item Côté client PWA, trois pages dédiées : \texttt{RoomHotelInfoPage}, \texttt{RoomEventsPage}, \texttt{RoomCurrencyPage} ;
+  \item Côté dashboard admin, trois sections de gestion CRUD avec upload d'images pour les événements (via Multer + Supabase Storage en démonstration, ou stockage local sur serveur privé).
 \end{itemize}
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran des pages services
-\figplaceholder{Capture d'écran — Page informations hôtel (PWA)}
-\figplaceholder{Capture d'écran — Page événements (PWA)}
-\figplaceholder{Capture d'écran — Page convertisseur de devises (PWA)}
-\figplaceholder{Capture d'écran — Dashboard admin — Gestion événements}
+\figplaceholder{Capture d'écran — Page informations hôtel (espace chambre client)}
+\figplaceholder{Capture d'écran — Page événements (espace chambre client)}
+\figplaceholder{Capture d'écran — Convertisseur de devises (espace chambre client)}
+\figplaceholder{Capture d'écran — Dashboard admin — Gestion des événements}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests CRUD des API HotelInfo, HotelEvent, CurrencyRate ;
-  \item Vérification de l'affichage côté client ;
-  \item Test de l'upload d'images pour les événements.
+  \item Test des routes API HotelInfo, HotelEvent, CurrencyRate (CRUD) ;
+  \item Vérification de l'affichage côté client (données réelles depuis le backend) ;
+  \item Test du calcul de conversion de devises (plusieurs devises : EUR, USD, GBP, JPY).
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-Les trois pages client sont fonctionnelles. La gestion admin des contenus hôteliers est opérationnelle.
+Les trois services client sont opérationnels et intégrés dans l'espace chambre PWA. La gestion admin des contenus est fonctionnelle. L'upload d'images pour les événements fonctionne correctement en environnement de démonstration.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 5.}
+\textbf{Ce qui a bien fonctionné :} La réutilisation du patron en couches du backend a permis de développer les trois fonctionnalités rapidement et de manière cohérente.
 
+\textbf{Difficultés rencontrées :} La gestion des images d'événements a nécessité la mise en place d'un pipeline upload (Multer) vers le stockage externe (Supabase Storage). La migration vers un stockage local en production cible devra être planifiée.
+
+\textbf{Améliorations identifiées :} Un système de mise à jour automatique des taux de change depuis une API publique (e.g., Open Exchange Rates) serait une amélioration pertinente pour la version de production.
 
 % =============================================================
 %  SPRINT 6
@@ -158,7 +189,7 @@ Les trois pages client sont fonctionnelles. La gestion admin des contenus hôtel
 
 \subsection{Objectif du sprint}
 
-Permettre la communication bilingue en temps réel entre le client et la réception, avec traduction automatique par le modèle pré-entraîné NLLB-200.
+Permettre la communication bilingue en temps réel entre le client et la réception, avec traduction automatique des messages par le service IA (modèle NLLB-200 de Meta AI).
 
 \subsection{Backlog du sprint}
 
@@ -166,62 +197,92 @@ Permettre la communication bilingue en temps réel entre le client et la récept
 \centering
 \caption{Backlog du Sprint 6}
 \label{tab:backlog_sprint6}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-14 & En tant que client, je veux envoyer des messages à la réception dans ma langue & Should \\
+US-14 & En tant que client, je veux envoyer des messages à la réception dans ma langue naturelle & Should & Client \\
 \hline
-US-15 & En tant que réceptionniste, je veux répondre aux messages avec traduction automatique & Should \\
+US-15 & En tant que réceptionniste, je veux répondre aux clients avec traduction automatique vers leur langue & Should & Réceptionniste \\
 \hline
-US-16 & En tant que système IA, je veux détecter la langue et traduire via NLLB & Must \\
+US-16 & En tant que système IA, je veux détecter la langue du message et le traduire via NLLB-200 & Must & Système IA \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Diagramme de séquence messagerie avec traduction
-\figplaceholder{Diagramme de séquence — Envoi message client → traduction NLLB → réception staff}
+\subsubsection{Diagramme de séquence — Messagerie bilingue avec traduction NLLB}
+
+\figplaceholder{Diagramme de séquence — Envoi message client → détection langue → traduction NLLB → réception staff}
+
+\subsubsection{Diagramme de classes}
+
+\figplaceholder{Diagramme de classes — GuestStaffMessage avec attributs}
+
+Le modèle \texttt{GuestStaffMessage} est le cœur de la messagerie bilingue. Il contient :
+\begin{itemize}
+  \item \texttt{direction} : CLIENT\_TO\_STAFF ou STAFF\_TO\_CLIENT ;
+  \item \texttt{originalMessage} : texte original envoyé par l'expéditeur ;
+  \item \texttt{detectedLanguage} : code de langue détecté (ex. : \texttt{fr}, \texttt{en}, \texttt{ar}) ;
+  \item \texttt{staffMessage} : traduction française du message (visible par le staff) ;
+  \item \texttt{clientMessage} : traduction dans la langue du client (visible par le client) ;
+  \item \texttt{reservationId} : clé étrangère pour lier les messages à la réservation.
+\end{itemize}
 
 \subsection{Étude conceptuelle}
 
-Le système de messagerie bilingue repose sur :
+\subsubsection{Service de détection de langue}
+
+Le \texttt{LanguageService} du service IA utilise la bibliothèque Python \texttt{langdetect} pour détecter automatiquement la langue d'un message texte. Un mécanisme de fallback basé sur des mots-clés est implémenté pour les messages très courts (moins de 3 mots) où \texttt{langdetect} peut être peu fiable. Le code de langue détecté est ensuite mappé vers les codes de langue du modèle NLLB (e.g., \texttt{fr} $\rightarrow$ \texttt{fra\_Latn}, \texttt{ar} $\rightarrow$ \texttt{arb\_Arab}).
+
+\subsubsection{Service de traduction NLLB-200}
+
+Le \texttt{TranslationService} charge le modèle pré-entraîné \texttt{facebook/nllb-200-distilled-600M} depuis Hugging Face Transformers. Ce modèle supporte plus de 200 langues. Un mécanisme de \textit{lazy loading} est implémenté : le modèle n'est chargé en mémoire qu'au premier appel de traduction, évitant un démarrage lent du service. Un cache de traduction en mémoire évite de retransduire des messages identiques.
+
+\subsubsection{Intégration backend → service IA}
+
+Lors de la réception d'un message client, le backend (\texttt{ai.service.ts}) appelle le service IA via la route \texttt{POST /translate}. La réponse contient le message traduit en français (pour le staff). Lors de la réponse du staff, le backend appelle de nouveau le service IA pour traduire la réponse vers la langue du client.
+
+\subsubsection{Temps réel avec Socket.IO}
+
+Les événements temps réel utilisés pour la messagerie sont :
 \begin{itemize}
-  \item \textbf{Modèle GuestStaffMessage} : messages bidirectionnels avec champs \texttt{originalMessage}, \texttt{detectedLanguage}, \texttt{staffMessage}, \texttt{clientMessage} ;
-  \item \textbf{Service IA — Détection de langue} : bibliothèque \texttt{langdetect} avec mapping vers les codes NLLB ;
-  \item \textbf{Service IA — Traduction} : modèle pré-entraîné NLLB-200-distilled-600M (Hugging Face Transformers), avec cache de traduction et lazy loading ;
-  \item \textbf{Socket.IO} : communication temps réel pour les notifications de nouveaux messages.
+  \item \texttt{newGuestMessage} : notifie le staff d'un nouveau message client ;
+  \item \texttt{newStaffMessage} : notifie le client d'une réponse du staff ;
+  \item \texttt{guestMessageRead} : marquage des messages comme lus.
 \end{itemize}
 
-\begin{quote}
-\textbf{Note :} Le modèle NLLB-200 est un modèle pré-entraîné par Meta AI. Il n'a pas été entraîné ou fine-tuné dans le cadre de ce projet. Il est chargé et utilisé tel quel via la bibliothèque Hugging Face Transformers.
-\end{quote}
+Les rooms Socket.IO sont organisées par \texttt{reservationId}, garantissant l'isolation des conversations entre réservations.
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran messagerie
-\figplaceholder{Capture d'écran — Messagerie client (PWA)}
-\figplaceholder{Capture d'écran — Messagerie réception (dashboard)}
+\figplaceholder{Capture d'écran — Page messagerie client (espace chambre PWA)}
+\figplaceholder{Capture d'écran — Section messagerie dans le dashboard réception (avec traduction)}
+\figplaceholder{Capture d'écran — Message reçu en arabe, affiché traduit en français pour le staff}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests de l'API messagerie ;
-  \item Tests de détection de langue et traduction via le service IA ;
-  \item Vérification de la communication temps réel via Socket.IO.
+  \item Test de détection de langue : messages en français, anglais, arabe, espagnol, allemand ;
+  \item Test de traduction NLLB : vérification de la qualité des traductions (score BLEU) ;
+  \item Test de la messagerie en temps réel : envoi/réception entre deux fenêtres navigateur simulant client et réception ;
+  \item Test du cache de traduction : deuxième appel identique retourné sans appel au modèle.
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-La messagerie bilingue est fonctionnelle en temps réel. La traduction automatique fonctionne correctement pour les langues supportées par NLLB.
+La messagerie bilingue est pleinement opérationnelle. La traduction NLLB fonctionne pour les paires de langues testées (FR, EN, AR, ES, DE). Le temps réel Socket.IO assure la réception instantanée des messages. Le cache de traduction réduit significativement le temps de réponse pour les messages répétitifs.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 6.}
+\textbf{Ce qui a bien fonctionné :} L'intégration du modèle NLLB via l'API HTTP interne a parfaitement découplé le service IA du backend, permettant une mise à jour indépendante du modèle.
 
+\textbf{Difficultés rencontrées :} Le chargement initial du modèle NLLB-200 est lent (\textasciitilde{}30 secondes sur CPU). Le mécanisme de \textit{lazy loading} et le \textit{warm-up} automatique au démarrage ont résolu ce problème.
+
+\textbf{Améliorations identifiées :} Le déploiement sur un serveur avec GPU accélérerait significativement les temps de traduction. Un mécanisme de sélection de la langue préférée par le client améliorerait la précision.
 
 % =============================================================
 \section*{Résumé du chapitre}
 
-La Release 2 a permis de mettre en place l'expérience digitale complète côté client : l'espace chambre PWA installable avec accès sécurisé par QR, les pages de services hôteliers (informations, événements, devises) et la messagerie bilingue en temps réel avec traduction automatique par le modèle NLLB-200. Le chapitre suivant présente la Release 3, consacrée aux réclamations, aux interventions et à l'intelligence artificielle intégrée.
+La Release 2 a livré l'expérience digitale complète côté client : l'espace chambre PWA installable accessible uniquement via QR code sécurisé, les services d'information hôteliers, les événements et le convertisseur de devises, ainsi que la messagerie bilingue en temps réel avec traduction automatique par le modèle NLLB-200. Le service IA (acteur technique secondaire) a été intégré de manière transparente dans ce sprint, conformément aux principes Scrum. Le chapitre suivant présente la Release 3, consacrée aux réclamations, aux interventions terrain et à l'intelligence intégrée.

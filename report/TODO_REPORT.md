@@ -1,4 +1,4 @@
-# TODO — Rapport PFE Hotel Smart Concierge
+# TODO — Rapport PFE LoomStay
 
 ## Informations à fournir manuellement
 

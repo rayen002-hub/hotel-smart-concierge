@@ -7,7 +7,9 @@
 
 \section*{Introduction}
 
-Ce chapitre détaille la première release du projet, consacrée à la mise en place des fondations techniques et fonctionnelles du système. Cette release comprend trois sprints : l'authentification et la sécurité, la gestion des chambres et réservations avec les QR codes, et le check-in numérique avec les fiches voyageurs.
+Ce chapitre détaille la première release du projet LoomStay, consacrée à la mise en place des fondations techniques et fonctionnelles du système. Cette release regroupe trois sprints : le Sprint 1 met en place l'authentification et le contrôle d'accès basé sur les rôles, le Sprint 2 implémente la gestion des chambres, des réservations et des QR codes sécurisés, et le Sprint 3 finalise le workflow de check-in numérique avec les fiches voyageurs réglementaires.
+
+L'objectif de la Release 1 est de fournir un socle opérationnel sur lequel toutes les fonctionnalités client et métier des releases suivantes pourront s'appuyer.
 
 % =============================================================
 %  SPRINT 1
@@ -17,7 +19,7 @@ Ce chapitre détaille la première release du projet, consacrée à la mise en p
 
 \subsection{Objectif du sprint}
 
-Mettre en place le système d'authentification JWT et le contrôle d'accès basé sur les rôles (RBAC), constituant le socle sécuritaire de l'ensemble de la plateforme.
+Mettre en place le système d'authentification JWT et le contrôle d'accès basé sur les rôles (RBAC), constituant le socle sécuritaire de l'ensemble de la plateforme LoomStay.
 
 \subsection{Backlog du sprint}
 
@@ -25,64 +27,76 @@ Mettre en place le système d'authentification JWT et le contrôle d'accès bas�
 \centering
 \caption{Backlog du Sprint 1}
 \label{tab:backlog_sprint1}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-01 & En tant qu'utilisateur du personnel, je veux me connecter avec email/mot de passe pour accéder à mon espace & Must \\
+US-01 & En tant qu'utilisateur du personnel, je veux me connecter avec email/mot de passe pour accéder à mon espace & Must & Staff \\
 \hline
-US-02 & En tant qu'administrateur, je veux gérer les utilisateurs pour administrer le personnel & Must \\
+US-02 & En tant qu'administrateur, je veux gérer les utilisateurs (créer, modifier, supprimer) pour administrer le personnel & Must & Admin \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Insérer le diagramme de classes User/EmployeeProfile
+\subsubsection{Diagramme de classes}
+
 \figplaceholder{Diagramme de classes — User, EmployeeProfile, enums UserRole, Department}
 
-% TODO: Insérer le diagramme de séquence login
-\figplaceholder{Diagramme de séquence — Flux d'authentification JWT}
+Le modèle \texttt{User} est le modèle central de l'authentification. Il contient les champs \texttt{email}, \texttt{passwordHash}, \texttt{role} (enum \texttt{UserRole}) et \texttt{isActive}. Le modèle \texttt{EmployeeProfile} étend \texttt{User} pour les employés terrain avec les champs \texttt{department} (enum \texttt{Department} : MAINTENANCE ou HOUSEKEEPING), \texttt{isAvailable} et \texttt{lastSeenAt}.
+
+Les cinq rôles définis par l'enum \texttt{UserRole} sont :
+\begin{itemize}
+  \item \texttt{ADMIN} : accès complet au système ;
+  \item \texttt{RECEPTIONIST} : gestion des réservations et check-in ;
+  \item \texttt{MAINTENANCE\_MANAGER} : supervision des réclamations maintenance ;
+  \item \texttt{HOUSEKEEPING\_MANAGER} : supervision des réclamations ménage et des tâches housekeeping ;
+  \item \texttt{EMPLOYEE} : agent terrain (maintenance ou ménage selon \texttt{department}).
+\end{itemize}
+
+\subsubsection{Diagramme de séquence — Authentification JWT}
+
+\figplaceholder{Diagramme de séquence — Flux d'authentification JWT (login → token → redirection)}
 
 \subsection{Étude conceptuelle}
 
-Le système d'authentification repose sur :
+Le système d'authentification repose sur les composants suivants :
+
 \begin{itemize}
-  \item \textbf{JWT (JSON Web Token)} pour la gestion des sessions sans état ;
-  \item \textbf{bcrypt} pour le hachage sécurisé des mots de passe ;
-  \item \textbf{RBAC} avec 5 rôles : ADMIN, RECEPTIONIST, MAINTENANCE\_MANAGER, HOUSEKEEPING\_MANAGER, EMPLOYEE ;
-  \item \textbf{Middlewares de sécurité} : Helmet (headers HTTP), express-rate-limit, CORS.
+  \item \textbf{JWT (JSON Web Token)} pour la gestion des sessions sans état côté serveur. Le token est généré lors du login et envoyé dans le header HTTP \texttt{Authorization: Bearer <token>} pour chaque requête protégée ;
+  \item \textbf{bcrypt} pour le hachage sécurisé des mots de passe (sel aléatoire, facteur de coût configurable) ;
+  \item \textbf{RBAC (Role-Based Access Control)} : le middleware \texttt{role.middleware.ts} vérifie le rôle extrait du JWT avant d'autoriser l'accès à chaque route protégée ;
+  \item \textbf{Middlewares de sécurité} : Helmet (en-têtes HTTP sécurisés), express-rate-limit (limitation du débit par IP), CORS (origines autorisées configurables) ;
+  \item \textbf{AuthGuard React} : composant HOC côté frontend qui protège les routes web par rôle et redirige vers la page de connexion si le token est absent ou expiré.
 \end{itemize}
 
 \subsection{Réalisation}
 
-% TODO: Ajouter des captures d'écran de la page de login
-\figplaceholder{Capture d'écran — Page de connexion}
+\figplaceholder{Capture d'écran — Page de connexion LoomStay (LoginPage)}
+\figplaceholder{Capture d'écran — Dashboard administrateur — Gestion des utilisateurs}
 
-% TODO: Ajouter des captures d'écran du dashboard admin (gestion utilisateurs)
-\figplaceholder{Capture d'écran — Dashboard admin — Gestion des utilisateurs}
-
-% TODO: Ajouter des extraits de code pertinents si nécessaire
+La page de connexion (\texttt{LoginPage.tsx}) présente un formulaire email/mot de passe. Après authentification réussie, l'utilisateur est redirigé vers son dashboard correspondant à son rôle. Le token JWT est stocké en mémoire locale et transmis automatiquement pour chaque requête API.
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests unitaires du service d'authentification (Jest) ;
-  \item Tests d'intégration de l'API auth (Supertest) ;
-  \item Vérification manuelle du login et de la redirection par rôle.
+  \item Tests unitaires du service d'authentification (Jest) : vérification du login valide, mot de passe incorrect, utilisateur inexistant ;
+  \item Tests d'intégration de l'API \texttt{POST /api/auth/login} (Supertest) : vérification des codes HTTP 200, 401, 422 ;
+  \item Vérification manuelle du login et de la redirection par rôle pour les 5 rôles.
 \end{itemize}
-
-% TODO: Ajouter les résultats des tests
 
 \subsection{Revue du sprint}
 
-L'objectif du sprint a été atteint : le système d'authentification JWT est opérationnel avec les 5 rôles configurés, le login web fonctionne avec redirection par rôle, et les middlewares de sécurité sont en place.
+L'objectif du sprint a été entièrement atteint : le système d'authentification JWT est opérationnel avec les 5 rôles configurés, le login web fonctionne avec redirection par rôle, et tous les middlewares de sécurité sont en place. Le seed de données crée automatiquement les utilisateurs initiaux (admin, réceptionniste, managers).
 
 \subsection{Rétrospective}
 
-% TODO: Personnaliser la rétrospective
-\todo{Compléter la rétrospective du Sprint 1 : ce qui a bien fonctionné, les difficultés rencontrées, les améliorations identifiées.}
+\textbf{Ce qui a bien fonctionné :} La mise en place des middlewares JWT et RBAC a été rapide grâce à la modularité de l'architecture Express. L'implémentation du composant \texttt{AuthGuard} côté React a permis de sécuriser proprement toutes les routes en une seule fois.
 
+\textbf{Difficultés rencontrées :} La gestion du renouvellement du token JWT en cas d'expiration a nécessité une attention particulière côté frontend. Le problème a été contourné en stockant l'état de connexion et en forçant la reconnexion lors d'une erreur 401.
+
+\textbf{Améliorations identifiées :} Un mécanisme de \textit{refresh token} pourrait améliorer l'expérience utilisateur dans une version future, évitant la déconnexion forcée après expiration du token d'accès.
 
 % =============================================================
 %  SPRINT 2
@@ -92,7 +106,7 @@ L'objectif du sprint a été atteint : le système d'authentification JWT est op
 
 \subsection{Objectif du sprint}
 
-Implémenter la gestion des chambres et des réservations, ainsi que la génération des QR codes sécurisés (client et worker).
+Implémenter la gestion des chambres et des réservations hôtelières, ainsi que la génération des QR codes sécurisés pour l'accès client (token chambre) et pour le scan des employés (token worker).
 
 \subsection{Backlog du sprint}
 
@@ -100,52 +114,65 @@ Implémenter la gestion des chambres et des réservations, ainsi que la généra
 \centering
 \caption{Backlog du Sprint 2}
 \label{tab:backlog_sprint2}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-03 & En tant qu'administrateur, je veux gérer les chambres de l'hôtel & Must \\
+US-03 & En tant qu'administrateur, je veux gérer les chambres de l'hôtel (CRUD) pour configurer l'infrastructure & Must & Admin \\
 \hline
-US-04 & En tant que réceptionniste, je veux gérer les réservations & Must \\
+US-04 & En tant que réceptionniste, je veux gérer les réservations (créer, modifier, consulter) pour préparer les arrivées & Must & Réceptionniste \\
 \hline
-US-05 & En tant que système, je veux générer des QR codes sécurisés & Must \\
+US-05 & En tant que système, je veux générer des QR codes sécurisés (client et worker) pour contrôler les accès & Must & Système \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Insérer le diagramme de classes Room, Reservation
+\subsubsection{Diagramme de classes}
+
 \figplaceholder{Diagramme de classes — Room, Reservation, enums RoomStatus, ReservationStatus}
+
+Le modèle \texttt{Room} contient les attributs suivants : \texttt{roomNumber} (identifiant humain unique), \texttt{floor}, \texttt{type} (SINGLE, DOUBLE, SUITE, etc.), \texttt{status} (enum \texttt{RoomStatus} : AVAILABLE, OCCUPIED, CLEANING, MAINTENANCE) et \texttt{workerQrVersion} (entier incrémenté pour invalider les anciens QR codes worker).
+
+Le modèle \texttt{Reservation} contient : \texttt{reservationNumber} (référence unique de réservation), \texttt{guestFirstName}, \texttt{guestLastName}, \texttt{checkInDate}, \texttt{checkOutDate}, \texttt{status} (enum \texttt{ReservationStatus} : PENDING, CHECKED\_IN, CHECKED\_OUT, CANCELLED) et la clé étrangère \texttt{roomId}.
 
 \subsection{Étude conceptuelle}
 
-\begin{itemize}
-  \item \textbf{QR code client} : token JWT signé contenant \texttt{reservationId}, \texttt{roomId}, dates de validité ;
-  \item \textbf{QR code worker} : token signé pour le scan d'entrée/sortie des employés, avec versionnement (\texttt{workerQrVersion}).
-\end{itemize}
+\subsubsection{QR codes clients (token JWT chambre)}
+
+Le service \texttt{checkinToken.service.ts} génère un token JWT signé avec la clé secrète de l'application, contenant : \texttt{reservationId}, \texttt{roomId}, \texttt{roomNumber}, \texttt{checkinDate}, \texttt{checkoutDate} (dates de validité). Ce token est encodé dans un QR code affiché au client lors du check-in. À chaque scan, le backend vérifie la signature, les dates de validité et le statut de la réservation (CHECKED\_IN).
+
+\subsubsection{QR codes workers (token worker)}
+
+Le service \texttt{qrToken.service.ts} génère un token pour chaque chambre, intégrant \texttt{roomId}, \texttt{roomNumber} et \texttt{workerQrVersion}. La version permet d'invalider les anciens QR codes lorsque l'administrateur régénère le code (incrémentation de \texttt{workerQrVersion}). Ce QR code est apposé physiquement à l'extérieur de chaque chambre et scanné par les employés lors de leurs interventions.
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran
-\figplaceholder{Capture d'écran — Dashboard admin — Gestion des chambres}
+\figplaceholder{Capture d'écran — Dashboard administrateur — Gestion des chambres}
 \figplaceholder{Capture d'écran — Dashboard réception — Liste des réservations}
+\figplaceholder{Capture d'écran — QR code worker généré (affiché dans le dashboard admin)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests des routes API chambres et réservations ;
-  \item Vérification de la génération et de la validation des QR codes.
+  \item Tests des routes API chambres : CRUD complet (création, lecture, mise à jour, suppression) ;
+  \item Tests des routes API réservations : création, modification de statut, filtrage ;
+  \item Vérification de la génération et de la validation des tokens JWT (client et worker) ;
+  \item Test de l'invalidation du token worker après régénération (\texttt{workerQrVersion} incrémenté).
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-L'API de gestion des chambres et réservations est opérationnelle, les QR codes sécurisés sont générés correctement.
+L'API de gestion des chambres et des réservations est opérationnelle. Les deux types de QR codes sont générés et validés correctement. Le versionnement du QR worker fonctionne : après régénération, l'ancien token est refusé par le backend.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 2.}
+\textbf{Ce qui a bien fonctionné :} La modélisation des statuts de chambre et de réservation avec des enums Prisma a rendu le code très lisible et évite les erreurs de saisie manuelle.
 
+\textbf{Difficultés rencontrées :} La synchronisation du statut de la chambre (OCCUPIED lors du check-in, AVAILABLE lors du check-out) a nécessité une attention particulière pour éviter les états incohérents.
+
+\textbf{Améliorations identifiées :} Un calendrier de disponibilité visuel pourrait améliorer l'expérience de la réceptionniste lors de la création de réservations.
 
 % =============================================================
 %  SPRINT 3
@@ -155,7 +182,7 @@ L'API de gestion des chambres et réservations est opérationnelle, les QR codes
 
 \subsection{Objectif du sprint}
 
-Permettre le check-in numérique complet avec vérification du numéro de réservation, saisie des fiches voyageurs multiples (adultes et enfants) et génération du QR client.
+Permettre le check-in numérique complet avec vérification du numéro de réservation, saisie des fiches voyageurs multiples (adultes et enfants) conformes aux obligations légales tunisiennes, et génération du QR code d'accès pour le client.
 
 \subsection{Backlog du sprint}
 
@@ -163,61 +190,73 @@ Permettre le check-in numérique complet avec vérification du numéro de réser
 \centering
 \caption{Backlog du Sprint 3}
 \label{tab:backlog_sprint3}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{9cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-06 & En tant que réceptionniste, je veux effectuer le check-in numérique et remettre un QR code au client & Must \\
+US-06 & En tant que réceptionniste, je veux effectuer le check-in numérique, vérifier la réservation et remettre un QR code au client & Must & Réceptionniste \\
 \hline
-US-07 & En tant que réceptionniste, je veux gérer les fiches voyageurs pour la conformité légale & Must \\
+US-07 & En tant que réceptionniste, je veux gérer les fiches voyageurs (multiples formulaires adultes et enfants) pour la conformité légale & Must & Réceptionniste \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Insérer le diagramme de séquence check-in
-\figplaceholder{Diagramme de séquence — Check-in numérique (réceptionniste → système → QR)}
+\subsubsection{Diagramme de séquence — Check-in numérique}
 
-% TODO: Insérer le diagramme de classes GuestForm
-\figplaceholder{Diagramme de classes — GuestForm}
+\figplaceholder{Diagramme de séquence — Check-in numérique (réceptionniste → backend → QR code → client)}
+
+\subsubsection{Diagramme de classes — GuestForm}
+
+\figplaceholder{Diagramme de classes — GuestForm avec attributs et enum TravelerType}
+
+Le modèle \texttt{GuestForm} représente une fiche voyageur individuelle. Il contient : \texttt{travelerIndex} (ordre dans la réservation), \texttt{travelerType} (enum : ADULT, CHILD), \texttt{fullName}, \texttt{nationality}, \texttt{passportEncrypted} (numéro de passeport chiffré), \texttt{phone}, \texttt{address}. Une réservation peut avoir plusieurs \texttt{GuestForm} associés.
+
+Le champ \texttt{checkinCompletionStatus} de la réservation suit la progression de la saisie des fiches (NOT\_STARTED, PARTIAL, COMPLETED).
 
 \subsection{Étude conceptuelle}
 
-Le workflow de check-in comprend :
+Le workflow de check-in numérique se déroule en plusieurs étapes :
+
 \begin{enumerate}
-  \item Vérification du numéro de réservation ;
-  \item Passage de la réservation en statut \texttt{CHECKED\_IN} ;
-  \item Saisie des fiches voyageurs multiples (adultes + enfants) ;
-  \item Suivi de la complétion (\texttt{checkinCompletionStatus} : NOT\_STARTED, PARTIAL, COMPLETED) ;
-  \item Génération du QR code sécurisé pour le client ;
-  \item Le client peut également compléter ses formulaires voyageurs depuis son téléphone.
+  \item La réceptionniste saisit le numéro de réservation du client dans le dashboard réception ;
+  \item Le backend vérifie l'existence de la réservation et son statut (PENDING) via \texttt{POST /api/checkin/verify} ;
+  \item La réservation passe au statut \texttt{CHECKED\_IN}, la chambre associée passe à \texttt{OCCUPIED} ;
+  \item La réceptionniste saisit les fiches voyageurs (un formulaire par adulte et par enfant) ;
+  \item Le champ \texttt{checkinCompletionStatus} est mis à jour progressivement (PARTIAL → COMPLETED) ;
+  \item Le QR code client (token JWT chambre) est généré et affiché pour remise au client ;
+  \item Le client peut également compléter ses formulaires voyageurs depuis son téléphone via la page \texttt{CheckInPage.tsx}.
 \end{enumerate}
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran du workflow check-in
-\figplaceholder{Capture d'écran — Réception — Workflow check-in}
-\figplaceholder{Capture d'écran — QR code généré pour le client}
-\figplaceholder{Capture d'écran — Check-in numérique côté client (mobile)}
+\figplaceholder{Capture d'écran — Dashboard réception — Workflow check-in (recherche réservation)}
+\figplaceholder{Capture d'écran — Formulaire fiche voyageur (adulte/enfant)}
+\figplaceholder{Capture d'écran — QR code client généré après check-in}
+\figplaceholder{Capture d'écran — Page check-in numérique côté client (mobile)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests d'intégration du service check-in (Jest/Supertest) ;
-  \item Vérification du workflow complet : réservation → check-in → QR → accès.
+  \item Tests d'intégration du service check-in (Jest/Supertest) : vérification de réservation valide, réservation déjà check-in, numéro invalide ;
+  \item Test du workflow complet : numéro de réservation → check-in → saisie fiches voyageurs → génération QR → accès à l'espace chambre ;
+  \item Test de chiffrement du numéro de passeport (\texttt{passportEncrypted}).
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-Le check-in numérique est pleinement fonctionnel. Le QR code est généré et validé correctement. Les fiches voyageurs sont enregistrées avec le suivi de complétion.
+Le check-in numérique est pleinement fonctionnel de bout en bout. Le QR code est généré et validé correctement. Les fiches voyageurs sont enregistrées avec chiffrement du numéro de passeport. Le suivi de complétion (\texttt{checkinCompletionStatus}) fonctionne correctement.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 3.}
+\textbf{Ce qui a bien fonctionné :} La séparation du check-in en deux étapes distinctes (vérification de réservation, puis saisie des fiches) a rendu le workflow clair et facile à valider.
 
+\textbf{Difficultés rencontrées :} La gestion du cas où le client souhaite compléter ses fiches après son check-in physique (depuis son téléphone) a nécessité la création d'une page dédiée (\texttt{CheckInPage.tsx}) accessible sans token chambre.
+
+\textbf{Améliorations identifiées :} Un envoi automatique du QR code par email ou SMS au client pourrait améliorer l'expérience dans une version future.
 
 % =============================================================
 \section*{Résumé du chapitre}
 
-La Release 1 a permis de mettre en place le socle technique du système : authentification JWT avec RBAC, gestion des chambres et réservations, génération de QR codes sécurisés, et check-in numérique avec fiches voyageurs. L'ensemble constitue la base fonctionnelle sur laquelle les releases suivantes s'appuient. Le chapitre suivant présente la Release 2 consacrée au parcours client et aux services numériques.
+La Release 1 a permis de mettre en place le socle technique et fonctionnel de LoomStay : authentification JWT avec RBAC à 5 rôles, gestion complète des chambres et des réservations, génération de QR codes sécurisés (client et worker) avec mécanisme de versionnement, et check-in numérique de bout en bout avec fiches voyageurs conformes. L'ensemble constitue la base fonctionnelle sur laquelle les releases suivantes s'appuient. Le chapitre suivant présente la Release 2 consacrée au parcours client et aux services numériques.

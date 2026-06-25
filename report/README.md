@@ -1,4 +1,4 @@
-# Rapport PFE — Hotel Smart Concierge
+# Rapport PFE — LoomStay
 
 ## Structure du projet LaTeX
 

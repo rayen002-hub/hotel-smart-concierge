@@ -7,8 +7,9 @@
 
 \section*{Introduction}
 
-Ce chapitre détaille la troisième et dernière release du projet. Elle couvre le workflow complet des réclamations avec classification automatique par intelligence artificielle, l'application Flutter mobile pour les agents d'intervention terrain, et le module de gestion des tâches de ménage de chambre (housekeeping). L'intelligence artificielle (classification par apprentissage automatique) est intégrée directement dans le Sprint 7, et non traitée comme une release séparée.
+Ce chapitre présente la troisième et dernière release du projet LoomStay, la plus complexe fonctionnellement. Elle regroupe trois sprints : le Sprint 7 implémente le workflow de réclamations avec classification automatique par IA, le Sprint 8 développe l'assignation des interventions par les managers et l'application Flutter pour les agents terrain, et le Sprint 9 finalise le module housekeeping avec les tâches de ménage de chambre.
 
+Cette release constitue le cœur opérationnel de la plateforme, intégrant le service d'intelligence artificielle directement dans les workflows métier, conformément aux principes Scrum de livraison incrémentale.
 
 % =============================================================
 %  SPRINT 7
@@ -18,7 +19,7 @@ Ce chapitre détaille la troisième et dernière release du projet. Elle couvre 
 
 \subsection{Objectif du sprint}
 
-Permettre au client d'envoyer une réclamation en texte libre dans sa langue, automatiquement traduite et classifiée dans la bonne catégorie par le service d'intelligence artificielle.
+Permettre au client d'envoyer une réclamation en texte libre dans sa langue maternelle, automatiquement traduite et classifiée par catégorie par le pipeline IA, et de suivre son traitement en temps réel.
 
 \subsection{Backlog du sprint}
 
@@ -26,63 +27,80 @@ Permettre au client d'envoyer une réclamation en texte libre dans sa langue, au
 \centering
 \caption{Backlog du Sprint 7}
 \label{tab:backlog_sprint7}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{8.5cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-17 & En tant que client, je veux envoyer une réclamation en texte libre dans ma langue & Must \\
+US-17 & En tant que client, je veux envoyer une réclamation en texte libre dans ma langue & Must & Client \\
 \hline
-US-18 & En tant que système IA, je veux classifier la réclamation automatiquement & Must \\
+US-18 & En tant que système IA, je veux classifier la réclamation dans la bonne catégorie automatiquement & Must & Système IA \\
 \hline
-US-19 & En tant que système IA, je veux fournir un pipeline combiné (détecter + traduire + classifier) & Must \\
+US-19 & En tant que système IA, je veux fournir un pipeline combiné (détecter + traduire + classifier) en un seul appel & Must & Système IA \\
 \hline
-US-20 & En tant que client, je veux suivre le statut de ma réclamation en temps réel & Must \\
+US-20 & En tant que client, je veux suivre le statut de ma réclamation en temps réel & Must & Client \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Diagramme de séquence réclamation avec pipeline IA
-\figplaceholder{Diagramme de séquence — Réclamation avec pipeline IA (détection + traduction + classification)}
+\subsubsection{Diagramme de séquence — Soumission de réclamation avec pipeline IA}
 
-% TODO: Diagramme d'activité workflow réclamation
-\figplaceholder{Diagramme d'activité — Workflow complet d'une réclamation}
+\figplaceholder{Diagramme de séquence — Réclamation client : envoi → pipeline IA (détection + traduction + classification) → backend → notification manager}
+
+\subsubsection{Diagramme d'activité — Workflow complet d'une réclamation}
+
+\figplaceholder{Diagramme d'activité — Workflow réclamation : PENDING → ASSIGNED → IN\_PROGRESS → RESOLVED → CONFIRMED / REOPENED}
+
+\subsubsection{Diagramme de classes}
+
+\figplaceholder{Diagramme de classes — Complaint avec attributs, enum ComplaintStatus, enum ComplaintCategory}
+
+Le modèle \texttt{Complaint} contient les attributs suivants :
+\begin{itemize}
+  \item \texttt{reservationId} : lien avec la réservation du client ;
+  \item \texttt{originalMessage} : texte original de la réclamation (langue du client) ;
+  \item \texttt{detectedLanguage} : code de langue détecté par le service IA ;
+  \item \texttt{normalizedMessageEn} : traduction de la réclamation en français (fournie par NLLB) ;
+  \item \texttt{staffMessage} : message de résolution du staff (affiché à la réception) ;
+  \item \texttt{category} : catégorie classifiée par l'IA (enum : MAINTENANCE, HOUSEKEEPING, RESTAURANT, RECEPTION, NOISE, OTHER) ;
+  \item \texttt{status} : état courant du workflow (enum : PENDING, ASSIGNED, IN\_PROGRESS, RESOLVED, CONFIRMED, REOPENED).
+\end{itemize}
 
 \subsection{Étude conceptuelle}
 
-\subsubsection{Modèle de données}
+\subsubsection{Pipeline IA combiné — Route \texttt{/analyze}}
 
-Le modèle \texttt{Complaint} comprend les champs principaux : \texttt{originalMessage}, \texttt{detectedLanguage}, \texttt{normalizedMessageEn}, \texttt{staffMessage}, \texttt{category}, \texttt{status}, ainsi que les timestamps de suivi.
+Le service IA expose une route unique \texttt{POST /analyze} qui combine trois opérations en un seul appel HTTP :
 
-Le workflow de statut suit le cycle : PENDING → ASSIGNED → IN\_PROGRESS → RESOLVED → CONFIRMED.
-
-\subsubsection{Pipeline IA combinée}
-
-La route \texttt{/analyze} du service IA exécute trois étapes en un seul appel :
 \begin{enumerate}
-  \item \textbf{Détection de langue} : bibliothèque \texttt{langdetect} ;
-  \item \textbf{Traduction} : modèle pré-entraîné NLLB-200-distilled-600M ;
-  \item \textbf{Classification} : modèle entraîné Logistic Regression + TF-IDF.
+  \item \textbf{Détection de langue} : \texttt{LanguageService} utilise \texttt{langdetect} pour identifier la langue du message ;
+  \item \textbf{Traduction} : \texttt{TranslationService} traduit le message vers le français via NLLB-200 ;
+  \item \textbf{Classification} : \texttt{ComplaintClassifier} classifie le texte traduit dans une des 6 catégories.
 \end{enumerate}
 
-\subsubsection{Classification par apprentissage automatique}
+Cette approche en pipeline minimise le nombre d'appels HTTP entre le backend et le service IA, améliorant la latence globale du traitement.
 
-Le classifieur a été entraîné sur un dataset hôtelier de $\sim$500 exemples répartis en 6 catégories : MAINTENANCE, HOUSEKEEPING, RECEPTION, RESTAURANT, COMPLAINT, OTHER.
+\subsubsection{Modèle de classification ML}
 
-\textbf{Approche :} pipeline scikit-learn combinant des features TF-IDF word et char n-grams avec un classifieur Logistic Regression.
+Le modèle de classification des réclamations est un pipeline \textbf{scikit-learn} entraîné sur un dataset de réclamations hôtelières de \textasciitilde{}500 exemples labellisés. Il combine :
 
-\textbf{Évaluation :} 11 pipelines ont été testés. Le meilleur modèle retenu est \textbf{LR\_combined} :
+\begin{itemize}
+  \item \textbf{Vectorisation TF-IDF combinée} : features word n-grams (1-2) + char n-grams (3-5), normalisées et combinées (\texttt{FeatureUnion}) ;
+  \item \textbf{Régression logistique} (Logistic Regression) avec régularisation L2.
+\end{itemize}
+
+Onze pipelines candidats ont été évalués (Naive Bayes, SVM, Random Forest, Gradient Boosting, Logistic Regression avec différentes configurations de features). Le pipeline retenu, \textbf{LR\_combined}, a obtenu les meilleures métriques :
 
 \begin{table}[H]
 \centering
-\caption{Métriques du modèle de classification LR\_combined}
+\caption{Métriques du modèle de classification — LR\_combined}
 \label{tab:metriques_ml}
 \begin{tabular}{|l|c|}
 \hline
 \textbf{Métrique} & \textbf{Valeur} \\
 \hline
-Accuracy (jeu de test) & 0,8595 ($\sim$86\%) \\
+Accuracy (jeu de test) & 0,8595 (\textasciitilde{}86\%) \\
 \hline
 F1 macro & 0,8605 \\
 \hline
@@ -93,38 +111,49 @@ CV F1 macro (validation croisée 5-fold) & 0,7702 $\pm$ 0,0450 \\
 \end{tabular}
 \end{table}
 
-% TODO: Insérer la matrice de confusion
-\figplaceholder{Matrice de confusion du modèle LR\_combined}
-
 \begin{quote}
-\textbf{Note de prudence :} La validation croisée présente un F1 macro moyen d'environ 77\%, ce qui montre que les résultats restent dépendants du jeu de données et doivent être interprétés avec prudence. Les limitations identifiées incluent : messages courts ou ambigus, confusion entre les catégories RECEPTION et RESTAURANT, et nécessité d'enrichir le dataset avec des données réelles de l'hôtel pour améliorer la généralisation du modèle.
+\textbf{Note de prudence :} La validation croisée présente un F1 macro moyen d'environ 77\%, ce qui témoigne d'une certaine variabilité selon la partition du dataset. Les limitations identifiées incluent la confusion entre les catégories RECEPTION et RESTAURANT sur les messages courts et ambigus, ainsi que la taille limitée du dataset (\textasciitilde{}500 exemples). L'enrichissement du dataset avec des données réelles de l'hôtel améliorera la généralisation du modèle.
 \end{quote}
 
-% TODO: Architecture IA/ML
-\figplaceholder{Architecture du service IA/ML (pipeline classification + traduction)}
+\subsubsection{Workflow de statut de réclamation}
+
+Le cycle de vie d'une réclamation suit les statuts suivants :
+\begin{enumerate}
+  \item \texttt{PENDING} : réclamation soumise, en attente d'assignation par le manager ;
+  \item \texttt{ASSIGNED} : réclamation assignée à un employé par le manager ;
+  \item \texttt{IN\_PROGRESS} : l'employé a scanné le QR d'entrée, l'intervention a démarré ;
+  \item \texttt{RESOLVED} : l'employé a scanné le QR de sortie et rapporté le résultat ;
+  \item \texttt{CONFIRMED} : le client confirme la résolution depuis la PWA ;
+  \item \texttt{REOPENED} : le client n'est pas satisfait et rouvre la réclamation.
+\end{enumerate}
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran
-\figplaceholder{Capture d'écran — Page d'envoi de réclamation (PWA client)}
-\figplaceholder{Capture d'écran — Page de suivi des réclamations (PWA client)}
+\figplaceholder{Capture d'écran — Page soumission réclamation (espace chambre client)}
+\figplaceholder{Capture d'écran — Page suivi réclamations client (liste avec statuts)}
+\figplaceholder{Capture d'écran — Réclamation reçue dans le dashboard manager (avec catégorie IA)}
+\figplaceholder{Matrice de confusion — Modèle LR\_combined (6 catégories)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests de l'API réclamations (Jest/Supertest) ;
-  \item Tests du service IA : classification, traduction, pipeline combinée (pytest) ;
-  \item Vérification du workflow complet : envoi → IA → catégorisation → affichage.
+  \item Tests du pipeline IA : envoi de messages dans 5 langues différentes, vérification de la détection, traduction et classification ;
+  \item Tests unitaires du \texttt{ComplaintClassifier} (pytest) : vérification de la prédiction de catégorie ;
+  \item Tests d'intégration du workflow réclamation complet (backend, Jest/Supertest) ;
+  \item Test du temps réel : notification Socket.IO \texttt{complaintStatusChanged} reçue par le client lors d'un changement de statut.
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-Le workflow de réclamation est fonctionnel de bout en bout. Le service IA classifie correctement les réclamations dans les catégories attendues avec une accuracy de $\sim$86\%.
+Le pipeline de réclamation est entièrement fonctionnel de bout en bout. La classification IA atteint \textasciitilde{}86\% de précision sur le jeu de test. Les notifications Socket.IO permettent au client de suivre l'état de sa réclamation en temps réel sans rechargement de page.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 7.}
+\textbf{Ce qui a bien fonctionné :} La route \texttt{/analyze} combinant les trois opérations IA a été une excellente décision architecturale : un seul appel HTTP depuis le backend réduit la latence et simplifie le code.
 
+\textbf{Difficultés rencontrées :} L'entraînement du modèle a nécessité plusieurs itérations pour construire un dataset équilibré entre les 6 catégories. La catégorie NOISE était sous-représentée et a nécessité un rééchantillonnage.
+
+\textbf{Améliorations identifiées :} Un mécanisme de \textit{feedback loop} permettant au staff de corriger les prédictions incorrectes enrichirait automatiquement le dataset d'entraînement.
 
 % =============================================================
 %  SPRINT 8
@@ -134,7 +163,7 @@ Le workflow de réclamation est fonctionnel de bout en bout. Le service IA class
 
 \subsection{Objectif du sprint}
 
-Permettre aux managers d'assigner les réclamations et aux employés d'exécuter les interventions via l'application Flutter mobile avec scan QR.
+Permettre aux managers d'assigner les réclamations aux employés compétents et aux employés d'exécuter leurs interventions via l'application Flutter mobile, avec scan QR d'entrée et de sortie.
 
 \subsection{Backlog du sprint}
 
@@ -142,80 +171,111 @@ Permettre aux managers d'assigner les réclamations et aux employés d'exécuter
 \centering
 \caption{Backlog du Sprint 8}
 \label{tab:backlog_sprint8}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{8.5cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-21 & En tant que responsable, je veux assigner les réclamations à un employé & Must \\
+US-21 & En tant que responsable, je veux consulter les réclamations de mon service et les assigner à un employé & Must & Manager \\
 \hline
-US-22 & En tant que responsable, je veux transférer une réclamation entre services & Should \\
+US-22 & En tant que responsable, je veux transférer une réclamation entre maintenance et ménage & Should & Manager \\
 \hline
-US-23 & En tant que responsable, je veux créer des employés dans mon département & Must \\
+US-23 & En tant que responsable, je veux créer des employés dans mon département & Must & Manager \\
 \hline
-US-24 & En tant qu'employé, je veux me connecter à l'app Flutter et voir mes tâches & Must \\
+US-24 & En tant qu'employé, je veux me connecter à l'app Flutter et voir mes tâches assignées & Must & Employé \\
 \hline
-US-25 & En tant qu'employé, je veux scanner le QR pour démarrer/terminer l'intervention & Must \\
+US-25 & En tant qu'employé, je veux scanner le QR de chambre pour démarrer et terminer mon intervention & Must & Employé \\
 \hline
-US-26 & En tant qu'employé, je veux rapporter le résultat et ajouter un commentaire & Must \\
+US-26 & En tant qu'employé, je veux rapporter le résultat (FIXED/NOT\_FIXED) et ajouter un commentaire & Must & Employé \\
 \hline
-US-27 & En tant que client, je veux confirmer la résolution ou rouvrir & Must \\
+US-27 & En tant que client, je veux confirmer la résolution de ma réclamation ou la rouvrir & Must & Client \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Diagramme de séquence intervention worker
-\figplaceholder{Diagramme de séquence — Intervention worker (assignation → scan entrée → scan sortie → résultat)}
+\subsubsection{Diagramme de séquence — Intervention worker}
 
-% TODO: Diagramme d'activité scan QR worker
-\figplaceholder{Diagramme d'activité — Scan QR worker (validation + traitement)}
+\figplaceholder{Diagramme de séquence — Intervention employé : assignation → scan QR entrée → travail → scan QR sortie → résultat}
+
+\subsubsection{Diagramme d'activité — Scan QR worker}
+
+\figplaceholder{Diagramme d'activité — Scan QR worker (validation roomId + workerQrVersion + traitement)}
+
+\subsubsection{Diagramme de classes}
+
+\figplaceholder{Diagramme de classes — Complaint, InterventionLog, User (employé), InternalMessage}
+
+Le modèle \texttt{InterventionLog} enregistre les détails de chaque intervention terrain :
+\begin{itemize}
+  \item \texttt{complaintId} : réclamation concernée ;
+  \item \texttt{employeeId} : employé assigné ;
+  \item \texttt{entryTime} : horodatage du scan QR d'entrée dans la chambre ;
+  \item \texttt{exitTime} : horodatage du scan QR de sortie ;
+  \item \texttt{result} : résultat de l'intervention (enum : FIXED, NOT\_FIXED) ;
+  \item \texttt{employeeComment} : commentaire optionnel de l'employé.
+\end{itemize}
 
 \subsection{Étude conceptuelle}
 
-\subsubsection{Dashboard manager}
+\subsubsection{Dashboard Manager}
 
-Le dashboard manager comprend :
+Le \texttt{ManagerDashboard} est une interface web React accessible aux rôles \texttt{MAINTENANCE\_MANAGER} et \texttt{HOUSEKEEPING\_MANAGER}. Il est organisé en onglets :
 \begin{itemize}
-  \item Onglet \textbf{Réclamations} : liste filtrée par catégorie, assignation à un employé, transfert entre services, suivi du statut ;
-  \item Onglet \textbf{Employés} : création, liste avec statut en ligne (\texttt{lastSeenAt}), disponibilité.
+  \item \textbf{Réclamations} : liste filtrée par département (MAINTENANCE ou HOUSEKEEPING), avec possibilité d'assigner un employé, de transférer vers l'autre service, et de consulter les détails de l'intervention ;
+  \item \textbf{Employés} : liste des employés du département avec leur statut de disponibilité (\texttt{isAvailable}), dernier vu (\texttt{lastSeenAt}), et un formulaire de création ;
+  \item \textbf{Ménage} (pour \texttt{HOUSEKEEPING\_MANAGER} uniquement) : gestion des tâches housekeeping (cf. Sprint 9).
 \end{itemize}
 
-\subsubsection{Application Flutter mobile}
+\subsubsection{Architecture de l'application Flutter}
 
-L'application Flutter est organisée en architecture feature-layered :
+L'application Flutter est organisée selon une \textbf{architecture en couches par feature} :
+
 \begin{itemize}
-  \item \textbf{Authentification} : login employé, stockage sécurisé du token JWT ;
-  \item \textbf{Liste des tâches} : réclamations assignées avec statut et détails ;
-  \item \textbf{Scanner QR} : scan entrée (\texttt{entryTime}) et scan sortie (\texttt{exitTime}) ;
-  \item \textbf{Résultat} : saisie FIXED/NOT\_FIXED avec commentaire.
+  \item \texttt{features/auth/} : login employé, splash screen, stockage sécurisé du token JWT (\texttt{flutter\_secure\_storage}) ;
+  \item \texttt{features/tasks/} : liste des tâches assignées, détails d'intervention, scanner QR (entrée et sortie), saisie du résultat ;
+  \item \texttt{features/messages/} : consultation des messages internes liés à une tâche.
+\end{itemize}
+
+La navigation est gérée par le package \texttt{go\_router} avec des routes déclaratives et une protection par token. Les appels HTTP sont effectués via le client \texttt{Dio}.
+
+\subsubsection{Scan QR worker dans Flutter}
+
+Le scan est implémenté via le package \texttt{mobile\_scanner} :
+\begin{itemize}
+  \item \textbf{Scan entrée} (\texttt{QrScannerScreen}) : l'employé scanne le QR de la chambre. Le token est envoyé au backend (\texttt{POST /api/worker/qr/start}). Le backend valide le \texttt{roomId}, le \texttt{workerQrVersion} (version courante de la chambre), met le statut de la réclamation à \texttt{IN\_PROGRESS} et enregistre \texttt{entryTime} dans l'\texttt{InterventionLog} ;
+  \item \textbf{Scan sortie} (\texttt{QrExitScannerScreen}) : même QR scanné. Le backend valide, enregistre \texttt{exitTime}, met le statut à \texttt{RESOLVED} et attend la confirmation client.
 \end{itemize}
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran
-\figplaceholder{Capture d'écran — Dashboard manager — Onglet réclamations}
-\figplaceholder{Capture d'écran — Dashboard manager — Onglet employés}
-\figplaceholder{Capture d'écran — App Flutter — Liste des tâches}
-\figplaceholder{Capture d'écran — App Flutter — Scanner QR entrée}
-\figplaceholder{Capture d'écran — App Flutter — Résultat intervention}
+\figplaceholder{Capture d'écran — Dashboard manager — Onglet Réclamations (assignation)}
+\figplaceholder{Capture d'écran — Dashboard manager — Onglet Employés (liste, statut disponibilité)}
+\figplaceholder{Capture d'écran — App Flutter — Écran de connexion employé}
+\figplaceholder{Capture d'écran — App Flutter — Liste des tâches assignées}
+\figplaceholder{Capture d'écran — App Flutter — Scanner QR (écran caméra)}
+\figplaceholder{Capture d'écran — App Flutter — Saisie du résultat (FIXED / NOT\_FIXED)}
+\figplaceholder{Capture d'écran — Page confirmation client (espace chambre PWA)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests de l'API assignation et scan QR (Jest/Supertest) ;
-  \item Tests manuels de l'app Flutter sur émulateur Android ;
-  \item Vérification du workflow complet : assignation → scan → résultat → confirmation client.
+  \item Tests d'intégration backend : assignation, transfert de département, scan QR entrée/sortie, résultat ;
+  \item \texttt{flutter analyze} : 0 erreur, 0 warning ;
+  \item Test manuel du workflow complet : login Flutter → liste tâches → scan entrée → scan sortie → résultat → notification client → confirmation.
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-Le dashboard manager et l'application Flutter sont fonctionnels. Le workflow complet d'intervention est opérationnel.
+L'ensemble du workflow d'intervention est opérationnel. Le dashboard manager permet une gestion complète des réclamations et des employés. L'application Flutter est fonctionnelle sur Android avec le scan QR intégré. La confirmation client et la réouverture de réclamation fonctionnent correctement.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 8.}
+\textbf{Ce qui a bien fonctionné :} L'architecture feature-layered de l'application Flutter a facilité l'organisation du code et le développement itératif. L'intégration du scanner QR via \texttt{mobile\_scanner} a été rapide et fiable.
 
+\textbf{Difficultés rencontrées :} La gestion du \texttt{workerQrVersion} pour l'invalidation des anciens QR codes a nécessité une logique de validation précise côté backend. Un QR obsolète est maintenant rejeté avec un message d'erreur explicite dans l'application Flutter.
+
+\textbf{Améliorations identifiées :} Des notifications push (Firebase Cloud Messaging) pourraient améliorer la réactivité des employés lors d'une nouvelle assignation, sans nécessiter que l'application soit ouverte.
 
 % =============================================================
 %  SPRINT 9
@@ -225,7 +285,7 @@ Le dashboard manager et l'application Flutter sont fonctionnels. Le workflow com
 
 \subsection{Objectif du sprint}
 
-Mettre en place le workflow de ménage de chambre, séparé des réclamations, avec assignation par la gouvernante et exécution par l'employé via scan QR.
+Mettre en place le workflow de ménage de chambre (housekeeping), distinct des réclamations, avec assignation par la gouvernante générale et exécution par les employés housekeeping via l'application Flutter avec scan QR.
 
 \subsection{Backlog du sprint}
 
@@ -233,63 +293,111 @@ Mettre en place le workflow de ménage de chambre, séparé des réclamations, a
 \centering
 \caption{Backlog du Sprint 9}
 \label{tab:backlog_sprint9}
-\begin{tabular}{|c|p{10cm}|c|}
+\begin{tabular}{|c|p{8.5cm}|c|c|}
 \hline
-\textbf{ID} & \textbf{User Story} & \textbf{Priorité} \\
+\textbf{ID} & \textbf{User Story} & \textbf{Priorité} & \textbf{Acteur} \\
 \hline
-US-28 & En tant que gouvernante, je veux assigner une tâche de ménage & Must \\
+US-28 & En tant que gouvernante, je veux consulter les chambres occupées et assigner une tâche de ménage & Must & Gouvernante \\
 \hline
-US-29 & En tant que gouvernante, je veux suivre le statut et consulter l'historique & Must \\
+US-29 & En tant que gouvernante, je veux suivre le statut des tâches de ménage et consulter l'historique & Must & Gouvernante \\
 \hline
-US-30 & En tant qu'employé HK, je veux démarrer/terminer une tâche par scan QR & Must \\
+US-30 & En tant qu'employé housekeeping, je veux démarrer et terminer une tâche ménage par scan QR & Must & Employé HK \\
 \hline
-US-31 & En tant qu'employé HK, je veux rapporter le résultat (DONE/NOT\_DONE) & Must \\
+US-31 & En tant qu'employé housekeeping, je veux rapporter le résultat (DONE/NOT\_DONE) avec un commentaire & Must & Employé HK \\
 \hline
-US-32 & En tant que système, je veux enregistrer un journal d'audit & Should \\
+US-32 & En tant que système, je veux enregistrer un journal d'audit pour chaque action critique & Should & Système \\
 \hline
 \end{tabular}
 \end{table}
 
 \subsection{Analyse}
 
-% TODO: Diagramme de séquence tâche housekeeping
-\figplaceholder{Diagramme de séquence — Tâche housekeeping (assignation → scan → résultat)}
+\subsubsection{Diagramme de séquence — Tâche housekeeping}
+
+\figplaceholder{Diagramme de séquence — Tâche housekeeping : assignation gouvernante → notification employé → scan QR entrée → ménage → scan QR sortie → résultat DONE/NOT\_DONE}
+
+\subsubsection{Diagramme de classes}
+
+\figplaceholder{Diagramme de classes — HousekeepingTask avec attributs et enum HousekeepingTaskStatus}
+
+Le modèle \texttt{HousekeepingTask} est spécifiquement conçu pour les tâches de ménage de chambre, distinctes des réclamations :
+\begin{itemize}
+  \item \texttt{roomId} : chambre concernée par la tâche ;
+  \item \texttt{assignedToId} : employé housekeeping assigné ;
+  \item \texttt{assignedById} : gouvernante qui a créé la tâche ;
+  \item \texttt{note} : instructions optionnelles pour l'employé ;
+  \item \texttt{status} : état courant (enum : ASSIGNED, IN\_PROGRESS, COMPLETED, NEEDS\_REVIEW) ;
+  \item \texttt{entryTime} / \texttt{exitTime} : horodatages du scan QR d'entrée et de sortie ;
+  \item \texttt{result} : résultat final (enum : DONE, NOT\_DONE) ;
+  \item \texttt{workerComment} : commentaire optionnel de l'employé.
+\end{itemize}
+
+\textbf{Différence importante avec les interventions de réclamation :} Les tâches housekeeping ne requièrent pas de confirmation client. Une fois terminées avec le résultat DONE, elles passent au statut COMPLETED. Le résultat NOT\_DONE entraîne le statut NEEDS\_REVIEW, signalant à la gouvernante que la chambre nécessite une attention supplémentaire.
 
 \subsection{Étude conceptuelle}
 
-Le modèle \texttt{HousekeepingTask} comprend : \texttt{roomId}, \texttt{assignedToId}, \texttt{assignedById}, \texttt{note}, \texttt{status}, \texttt{entryTime}, \texttt{exitTime}, \texttt{result} (DONE/NOT\_DONE), \texttt{workerComment}.
+\subsubsection{Onglet Ménage dans le dashboard manager}
 
+Un troisième onglet \og Ménage \fg{} est ajouté au \texttt{ManagerDashboard} pour les utilisateurs avec le rôle \texttt{HOUSEKEEPING\_MANAGER}. Il comprend :
 \begin{itemize}
-  \item Résultat DONE → statut COMPLETED ;
-  \item Résultat NOT\_DONE → statut NEEDS\_REVIEW ;
-  \item Contrairement aux réclamations, les tâches de ménage ne requièrent pas de confirmation du client.
+  \item La liste des chambres actuellement occupées (statut OCCUPIED) disponibles pour une assignation ;
+  \item Un formulaire d'assignation : sélection de la chambre, sélection de l'employé disponible, note optionnelle ;
+  \item La liste des tâches en cours avec leur statut en temps réel ;
+  \item L'historique des tâches terminées (COMPLETED, NEEDS\_REVIEW) avec résultat et commentaire employé.
 \end{itemize}
+
+\subsubsection{Intégration dans l'application Flutter}
+
+L'application Flutter est étendue pour supporter les deux types de tâches pour les employés housekeeping :
+\begin{itemize}
+  \item \textbf{Tâches de réclamation} (déjà présentes depuis le Sprint 8) : affichées dans la section réclamations de la liste de tâches ;
+  \item \textbf{Tâches de ménage} (\texttt{HousekeepingTaskModel}) : affichées dans une nouvelle section dédiée, avec leur propre écran de détail (\texttt{HousekeepingTaskDetailScreen}) et leur propre carte (\texttt{HousekeepingTaskCard}).
+\end{itemize}
+
+Le scan QR est réutilisé pour les tâches housekeeping, avec les routes backend dédiées \texttt{POST /api/housekeeping-tasks/:id/start} (scan entrée) et \texttt{POST /api/housekeeping-tasks/:id/complete} (scan sortie + résultat).
+
+\subsubsection{Journal d'audit (AuditLog)}
+
+Un modèle \texttt{AuditLog} est introduit dans ce sprint pour enregistrer toutes les actions critiques du système :
+\begin{itemize}
+  \item Assignation et transfert de réclamations ;
+  \item Création et modification de tâches housekeeping ;
+  \item Scan QR (entrée/sortie) et résultat d'intervention ;
+  \item Actions d'administration (création/modification d'utilisateurs, régénération QR).
+\end{itemize}
+
+Chaque entrée du journal contient : \texttt{action} (type d'action), \texttt{userId} (acteur), \texttt{targetId} (entité ciblée), \texttt{details} (JSON), \texttt{createdAt} (horodatage).
 
 \subsection{Réalisation}
 
-% TODO: Captures d'écran
-\figplaceholder{Capture d'écran — Dashboard gouvernante — Onglet Ménage}
-\figplaceholder{Capture d'écran — App Flutter — Tâche housekeeping}
-\figplaceholder{Capture d'écran — App Flutter — Scanner QR ménage}
+\figplaceholder{Capture d'écran — Dashboard gouvernante — Onglet Ménage (liste chambres occupées)}
+\figplaceholder{Capture d'écran — Dashboard gouvernante — Formulaire d'assignation tâche ménage}
+\figplaceholder{Capture d'écran — Dashboard gouvernante — Historique des tâches ménage}
+\figplaceholder{Capture d'écran — App Flutter — Section tâches ménage (HousekeepingTaskCard)}
+\figplaceholder{Capture d'écran — App Flutter — Détail tâche ménage (HousekeepingTaskDetailScreen)}
 
 \subsection{Tests et validation du sprint}
 
 \begin{itemize}
-  \item Tests de l'API housekeeping (Jest/Supertest) ;
-  \item Tests manuels du workflow complet sur émulateur ;
-  \item Vérification du journal d'audit (AuditLog).
+  \item Tests d'intégration backend : création tâche, démarrage par scan QR, finalisation avec résultat DONE/NOT\_DONE ;
+  \item Tests des routes Socket.IO : \texttt{housekeepingTaskCreated}, \texttt{housekeepingTaskCompleted}, \texttt{housekeepingTaskNeedsReview} ;
+  \item \texttt{flutter analyze} après ajout des composants housekeeping : 0 erreur ;
+  \item Test de la suite Jest complète (7/7 suites, 25/25 tests) après intégration du Sprint 9.
 \end{itemize}
 
 \subsection{Revue du sprint}
 
-Le workflow housekeeping est pleinement fonctionnel : assignation, scan QR, résultat, suivi gouvernante. Le journal d'audit enregistre les actions critiques.
+Le workflow housekeeping est pleinement opérationnel. La gouvernante peut assigner des tâches, suivre leur progression en temps réel et consulter l'historique. L'employé housekeeping voit ses tâches dans l'application Flutter et peut les démarrer et terminer par scan QR. Le journal d'audit enregistre toutes les actions critiques du système.
 
 \subsection{Rétrospective}
 
-\todo{Compléter la rétrospective du Sprint 9.}
+\textbf{Ce qui a bien fonctionné :} La réutilisation du mécanisme de scan QR développé au Sprint 8 pour les tâches housekeeping a considérablement réduit le temps de développement. L'architecture du \texttt{ManagerDashboard} avec un système d'onglets dynamiques a permis l'ajout du troisième onglet sans refactoring.
 
+\textbf{Difficultés rencontrées :} La distinction dans l'application Flutter entre les tâches de réclamation et les tâches de ménage (deux modèles différents, deux types d'écrans) a nécessité une refactoring de la liste de tâches pour supporter les deux types dans des sections distinctes.
+
+\textbf{Améliorations identifiées :} Un planning de ménage visuel (calendrier ou vue par étage) permettrait à la gouvernante de planifier les tâches de manière plus efficace pour les gros établissements.
 
 % =============================================================
 \section*{Résumé du chapitre}
 
-La Release 3 a permis de compléter le système avec les fonctionnalités les plus avancées : réclamations avec classification IA automatique ($\sim$86\% d'accuracy), dashboard manager avec assignation et transfert, application Flutter mobile pour les interventions terrain avec scan QR, et workflow de ménage de chambre avec suivi gouvernante. L'ensemble du système est désormais fonctionnel de bout en bout. Le chapitre suivant présente le build, les tests et la validation technique.
+La Release 3 a livré le workflow opérationnel complet de la plateforme LoomStay : la gestion des réclamations avec pipeline IA automatique (détection de langue + traduction NLLB + classification ML), le dashboard manager pour l'assignation et le suivi des interventions, l'application Flutter pour les agents terrain avec scan QR horodaté, et le module housekeeping avec gestion des tâches de ménage de chambre par la gouvernante. L'ensemble des modules est désormais intégré et fonctionnel. Le chapitre suivant présente le bilan technique de build, tests et validation réalisés tout au long du projet.

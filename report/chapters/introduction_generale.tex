@@ -8,45 +8,45 @@
 % --- Contexte général ---
 \section*{Contexte général}
 
-L'industrie hôtelière connaît une transformation numérique majeure, accélérée par les nouvelles attentes des voyageurs en matière de services digitaux. Les clients recherchent désormais des expériences fluides, personnalisées et accessibles depuis leur smartphone. Dans ce contexte, la digitalisation des services hôteliers n'est plus un luxe mais une nécessité concurrentielle.
+L'industrie hôtelière mondiale est au cœur d'une transformation numérique profonde, accélérée par l'évolution des comportements des voyageurs et la compétition croissante entre les établissements. Les clients d'aujourd'hui recherchent des expériences digitales fluides et personnalisées, accessibles directement depuis leur smartphone : check-in sans contact, communication multilingue, accès autonome aux services de l'hôtel et suivi de leurs demandes en temps réel.
 
-% TODO: Enrichir avec des statistiques du secteur hôtelier tunisien/mondial
+En Tunisie, le secteur hôtelier représente un pilier de l'économie touristique, accueillant des millions de visiteurs internationaux chaque année. Cependant, de nombreux établissements opèrent encore avec des processus largement manuels — check-in sur papier, gestion des réclamations par téléphone ou en personne, coordination verbale des équipes d'intervention — qui nuisent à la qualité de service et à l'efficacité opérationnelle.
 
 % --- Motivation ---
 \section*{Motivation}
 
-La motivation principale de ce projet réside dans le constat d'un écart significatif entre les attentes des clients modernes et les processus encore largement manuels dans de nombreux établissements hôteliers. Les procédures de check-in sur papier, la gestion des réclamations par téléphone ou en personne, et l'absence de communication multilingue efficace constituent autant de points de friction dans l'expérience client.
+La motivation principale de ce projet réside dans le constat d'un écart significatif entre les attentes des clients modernes et les processus manuels qui caractérisent encore de nombreux établissements hôteliers de taille moyenne. Les points de friction identifiés sont multiples : temps d'attente au check-in, barrière linguistique avec les clients internationaux, absence de traçabilité des interventions techniques et de ménage, et manque d'un canal de communication digital entre le client et la réception.
 
-% TODO: Personnaliser avec les observations faites dans l'hôtel d'accueil
+Ce projet est réalisé en partenariat avec \textbf{Loomens}, une entreprise spécialisée dans le développement de solutions logicielles pour l'hôtellerie, qui a confié la conception et le développement d'une nouvelle plateforme intégrée répondant à ces besoins.
 
 % --- Problématique ---
 \section*{Problématique}
 
-Comment concevoir et développer une plateforme numérique intégrée qui digitalise l'ensemble du parcours client en hôtellerie, automatise le traitement des réclamations par intelligence artificielle, et facilite la coordination des équipes d'intervention sur le terrain, tout en garantissant une installation autonome sur l'infrastructure privée de l'établissement~?
+\textbf{Comment concevoir et développer une plateforme numérique intégrée qui digitalise l'ensemble du parcours client en hôtellerie, automatise le traitement des réclamations par intelligence artificielle, facilite la coordination des équipes terrain via une application mobile, et garantit une installation autonome sur l'infrastructure privée de l'établissement ?}
 
 % --- Solution proposée ---
 \section*{Solution proposée}
 
-Pour répondre à cette problématique, nous proposons \textbf{Hotel Smart Concierge}, une plateforme intelligente de services numériques composée de quatre modules indépendants :
+Pour répondre à cette problématique, nous proposons \textbf{LoomStay}, une plateforme intelligente de services numériques pour établissements hôteliers, composée de quatre modules indépendants architecturés selon le patron SOA (Architecture Orientée Services) :
 
 \begin{itemize}
-  \item Une \textbf{application web React} offrant un espace client chambre installable en tant que PWA et des dashboards pour le personnel hôtelier ;
-  \item Un \textbf{backend Node.js/Express} centralisant la logique métier avec une base de données PostgreSQL ;
-  \item Un \textbf{service d'intelligence artificielle FastAPI} assurant la classification automatique des réclamations et la traduction multilingue ;
-  \item Une \textbf{application mobile Flutter} permettant aux agents de terrain de gérer leurs interventions par scan QR.
+  \item Une \textbf{application web React} offrant un espace client chambre installable en tant que Progressive Web App (PWA), accessible via QR code sécurisé, et des tableaux de bord pour l'ensemble du personnel hôtelier ;
+  \item Un \textbf{backend Node.js/Express} centralisant la logique métier, l'authentification JWT, le contrôle d'accès par rôles (RBAC), la communication temps réel (Socket.IO) et l'accès aux données via Prisma ORM et PostgreSQL ;
+  \item Un \textbf{service d'intelligence artificielle FastAPI} assurant la classification automatique des réclamations (Régression Logistique + TF-IDF, \textasciitilde{}86\% de précision) et la traduction multilingue via le modèle pré-entraîné NLLB-200 de Meta AI ;
+  \item Une \textbf{application mobile Flutter} permettant aux agents terrain (maintenance et ménage) de gérer leurs interventions par scan QR horodaté depuis leur smartphone Android.
 \end{itemize}
 
 % --- Organisation du rapport ---
 \section*{Organisation du rapport}
 
-Ce rapport est organisé comme suit :
+Ce rapport est organisé en sept chapitres, selon la structure suivante :
 
 \begin{itemize}
-  \item \textbf{Chapitre 1} présente le contexte général du projet, la problématique, l'étude de l'existant et la méthodologie adoptée.
-  \item \textbf{Chapitre 2} détaille l'analyse et la préparation du projet (Sprint 0) : identification des acteurs, spécification des besoins, backlog produit, architecture logique et environnement de travail.
-  \item \textbf{Chapitre 3} couvre la Release 1 (Sprints 1 à 3) : socle système, authentification, gestion des chambres, réservations et check-in numérique.
-  \item \textbf{Chapitre 4} couvre la Release 2 (Sprints 4 à 6) : parcours client PWA, services hôteliers et messagerie bilingue avec traduction IA.
-  \item \textbf{Chapitre 5} couvre la Release 3 (Sprints 7 à 9) : réclamations avec classification IA, application Flutter worker et tâches housekeeping.
-  \item \textbf{Chapitre 6} présente le build, les tests et la validation technique du système.
-  \item \textbf{Chapitre 7} décrit l'installation cible sur le serveur privé de l'hôtel et compare avec le déploiement temporaire de démonstration.
+  \item \textbf{Chapitre 1 — Contexte général du projet} : présentation de l'organisme d'accueil (Loomens), problématique, étude de l'existant (5 solutions comparées), solution proposée et méthodologie Scrum ;
+  \item \textbf{Chapitre 2 — Sprint 0 : Analyse et préparation} : identification des 8 acteurs, spécification des besoins fonctionnels et non fonctionnels, backlog produit (32 user stories), planification des 3 releases et 9 sprints, architecture logique SOA et environnement de travail ;
+  \item \textbf{Chapitre 3 — Release 1 : Socle système et gestion hôtelière} (Sprints 1 à 3) : authentification JWT/RBAC, gestion des chambres et réservations, QR codes sécurisés, check-in numérique et fiches voyageurs ;
+  \item \textbf{Chapitre 4 — Release 2 : Parcours client et services numériques} (Sprints 4 à 6) : espace chambre PWA avec accès QR, services d'information hôteliers, événements, convertisseur de devises, messagerie bilingue temps réel avec traduction NLLB ;
+  \item \textbf{Chapitre 5 — Release 3 : Réclamations, interventions et intelligence intégrée} (Sprints 7 à 9) : pipeline IA de réclamations (détection + traduction + classification), dashboard manager, application Flutter worker avec scan QR, tâches de ménage housekeeping ;
+  \item \textbf{Chapitre 6 — Build, tests et validation} : récapitulatif des activités de build et de test pour les 4 modules (Jest, pytest, Flutter analyze), résultats chiffrés, scénario de démonstration end-to-end ;
+  \item \textbf{Chapitre 7 — Installation cible sur serveur privé hôtelier} : architecture de déploiement sur serveur privé (Nginx, PM2, PostgreSQL local), guide d'installation, variables d'environnement, sauvegarde, et comparaison avec le déploiement temporaire de démonstration.
 \end{itemize}

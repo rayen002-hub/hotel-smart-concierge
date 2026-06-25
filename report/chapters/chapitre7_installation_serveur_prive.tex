@@ -7,94 +7,234 @@
 
 \section*{Introduction}
 
-Ce chapitre décrit l'architecture de déploiement cible du système Hotel Smart Concierge sur le serveur physique privé de l'hôtel. Il distingue clairement le déploiement temporaire de démonstration (utilisé pour la soutenance) de l'installation réelle prévue sur l'infrastructure interne de l'hôtel.
+Ce chapitre décrit l'architecture de déploiement cible du système LoomStay sur le serveur physique privé de l'hôtel. Il distingue clairement le déploiement temporaire de démonstration utilisé pour la soutenance de l'installation réelle prévue sur l'infrastructure interne de l'établissement. Cette approche garantit la confidentialité des données des clients, l'autonomie de l'hôtel et l'absence de dépendance aux services cloud publics.
 
 % =============================================================
 \section{Objectif du déploiement cible}
 \label{sec:objectif_deploiement}
 
-L'objectif est de permettre à l'hôtel de fonctionner de manière \textbf{autonome et indépendante de tout service cloud public}. Tous les composants du système (backend, base de données, service IA, stockage de fichiers) sont conçus pour être installés sur un serveur physique privé situé dans les locaux de l'hôtel.
+L'objectif est de permettre à l'hôtel de fonctionner de manière \textbf{autonome et indépendante de tout service cloud public}. Tous les composants du système (backend, base de données, service IA, stockage de fichiers, frontend) sont conçus pour être installés sur un serveur physique privé situé dans les locaux de l'hôtel, accessible uniquement sur le réseau local de l'établissement.
+
+Les avantages de cette approche sont :
+\begin{itemize}
+  \item \textbf{Confidentialité} : les données des clients (fiches voyageurs, réclamations, messages) ne transitent jamais par le cloud public ;
+  \item \textbf{Autonomie} : aucune dépendance à des services tiers (Vercel, Render, Supabase, Hugging Face) ;
+  \item \textbf{Coût récurrent nul} : une fois installé, le système ne génère aucun abonnement mensuel ;
+  \item \textbf{Performance} : latence réduite sur le réseau local, pas de délai de réveil des serveurs cloud (cold start).
+\end{itemize}
 
 % =============================================================
 \section{Architecture physique cible}
 \label{sec:architecture_physique}
 
-% TODO: Insérer le diagramme d'architecture cible serveur privé
-\figplaceholder{Diagramme d'architecture cible — Serveur privé de l'hôtel}
+\figplaceholder{Diagramme d'architecture cible — Serveur privé de l'hôtel (Nginx + Node.js + PostgreSQL + FastAPI)}
 
-L'architecture cible repose sur un serveur physique unique ou un petit cluster, hébergeant :
+L'architecture cible repose sur un serveur physique Linux (ou un petit cluster si l'établissement est de grande taille), hébergeant les composants suivants :
+
 \begin{itemize}
-  \item \textbf{Node.js + Express} : backend API ;
-  \item \textbf{PostgreSQL} : base de données relationnelle ;
-  \item \textbf{Python + FastAPI} : service d'intelligence artificielle ;
-  \item \textbf{Nginx} : reverse proxy et serveur de fichiers statiques (frontend React build) ;
-  \item \textbf{Stockage local} : remplacement de Supabase Storage par un stockage de fichiers local.
+  \item \textbf{Nginx} : reverse proxy gérant toutes les requêtes entrantes. Il sert les fichiers statiques du frontend React/PWA (\texttt{dist/}) et redirige les requêtes API vers le backend Node.js et les requêtes IA vers le service FastAPI ;
+  \item \textbf{Node.js + Express} : backend API, géré par le gestionnaire de processus PM2 pour le redémarrage automatique ;
+  \item \textbf{PostgreSQL} : SGBD relationnel installé localement, gérant l'ensemble des données du système ;
+  \item \textbf{Python + FastAPI} : service d'intelligence artificielle (traduction NLLB, classification ML), géré par PM2 ou Docker ;
+  \item \textbf{Stockage local} : répertoire du serveur pour les images d'événements, en remplacement de Supabase Storage.
 \end{itemize}
 
 % =============================================================
-\section{Installation sur serveur privé}
-\label{sec:installation_serveur}
-
-\subsection{Prérequis}
-
-\begin{itemize}
-  \item Serveur Linux (Ubuntu 22.04 LTS recommandé) ;
-  \item Node.js 18+ ;
-  \item PostgreSQL 15+ ;
-  \item Python 3.10+ ;
-  \item Docker (optionnel, pour le service IA) ;
-  \item Nginx.
-\end{itemize}
-
-\subsection{Étapes d'installation}
-
-\todo{Détailler les commandes d'installation pas à pas.}
-
-% =============================================================
-\section{Réseau local hôtelier et accès staff}
+\section{Réseau local hôtelier et accès}
 \label{sec:reseau_local}
 
-Le système est accessible sur le réseau local de l'hôtel :
+Le système est accessible sur le réseau local (Wi-Fi et Ethernet) de l'hôtel :
+
 \begin{itemize}
-  \item Les dashboards du personnel sont accessibles depuis les postes de travail connectés au réseau local ;
-  \item L'espace client PWA est accessible via le Wi-Fi de l'hôtel après scan du QR code ;
-  \item L'application Flutter se connecte au backend via le réseau local.
+  \item \textbf{Personnel (dashboards web)} : accessible depuis les postes de travail connectés au réseau local de l'hôtel, via un navigateur web pointant vers l'adresse IP locale du serveur (ex. : \texttt{http://192.168.1.10}) ;
+  \item \textbf{Client (PWA chambre)} : accessible via le Wi-Fi de l'hôtel après scan du QR code remis lors du check-in. Le QR code contient l'URL du serveur local ;
+  \item \textbf{Application Flutter (employés)} : se connecte au backend via le réseau local de l'hôtel, configurée avec l'adresse IP du serveur.
 \end{itemize}
+
+% =============================================================
+\section{Prérequis serveur}
+\label{sec:prerequis_serveur}
+
+\begin{table}[H]
+\centering
+\caption{Prérequis pour l'installation sur serveur privé}
+\label{tab:prerequis}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Composant} & \textbf{Version recommandée} \\
+\hline
+Système d'exploitation & Ubuntu 22.04 LTS (64 bits) \\
+\hline
+Node.js & 18 LTS ou supérieur \\
+\hline
+npm & 9+ \\
+\hline
+PostgreSQL & 15 ou supérieur \\
+\hline
+Python & 3.10 ou supérieur \\
+\hline
+pip & 23+ \\
+\hline
+Nginx & 1.18+ \\
+\hline
+PM2 & 5+ (gestionnaire de processus Node.js) \\
+\hline
+Docker & 24+ (optionnel, pour le service IA) \\
+\hline
+Git & 2.40+ \\
+\hline
+RAM serveur recommandée & 8 Go minimum (16 Go recommandé pour NLLB) \\
+\hline
+Espace disque & 20 Go minimum + espace pour les images \\
+\hline
+\end{tabular}
+\end{table}
+
+% =============================================================
+\section{Étapes d'installation}
+\label{sec:installation_serveur}
+
+\subsection{Clonage du dépôt}
+
+\begin{lstlisting}[language=bash, caption={Clonage du dépôt et configuration de l'environnement}]
+git clone https://github.com/rayen002-hub/hotel-smart-concierge.git
+cd hotel-smart-concierge
+\end{lstlisting}
+
+\subsection{Installation et démarrage du backend}
+
+\begin{lstlisting}[language=bash, caption={Installation et démarrage du backend Node.js}]
+cd backend
+npm install
+# Configurer le fichier .env (voir section variables d'environnement)
+npx prisma migrate deploy    # Application des migrations
+npx prisma db seed           # Données initiales (admin, réceptionniste, managers)
+npm run build                # Compilation TypeScript
+pm2 start dist/index.js --name loomstay-backend
+\end{lstlisting}
+
+\subsection{Installation et démarrage du service IA}
+
+\begin{lstlisting}[language=bash, caption={Installation du service IA Python/FastAPI}]
+cd ai-service
+pip install -r requirements.txt
+# Le modele NLLB sera telecharge depuis Hugging Face au premier lancement
+pm2 start "uvicorn app.main:app --host 0.0.0.0 --port 8000" \
+    --name loomstay-ai-service --interpreter none
+\end{lstlisting}
+
+\subsection{Build et déploiement du frontend}
+
+\begin{lstlisting}[language=bash, caption={Build du frontend React et déploiement via Nginx}]
+cd web-app
+npm install
+npm run build
+# Copier le build vers le répertoire Nginx
+sudo cp -r dist/* /var/www/loomstay/
+\end{lstlisting}
+
+\subsection{Configuration Nginx}
+
+La configuration Nginx redirige les requêtes selon leur chemin :
+
+\begin{lstlisting}[language=bash, caption={Exemple de configuration Nginx (loomstay.conf)}]
+server {
+    listen 80;
+    server_name 192.168.1.10;   # Adresse IP locale du serveur
+
+    # Frontend React (fichiers statiques)
+    root /var/www/loomstay;
+    index index.html;
+    try_files $uri $uri/ /index.html;
+
+    # Proxy API backend
+    location /api/ {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Proxy WebSocket (Socket.IO)
+    location /socket.io/ {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Proxy service IA
+    location /ai/ {
+        proxy_pass http://localhost:8000;
+    }
+}
+\end{lstlisting}
+
+% =============================================================
+\section{Variables d'environnement}
+\label{sec:variables_env}
+
+Les variables d'environnement sont stockées dans un fichier \texttt{.env} à la racine du module backend, exclu du versionning (Git) :
+
+\begin{table}[H]
+\centering
+\caption{Variables d'environnement du backend}
+\label{tab:variables_env}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Description} \\
+\hline
+\texttt{DATABASE\_URL} & URL de connexion PostgreSQL \\
+\hline
+\texttt{JWT\_SECRET} & Clé secrète pour la signature des tokens JWT \\
+\hline
+\texttt{JWT\_CHECKIN\_SECRET} & Clé pour les tokens QR client \\
+\hline
+\texttt{JWT\_WORKER\_SECRET} & Clé pour les tokens QR worker \\
+\hline
+\texttt{AI\_SERVICE\_URL} & URL du service IA (\texttt{http://localhost:8000}) \\
+\hline
+\texttt{PORT} & Port du backend Express (défaut : 3001) \\
+\hline
+\texttt{STORAGE\_PATH} & Chemin du répertoire de stockage local des images \\
+\hline
+\end{tabular}
+\end{table}
 
 % =============================================================
 \section{Base de données et stockage interne}
 \label{sec:bdd_stockage}
 
-PostgreSQL est le SGBD principal du système. Dans le déploiement cible réel, la base de données est installée localement sur le serveur de l'hôtel. Le stockage des images (événements, etc.) est assuré par un répertoire local du serveur, remplaçant Supabase Storage utilisé dans l'environnement de démonstration.
+En installation cible, PostgreSQL est installé localement sur le serveur de l'hôtel. Les migrations Prisma (\texttt{prisma migrate deploy}) créent automatiquement le schéma complet.
+
+\textbf{Stockage des images :} En installation cible, le stockage des images des événements hôteliers est assuré par un répertoire local du serveur (ex. : \texttt{/var/loomstay/uploads/}), accessible via Nginx. Cette approche remplace Supabase Storage utilisé dans l'environnement de démonstration.
+
+\subsection{Sauvegarde de la base de données}
+
+\begin{lstlisting}[language=bash, caption={Sauvegarde PostgreSQL via pg\_dump}]
+# Sauvegarde quotidienne (à planifier via cron)
+pg_dump -U postgres loomstay_db > /backups/loomstay_$(date +%Y%m%d).sql
+
+# Restauration
+psql -U postgres loomstay_db < /backups/loomstay_20240615.sql
+\end{lstlisting}
 
 % =============================================================
 \section{Sécurité et confidentialité}
 \label{sec:securite}
 
 \begin{itemize}
-  \item Toutes les communications internes sont sur le réseau local de l'hôtel ;
-  \item Les données sensibles (passeports) sont chiffrées en base de données ;
-  \item Les secrets (JWT secret, credentials DB) sont stockés dans des variables d'environnement ;
-  \item L'accès externe peut être limité ou désactivé selon la politique de l'hôtel.
+  \item Toutes les communications sont sur le réseau local de l'hôtel (pas d'exposition directe à Internet, sauf configuration explicite) ;
+  \item Les données sensibles des clients (numéros de passeport) sont chiffrées en base de données (\texttt{passportEncrypted}) ;
+  \item Les secrets (JWT secret, credentials PostgreSQL) sont stockés dans des variables d'environnement et jamais versionés ;
+  \item L'accès externe peut être restreint ou activé via Nginx selon la politique de l'hôtel (ex. : VPN pour l'accès à distance) ;
+  \item Helmet.js protège contre les attaques XSS et les injections de headers côté backend.
 \end{itemize}
-
-% =============================================================
-\section{Sauvegarde et maintenance}
-\label{sec:sauvegarde}
-
-\begin{itemize}
-  \item \textbf{Base de données} : sauvegarde régulière via \texttt{pg\_dump} ;
-  \item \textbf{Fichiers} : sauvegarde du répertoire de stockage local ;
-  \item \textbf{Mise à jour} : procédure de mise à jour du code via \texttt{git pull} et redémarrage des services.
-\end{itemize}
-
-\todo{Fournir les commandes de sauvegarde et de restauration.}
 
 % =============================================================
 \section{Déploiement temporaire de démonstration}
 \label{sec:deploiement_demo}
 
-Pour les besoins de la démonstration et de la soutenance, le système a été déployé temporairement sur des plateformes cloud publiques :
+Pour les besoins de la soutenance et de la validation académique, le système a été déployé temporairement sur des plateformes cloud publiques accessibles depuis Internet :
 
 \begin{table}[H]
 \centering
@@ -104,13 +244,13 @@ Pour les besoins de la démonstration et de la soutenance, le système a été d
 \hline
 \textbf{Plateforme} & \textbf{Usage temporaire} \\
 \hline
-Supabase & Hébergement PostgreSQL de démonstration + stockage d'images \\
+Supabase & Hébergement PostgreSQL de démonstration + stockage Supabase Storage pour les images \\
 \hline
 Vercel & Hébergement temporaire de la web-app (frontend React/PWA) \\
 \hline
 Render & Hébergement temporaire du backend Node.js/Express \\
 \hline
-Hugging Face Spaces & Hébergement temporaire du service IA FastAPI (avec Docker) \\
+Hugging Face Spaces & Hébergement temporaire du service IA FastAPI (avec Dockerfile) \\
 \hline
 \end{tabular}
 \end{table}
@@ -120,32 +260,34 @@ Hugging Face Spaces & Hébergement temporaire du service IA FastAPI (avec Docker
 \end{quote}
 
 % =============================================================
-\section{Différence entre démonstration cloud et installation réelle}
+\section{Comparaison démonstration cloud vs installation réelle}
 \label{sec:difference_demo_prod}
 
 \begin{table}[H]
 \centering
-\caption{Comparaison démonstration cloud vs installation réelle}
+\caption{Comparaison démonstration cloud vs installation réelle sur serveur privé}
 \label{tab:comparaison_demo_prod}
-\begin{tabular}{|p{4cm}|p{5cm}|p{5cm}|}
+\begin{tabular}{|p{3.5cm}|p{4.8cm}|p{4.8cm}|}
 \hline
 \textbf{Aspect} & \textbf{Démonstration cloud} & \textbf{Installation réelle} \\
 \hline
-Hébergement backend & Render (cloud public) & Serveur privé de l'hôtel \\
+Hébergement backend & Render (cloud public) & Serveur privé de l'hôtel (PM2 + Node.js) \\
 \hline
-Base de données & Supabase (cloud) & PostgreSQL local \\
+Base de données & Supabase PostgreSQL (cloud) & PostgreSQL local (serveur hôtel) \\
 \hline
-Stockage images & Supabase Storage & Répertoire local du serveur \\
+Stockage images & Supabase Storage & Répertoire local du serveur + Nginx \\
 \hline
-Service IA & Hugging Face Spaces & Serveur privé (Docker ou natif) \\
+Service IA & Hugging Face Spaces (Docker) & Serveur privé (PM2 ou Docker local) \\
 \hline
-Frontend & Vercel (cloud) & Nginx + fichiers statiques locaux \\
+Frontend & Vercel (CDN cloud) & Nginx + fichiers statiques locaux \\
 \hline
 Réseau & Internet public & Réseau local de l'hôtel \\
 \hline
 Confidentialité & Données transitant par le cloud & Données restant dans l'hôtel \\
 \hline
-Coût récurrent & Gratuit (free tier) & Aucun (infrastructure propre) \\
+Coût récurrent & Gratuit (free tier temporaire) & Aucun (infrastructure propre) \\
+\hline
+Disponibilité & Dépendante des services cloud & Maîtrisée par l'hôtel \\
 \hline
 \end{tabular}
 \end{table}
@@ -153,4 +295,4 @@ Coût récurrent & Gratuit (free tier) & Aucun (infrastructure propre) \\
 % =============================================================
 \section*{Résumé du chapitre}
 
-Ce chapitre a présenté l'architecture de déploiement cible du système sur le serveur privé de l'hôtel. Il a clairement distingué le déploiement temporaire de démonstration (Vercel, Render, Hugging Face, Supabase) de l'installation réelle prévue sur l'infrastructure interne, garantissant l'autonomie, la confidentialité des données et l'absence de dépendance au cloud public.
+Ce chapitre a présenté l'architecture de déploiement cible du système LoomStay sur le serveur physique privé de l'hôtel. Les prérequis, les étapes d'installation pour chaque module (backend, service IA, frontend, Nginx), la configuration des variables d'environnement et la procédure de sauvegarde ont été détaillés. La distinction claire entre l'environnement de démonstration cloud (Vercel, Render, Hugging Face, Supabase) et l'installation réelle garantit que la confidentialité des données des clients et l'autonomie de l'établissement sont pleinement assurées en production.

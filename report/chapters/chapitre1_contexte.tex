@@ -7,117 +7,131 @@
 
 \section*{Introduction}
 
-Ce chapitre présente le cadre général dans lequel s'inscrit notre projet de fin d'études. Nous commençons par la présentation de l'organisme d'accueil, puis nous définissons le projet et sa problématique. Nous effectuons ensuite une étude de l'existant avec une analyse comparative des solutions concurrentes, avant de présenter notre solution et la méthodologie de gestion de projet adoptée.
+Ce chapitre présente le cadre général dans lequel s'inscrit notre projet de fin d'études. Nous commençons par la présentation de l'organisme d'accueil, puis nous définissons le projet et sa problématique. Nous effectuons ensuite une étude de l'existant avec une analyse comparative des solutions concurrentes, avant de présenter notre solution \textbf{LoomStay} et la méthodologie de gestion de projet adoptée.
 
 % =============================================================
 \section{Présentation de l'organisme d'accueil}
 \label{sec:organisme}
 
-% TODO: Remplacer par les informations réelles de l'hôtel
-\todo{Insérer le logo de l'hôtel / entreprise d'accueil.}
+\textbf{Loomens} est une entreprise spécialisée dans le développement de solutions logicielles pour le secteur de l'hôtellerie et de la restauration. Elle accompagne les établissements hôteliers dans leur transformation numérique en proposant des outils adaptés à leurs besoins opérationnels : gestion des réservations, suivi des interventions terrain, communication avec les clients et optimisation des services internes.
 
-\todo{Présenter l'organisme d'accueil : nom, localisation, catégorie, capacité, historique, services proposés.}
-
-% TODO: Ajouter une photo ou le logo de l'hôtel
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=0.4\textwidth]{figures/images/logo_hotel.png}
-%   \caption{Logo de l'organisme d'accueil}
-%   \label{fig:logo_hotel}
-% \end{figure}
+Dans le cadre de ce projet de fin d'études, Loomens a confié à notre équipe la conception et le développement d'une nouvelle plateforme intelligente de services numériques, dénommée \textbf{LoomStay}, destinée à être déployée sur les serveurs privés des établissements hôteliers partenaires.
 
 % =============================================================
 \section{Contexte et définition du projet}
 \label{sec:definition_projet}
 
-Le projet \textbf{Hotel Smart Concierge} s'inscrit dans la dynamique de transformation numérique du secteur hôtelier. Il vise à concevoir et développer une plateforme intelligente de services numériques qui digitalise l'ensemble du parcours client, depuis le check-in jusqu'à la gestion des réclamations et le suivi des interventions terrain.
+Le projet \textbf{LoomStay} s'inscrit dans la dynamique de transformation numérique du secteur hôtelier. Il vise à concevoir et développer une plateforme intelligente de services numériques qui digitalise l'ensemble du parcours client, depuis le check-in jusqu'à la gestion des réclamations et le suivi des interventions terrain.
 
 Le projet couvre les axes fonctionnels suivants :
 \begin{itemize}
-  \item \textbf{Check-in numérique} avec génération de QR codes sécurisés pour l'accès aux services ;
-  \item \textbf{Espace client chambre} accessible via PWA installable sur smartphone ;
+  \item \textbf{Check-in numérique} avec vérification du numéro de réservation et génération de QR codes sécurisés pour l'accès aux services ;
+  \item \textbf{Espace client chambre} accessible uniquement via une PWA installable sur smartphone, déclenchée par le scan du QR code ;
   \item \textbf{Messagerie bilingue en temps réel} entre clients et réception avec traduction automatique ;
   \item \textbf{Gestion des réclamations} avec classification automatique par intelligence artificielle ;
-  \item \textbf{Application mobile} pour les agents d'intervention terrain (maintenance et ménage) ;
-  \item \textbf{Gestion des tâches de ménage de chambre} (housekeeping) avec suivi par scan QR.
+  \item \textbf{Application mobile Flutter} pour les agents d'intervention terrain (maintenance et ménage) avec scan QR d'entrée/sortie ;
+  \item \textbf{Gestion des tâches de ménage de chambre} (housekeeping) avec suivi par la gouvernante générale.
 \end{itemize}
 
 % =============================================================
 \section{Problématique}
 \label{sec:problematique}
 
-La gestion traditionnelle des services hôteliers présente plusieurs limitations :
+La gestion traditionnelle des services hôteliers repose encore largement sur des processus manuels, des communications verbales et des supports papier. Cette approche présente plusieurs limitations structurelles qui nuisent à la qualité de service et à l'efficacité opérationnelle :
 
 \begin{enumerate}
-  \item \textbf{Check-in manuel} : processus papier lent, source d'erreurs et d'attente pour les clients ;
-  \item \textbf{Barrière linguistique} : difficulté de communication avec les clients internationaux ;
-  \item \textbf{Gestion réactive des réclamations} : absence de classification automatique et de suivi structuré ;
-  \item \textbf{Coordination terrain inefficace} : absence d'outil mobile pour les équipes d'intervention ;
-  \item \textbf{Manque de traçabilité} : absence de suivi horodaté des interventions et des tâches de ménage.
+  \item \textbf{Check-in manuel} : processus papier lent, source d'erreurs de saisie et de temps d'attente pour les clients, avec un risque de perte des fiches voyageurs réglementaires ;
+  \item \textbf{Barrière linguistique} : difficulté de communication avec les clients internationaux ne parlant pas la langue du personnel, conduisant à des malentendus et à une dégradation de l'expérience client ;
+  \item \textbf{Gestion réactive des réclamations} : absence de classification automatique des incidents, ce qui retarde leur traitement et complique l'assignation aux bons départements (maintenance ou ménage) ;
+  \item \textbf{Coordination terrain inefficace} : absence d'outil mobile pour les équipes d'intervention, qui reçoivent leurs tâches verbalement ou par téléphone, sans traçabilité ;
+  \item \textbf{Manque de traçabilité} : absence de suivi horodaté des interventions et des tâches de ménage, rendant difficile l'audit et l'évaluation des performances ;
+  \item \textbf{Absence d'espace client digitalisé} : le client n'a aucun accès autonome aux informations de l'hôtel, aux événements, à la messagerie ou au suivi de ses réclamations.
 \end{enumerate}
-
-% TODO: Enrichir avec des observations spécifiques à l'hôtel d'accueil
 
 % =============================================================
 \section{Étude de l'existant}
 \label{sec:etude_existant}
 
-% TODO: Décrire les solutions existantes dans le secteur hôtelier
-% Exemples : Mews, Cloudbeds, Hotelogix, etc.
+Plusieurs solutions existent sur le marché de la gestion hôtelière numérique. Nous présentons ci-dessous une analyse de cinq solutions représentatives.
 
-\todo{Présenter 3 à 5 solutions existantes dans le domaine de la gestion hôtelière numérique.}
+\subsection{Mews}
 
-\todo{Pour chaque solution : nom, description, fonctionnalités principales, points forts, points faibles.}
+Mews est un PMS (Property Management System) cloud basé en République Tchèque, fondé en 2012. Il propose une suite complète de gestion hôtelière : check-in en ligne, gestion des chambres, facturation, reporting et intégration avec des plateformes tierces. Mews offre une interface moderne et une API ouverte, mais il est entièrement hébergé sur le cloud (sans option d'installation sur serveur privé) et son coût d'abonnement mensuel le rend inaccessible pour les établissements de taille moyenne.
+
+\subsection{Cloudbeds}
+
+Cloudbeds est une plateforme américaine tout-en-un dédiée à l'hôtellerie, intégrant la gestion des réservations (PMS), un moteur de réservation, un channel manager et un portail client. Elle propose un espace digital pour les clients, mais sans traduction automatique ni classification IA des réclamations. Comme Mews, elle est exclusivement cloud et implique un abonnement mensuel significatif.
+
+\subsection{Hotelogix}
+
+Hotelogix est un PMS en SaaS ciblant les hôtels de taille petite à moyenne, disponible en plusieurs langues. Il propose la gestion des réservations, la facturation, le suivi des chambres et un portail de reporting. Cependant, il ne dispose pas de module de messagerie client intégré avec traduction automatique, ni d'application mobile pour les agents d'intervention terrain.
+
+\subsection{Medallia (anciennement Zingle)}
+
+Medallia est une plateforme spécialisée dans la communication client et la gestion de l'expérience hôtelière. Elle propose une messagerie multicanal (SMS, WhatsApp, e-mail) avec traduction automatique de base. Elle cible principalement les chaînes hôtelières de grande envergure, avec des tarifs prohibitifs pour les établissements indépendants. Elle ne couvre pas la gestion des interventions terrain ni la classification IA des réclamations.
+
+\subsection{Alice (Actabl)}
+
+Alice est une plateforme opérationnelle pour les hôtels, proposant la gestion des tâches d'entretien (housekeeping), des demandes des clients et des interventions de maintenance. Elle intègre une application mobile pour les agents. Cependant, elle ne propose pas de classification automatique des réclamations par IA, ni de traduction automatique intégrée. Son déploiement est exclusivement cloud, avec des licences annuelles coûteuses.
 
 % =============================================================
 \section{Étude comparative et critique}
 \label{sec:etude_comparative}
 
-% TODO: Créer un tableau comparatif des solutions existantes
-\todo{Insérer un tableau comparatif des solutions existantes vs notre solution.}
+Le tableau~\ref{tab:comparatif} présente une analyse comparative des solutions existantes par rapport à notre solution LoomStay, sur la base des critères fonctionnels et techniques les plus pertinents.
 
-% \begin{table}[H]
-%   \centering
-%   \caption{Tableau comparatif des solutions existantes}
-%   \label{tab:comparatif}
-%   \begin{tabular}{|l|c|c|c|c|c|}
-%     \hline
-%     \textbf{Critère} & \textbf{Solution A} & \textbf{Solution B} & \textbf{Solution C} & \textbf{Notre solution} \\
-%     \hline
-%     Check-in numérique & & & & \\
-%     \hline
-%     Classification IA & & & & \\
-%     \hline
-%     Traduction automatique & & & & \\
-%     \hline
-%     App mobile terrain & & & & \\
-%     \hline
-%     Installation serveur privé & & & & \\
-%     \hline
-%   \end{tabular}
-% \end{table}
+\begin{table}[H]
+  \centering
+  \caption{Tableau comparatif des solutions existantes}
+  \label{tab:comparatif}
+  \begin{tabular}{|p{4.5cm}|c|c|c|c|c|c|}
+    \hline
+    \textbf{Critère} & \textbf{Mews} & \textbf{Cloudbeds} & \textbf{Hotelogix} & \textbf{Medallia} & \textbf{Alice} & \textbf{LoomStay} \\
+    \hline
+    Check-in numérique & \checkmark & \checkmark & \checkmark & \texttimes & \texttimes & \checkmark \\
+    \hline
+    Espace client PWA (QR) & \texttimes & partiel & \texttimes & \texttimes & \texttimes & \checkmark \\
+    \hline
+    Messagerie client-réception & partiel & partiel & \texttimes & \checkmark & partiel & \checkmark \\
+    \hline
+    Traduction automatique & \texttimes & \texttimes & \texttimes & partiel & \texttimes & \checkmark \\
+    \hline
+    Classification IA réclamations & \texttimes & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+    \hline
+    App mobile agents terrain & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark & \checkmark \\
+    \hline
+    Scan QR entrée/sortie & \texttimes & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+    \hline
+    Gestion tâches ménage & \texttimes & \texttimes & partiel & \texttimes & \checkmark & \checkmark \\
+    \hline
+    Serveur privé (on-premise) & \texttimes & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+    \hline
+    Open source / coût maîtrisé & \texttimes & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+    \hline
+  \end{tabular}
+\end{table}
 
 La critique de l'existant révèle que les solutions actuelles présentent principalement les lacunes suivantes :
-
 \begin{itemize}
-  \item Dépendance au cloud public sans possibilité d'installation sur serveur privé ;
-  \item Absence de classification automatique des réclamations par IA ;
-  \item Absence de traduction automatique intégrée pour la communication multilingue ;
-  \item Coûts d'abonnement élevés inadaptés aux établissements de taille moyenne.
+  \item Dépendance au cloud public sans possibilité d'installation sur serveur privé, impliquant des risques de confidentialité des données des clients ;
+  \item Absence de classification automatique des réclamations par IA, laissant à charge du personnel une catégorisation manuelle sujette à des erreurs ;
+  \item Absence de traduction automatique intégrée pour la communication multilingue entre clients et staff ;
+  \item Absence d'application mobile légère pour les agents de terrain avec scan QR pour la traçabilité des interventions ;
+  \item Coûts d'abonnement mensuels ou annuels élevés, inadaptés aux établissements hôteliers de taille moyenne ou indépendants.
 \end{itemize}
 
 % =============================================================
 \section{Solution proposée}
 \label{sec:solution_proposee}
 
-Notre solution, \textbf{Hotel Smart Concierge}, se distingue par :
+Notre solution, \textbf{LoomStay}, développée par \textbf{Loomens}, se distingue des solutions existantes par les caractéristiques suivantes :
 
 \begin{itemize}
-  \item Une \textbf{architecture modulaire SOA} composée de 4 modules indépendants ;
-  \item Un \textbf{service d'intelligence artificielle} intégrant la classification des réclamations (Logistic Regression + TF-IDF) et la traduction multilingue (NLLB-200) ;
-  \item Une \textbf{PWA installable} pour l'espace client chambre, accessible via QR code sécurisé ;
-  \item Une \textbf{application Flutter mobile} pour les agents de terrain avec scan QR ;
-  \item Une conception orientée \textbf{installation sur serveur privé} de l'hôtel, sans dépendance au cloud public.
+  \item Une \textbf{architecture modulaire SOA} composée de 4 modules indépendants (web-app, backend, service IA, app Flutter) communicant via des API REST, garantissant la maintenabilité et l'évolutivité ;
+  \item Un \textbf{service d'intelligence artificielle} intégrant la classification automatique des réclamations (Régression Logistique + TF-IDF, précision de \textasciitilde{}86\%) et la traduction multilingue via le modèle pré-entraîné NLLB-200 de Meta AI ;
+  \item Une \textbf{PWA installable} pour l'espace client chambre, accessible uniquement via QR code sécurisé (JWT), offrant une expérience native sur smartphone sans installation d'application ;
+  \item Une \textbf{application Flutter mobile} légère pour les agents de terrain (maintenance et ménage), avec scan QR pour la traçabilité horodatée des interventions ;
+  \item Une conception orientée \textbf{installation sur serveur privé} de l'hôtel, préservant la confidentialité des données des clients et éliminant les dépendances aux services cloud tiers.
 \end{itemize}
 
 % =============================================================
@@ -126,14 +140,16 @@ Notre solution, \textbf{Hotel Smart Concierge}, se distingue par :
 
 \subsection{Choix de la méthodologie Scrum}
 
-Pour la gestion de ce projet, nous avons adopté la méthodologie agile \textbf{Scrum}. Ce choix se justifie par :
+Pour la gestion de ce projet, nous avons adopté la méthodologie agile \textbf{Scrum}. Ce choix se justifie par les raisons suivantes :
 
 \begin{itemize}
-  \item La nature itérative et incrémentale du développement ;
-  \item Le besoin de livraisons fréquentes et de feedback continu ;
-  \item La complexité fonctionnelle du projet nécessitant une approche progressive ;
-  \item La conformité avec les pratiques académiques de gestion de projet.
+  \item La nature itérative et incrémentale du développement, qui permet d'ajuster les priorités au fil des sprints ;
+  \item Le besoin de livraisons fréquentes de fonctionnalités opérationnelles, vérifiables à chaque sprint ;
+  \item La complexité fonctionnelle du projet, couvrant plusieurs acteurs et plusieurs modules techniques, nécessitant une approche progressive ;
+  \item La facilité d'intégration des retours de l'encadrant et du superviseur à chaque fin de sprint.
 \end{itemize}
+
+Dans le cadre de ce projet, nous adoptons une version simplifiée de Scrum, adaptée au contexte académique d'un PFE individuel. Les cérémonies Scrum (planification de sprint, revue, rétrospective) sont formalisées dans les chapitres correspondants du rapport.
 
 \subsection{Organisation en releases et sprints}
 
@@ -145,13 +161,14 @@ Le projet a été organisé en \textbf{3 releases} et \textbf{9 sprints}, chaque
   \item \textbf{Release 3} — Réclamations, interventions et intelligence intégrée (Sprints 7 à 9).
 \end{itemize}
 
-Les fonctionnalités d'intelligence artificielle (traduction et classification) ont été intégrées directement dans les sprints fonctionnels où elles sont utilisées, conformément au principe Scrum de livraison d'incréments complets et testés.
+Les fonctionnalités d'intelligence artificielle (traduction et classification) ont été intégrées directement dans les sprints fonctionnels où elles sont utilisées (Sprint 6 pour la traduction, Sprint 7 pour la classification), conformément au principe Scrum de livraison d'incréments complets et testés.
 
-% TODO: Ajouter un diagramme de Gantt
-\figplaceholder{Diagramme de Gantt — Planification des 3 releases et 9 sprints}
-% TODO: Créer et insérer le diagramme de Gantt réel
+\textbf{Définition de Done (DoD) :} Un incrément de sprint est considéré comme terminé lorsque les fonctionnalités développées sont intégrées, testées unitairement et/ou fonctionnellement, validées manuellement selon le scénario de test défini, et documentées. Le chapitre \og Build, tests et validation \fg{} (chapitre~\ref{chap:build_tests}) récapitule les résultats cumulés des activités de test et de build réalisées tout au long des sprints.
+
+% Placeholder pour le diagramme de Gantt
+\figplaceholder{Diagramme de Gantt — Planification des 3 releases et 9 sprints (à générer)}
 
 % =============================================================
 \section*{Résumé du chapitre}
 
-Dans ce chapitre, nous avons présenté l'organisme d'accueil, défini le contexte et la problématique du projet, effectué une étude de l'existant avec une analyse comparative, présenté notre solution Hotel Smart Concierge et justifié le choix de la méthodologie Scrum avec une planification en 3 releases et 9 sprints. Le chapitre suivant détaille l'analyse et la préparation du projet (Sprint 0).
+Dans ce chapitre, nous avons présenté l'organisme d'accueil Loomens, défini le contexte et la problématique du projet LoomStay, effectué une étude comparative de cinq solutions existantes mettant en évidence leurs lacunes, présenté notre solution et ses caractéristiques différenciantes, et justifié le choix de la méthodologie Scrum avec une planification en 3 releases et 9 sprints. Le chapitre suivant détaille l'analyse et la préparation du projet (Sprint 0).

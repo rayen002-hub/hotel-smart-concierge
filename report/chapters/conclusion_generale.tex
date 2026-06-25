@@ -8,20 +8,20 @@
 % --- Synthèse du travail réalisé ---
 \section*{Synthèse du travail réalisé}
 
-Ce projet de fin d'études a abouti à la conception et au développement complet de la plateforme \textbf{Hotel Smart Concierge}, une solution intelligente de services numériques pour établissements hôteliers. Le développement a suivi la méthodologie Scrum avec 3 releases et 9 sprints, produisant un système fonctionnel de bout en bout.
+Ce projet de fin d'études a abouti à la conception et au développement complet de la plateforme \textbf{LoomStay}, une solution intelligente de services numériques pour établissements hôteliers, réalisée en partenariat avec \textbf{Loomens}. Le développement a suivi la méthodologie agile Scrum avec 3 releases et 9 sprints, produisant un système fonctionnel de bout en bout, validé par un scénario de démonstration couvrant l'ensemble des 8 acteurs et des 12 étapes du workflow intégré.
 
 % --- Apports fonctionnels ---
 \section*{Apports fonctionnels}
 
-La plateforme offre un ensemble complet de fonctionnalités couvrant l'intégralité du parcours client et de la gestion opérationnelle de l'hôtel :
+La plateforme LoomStay offre un ensemble complet de fonctionnalités couvrant l'intégralité du parcours client et de la gestion opérationnelle de l'hôtel :
 
 \begin{itemize}
-  \item \textbf{Check-in numérique} avec génération de QR codes sécurisés et fiches voyageurs ;
-  \item \textbf{Espace client chambre} (PWA installable) avec accès aux services hôteliers ;
-  \item \textbf{Messagerie bilingue en temps réel} avec traduction automatique ;
-  \item \textbf{Gestion des réclamations} avec classification automatique par IA ;
-  \item \textbf{Application mobile Flutter} pour les agents d'intervention terrain ;
-  \item \textbf{Gestion des tâches de ménage} avec suivi par scan QR.
+  \item \textbf{Check-in numérique} complet avec vérification de réservation, saisie de fiches voyageurs multiples (adultes et enfants) et génération d'un QR code d'accès sécurisé ;
+  \item \textbf{Espace client chambre PWA installable} sur smartphone, accessible uniquement via QR code, offrant les services hôteliers, les événements, le convertisseur de devises et la messagerie ;
+  \item \textbf{Messagerie bilingue en temps réel} entre le client et la réception, avec traduction automatique bidirectionnelle dans plus de 200 langues ;
+  \item \textbf{Gestion des réclamations} avec soumission en langue libre, classification automatique par IA, workflow de suivi complet (PENDING → CONFIRMED) et confirmation client ;
+  \item \textbf{Application mobile Flutter} pour les agents terrain (maintenance et ménage), avec liste de tâches, scan QR d'entrée/sortie, rapport de résultat et commentaire ;
+  \item \textbf{Module housekeeping} avec gestion des tâches de ménage de chambre, suivi par la gouvernante générale, et exécution par scan QR.
 \end{itemize}
 
 % --- Apports techniques ---
@@ -30,48 +30,53 @@ La plateforme offre un ensemble complet de fonctionnalités couvrant l'intégral
 Sur le plan technique, le projet a permis de :
 
 \begin{itemize}
-  \item Mettre en place une \textbf{architecture SOA modulaire} avec 4 composants indépendants ;
-  \item Implémenter une \textbf{authentification JWT avec RBAC} pour 5 rôles différents ;
-  \item Développer un \textbf{système de QR codes sécurisés} avec tokens signés et versionnement ;
-  \item Intégrer la \textbf{communication temps réel} via Socket.IO ;
-  \item Concevoir une architecture orientée \textbf{installation sur serveur privé}.
+  \item Mettre en place une \textbf{architecture SOA modulaire} avec 4 composants indépendants (web-app React, backend Node.js, service IA FastAPI, app Flutter), communiquant via des API REST ;
+  \item Implémenter une \textbf{authentification JWT avec RBAC} pour 5 rôles différents, avec tokens QR sécurisés pour les clients et les workers ;
+  \item Développer un \textbf{système de QR codes sécurisés} avec tokens JWT signés, versionnement (workerQrVersion) et validation à chaque scan ;
+  \item Intégrer la \textbf{communication temps réel} via Socket.IO pour les notifications d'état des réclamations, des interventions et des tâches housekeeping ;
+  \item Concevoir une architecture orientée \textbf{installation sur serveur privé} de l'hôtel, préservant la confidentialité des données et éliminant les dépendances au cloud public.
 \end{itemize}
 
 % --- Apports IA/ML ---
-\section*{Apports IA/ML}
+\section*{Apports IA et apprentissage automatique}
 
-Le volet intelligence artificielle a permis d'intégrer :
+Le volet intelligence artificielle a constitué l'une des contributions majeures de ce projet :
 
 \begin{itemize}
-  \item Un \textbf{classifieur de réclamations} basé sur Logistic Regression + TF-IDF, atteignant une accuracy de $\sim$86\% sur le jeu de test ;
-  \item Un \textbf{service de traduction multilingue} utilisant le modèle pré-entraîné NLLB-200 ;
-  \item Un \textbf{pipeline combinée} (détection de langue + traduction + classification) en un seul appel API.
+  \item Un \textbf{classifieur de réclamations} entraîné sur un dataset hôtelier (\textasciitilde{}500 exemples, 6 catégories), basé sur un pipeline Logistic Regression + TF-IDF combiné (word + char n-grams), atteignant une accuracy de \textasciitilde{}86\% sur le jeu de test (F1 macro : 0,8605) ;
+  \item Un \textbf{service de traduction multilingue} utilisant le modèle pré-entraîné NLLB-200-distilled-600M de Meta AI, supportant plus de 200 langues, avec mécanisme de \textit{lazy loading} et cache de traduction ;
+  \item Un \textbf{pipeline IA combiné} exposé via une seule route API (\texttt{/analyze}) : détection de langue + traduction + classification en un seul appel HTTP, minimisant la latence ;
+  \item L'intégration du service IA comme \textbf{acteur technique secondaire}, appelé automatiquement par le backend lors du traitement des messages et des réclamations, sans interaction directe avec les utilisateurs humains.
 \end{itemize}
 
 % --- Limites ---
 \section*{Limites}
 
-Malgré les résultats obtenus, le projet présente certaines limites :
+Malgré les résultats obtenus, le projet présente certaines limites à reconnaître honnêtement :
 
 \begin{itemize}
-  \item Le dataset d'entraînement du classifieur ($\sim$500 exemples) reste limité et devrait être enrichi avec des données réelles de l'hôtel ;
-  \item La validation croisée (CV F1 macro $\sim$77\%) montre une dépendance au jeu de données ;
-  \item Le modèle NLLB-200 est utilisé tel quel sans fine-tuning spécifique au domaine hôtelier ;
-  \item L'application Flutter n'a pas été testée sur un large panel d'appareils Android ;
-  \item \todo{Ajouter d'autres limites identifiées.}
+  \item Le dataset d'entraînement du classifieur (\textasciitilde{}500 exemples) reste de taille limitée. La validation croisée (CV F1 macro $\approx$ 77\%) montre une dépendance à la partition des données et indique un besoin d'enrichissement avec des réclamations réelles de l'hôtel ;
+  \item Le modèle NLLB-200 est utilisé tel quel sans \textit{fine-tuning} spécifique au domaine hôtelier, ce qui peut affecter la qualité de la traduction pour le vocabulaire technique spécialisé ;
+  \item L'application Flutter a été validée sur Android uniquement, via un émulateur et quelques appareils physiques. Une validation sur un panel plus large d'appareils serait nécessaire en production ;
+  \item Le déploiement cible sur serveur privé est conçu et documenté, mais n'a pas encore été déployé sur l'infrastructure physique réelle d'un établissement hôtelier.
 \end{itemize}
 
 % --- Perspectives ---
 \section*{Perspectives}
 
-Plusieurs pistes d'amélioration et d'extension sont envisageables :
+Plusieurs pistes d'amélioration et d'extension sont envisagées pour les versions futures de LoomStay :
 
 \begin{itemize}
-  \item \textbf{Enrichissement du dataset ML} avec des réclamations réelles pour améliorer la généralisation ;
-  \item \textbf{Fine-tuning du modèle de traduction} sur le vocabulaire hôtelier spécifique ;
-  \item \textbf{Ajout d'un système de notation} (rating) pour les services de l'hôtel ;
-  \item \textbf{Intégration d'un chatbot IA} pour l'assistance client automatisée ;
-  \item \textbf{Application iOS} via le framework Flutter existant ;
-  \item \textbf{Tableau de bord analytique} avec statistiques et indicateurs de performance ;
-  \item \todo{Ajouter d'autres perspectives.}
+  \item \textbf{Enrichissement continu du dataset ML} grâce à un mécanisme de \textit{feedback loop} permettant au staff de corriger les prédictions incorrectes du classifieur, améliorant automatiquement le modèle avec des données réelles ;
+  \item \textbf{Fine-tuning du modèle de traduction} sur le vocabulaire hôtelier et touristique spécifique pour améliorer la qualité des traductions dans le domaine métier ;
+  \item \textbf{Intégration d'un chatbot IA} pour l'assistance client automatisée, répondant aux questions fréquentes sans intervention du personnel de réception ;
+  \item \textbf{Tableau de bord analytique} avec indicateurs de performance clés (KPI) : taux de résolution des réclamations, temps moyen d'intervention, satisfaction client, taux d'occupation ;
+  \item \textbf{Support iOS} via le framework Flutter existant (build iOS) pour couvrir l'ensemble du parc de smartphones des employés ;
+  \item \textbf{Notifications push} via Firebase Cloud Messaging pour informer les employés en temps réel des nouvelles assignations sans nécessiter que l'application soit ouverte ;
+  \item \textbf{Module de facturation et paiement en ligne} pour compléter le parcours client avec une expérience de check-out numérique.
 \end{itemize}
+
+% --- Mot final ---
+\section*{Mot final}
+
+Ce projet a été une expérience enrichissante, permettant d'aborder simultanément des problématiques de développement full-stack (web, mobile, backend, IA), de gestion de projet agile (Scrum) et d'architecture logicielle (SOA). Il constitue une contribution concrète à la transformation numérique du secteur hôtelier tunisien, avec une approche centrée sur les besoins réels des établissements : autonomie, confidentialité des données, et intégration de l'intelligence artificielle comme outil au service des équipes opérationnelles.
