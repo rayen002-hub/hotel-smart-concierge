@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   listEmployees,
   listRooms,
@@ -18,7 +19,6 @@ import {
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
-import { PageHeader } from '../../components/ui/PageHeader';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -97,7 +97,11 @@ const isOnline = (lastSeenAt?: string | null) => {
 };
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial tab from URL ?tab= param, fallback to 'users'
+  const urlTab = searchParams.get('tab') as Tab | null;
+  const [activeTab, setActiveTab] = useState<Tab>(urlTab && tabs.find(t => t.key === urlTab) ? urlTab : 'users');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -149,8 +153,23 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // When URL tab param changes (sidebar click), update local state
+    const t = searchParams.get('tab') as Tab | null;
+    if (t && tabs.find(tab => tab.key === t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchTabContent(activeTab);
   }, [activeTab, fetchTabContent]);
+
+  // Sync URL when tab changes via TabNav
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // ── Handlers ───────────────────────────────────────────────────────
 
@@ -203,13 +222,6 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        icon="⚙️"
-        title="Console d'Administration"
-        description="Supervision de l'établissement : utilisateurs, chambres, réclamations, logs et configuration."
-      />
-
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Utilisateurs" value={users.length || '—'} icon="👷" accent="indigo" />
@@ -232,7 +244,7 @@ export const AdminDashboard: React.FC = () => {
       <TabNav
         tabs={tabs}
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
       />
 
       {/* Tab Content */}

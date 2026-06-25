@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   listReservations,
   listRooms,
@@ -26,7 +27,6 @@ import {
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
-import { PageHeader } from '../../components/ui/PageHeader';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -95,7 +95,13 @@ const formatDateTime = (iso: string) =>
 // ─── Main Component ──────────────────────────────────────────────────
 
 export const ReceptionDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('reservations');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial tab from URL ?tab= param
+  const urlTab = searchParams.get('tab') as Tab | null;
+  const [activeTab, setActiveTab] = useState<Tab>(
+    urlTab && tabs.find(t => t.key === urlTab) ? urlTab : 'reservations'
+  );
 
   // Data
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -202,8 +208,23 @@ export const ReceptionDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Sync local tab when sidebar changes URL param
+    const t = searchParams.get('tab') as Tab | null;
+    if (t && tabs.find(tab => tab.key === t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchData(activeTab);
   }, [activeTab, fetchData]);
+
+  // Sync URL when tab changes via TabNav click
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // ── Socket.IO real-time ──────────────────────────────────────────
 
@@ -641,6 +662,14 @@ export const ReceptionDashboard: React.FC = () => {
     setConversationMessages([]);
     setReplyText('');
 
+    // Optimistically clear unread badge — no mark-as-read API exists,
+    // but staff clearly reads when they open the conversation.
+    setConversations(prev =>
+      prev.map(c =>
+        c.reservationId === reservationId ? { ...c, unreadCount: 0 } : c
+      )
+    );
+
     // Join socket room for this conversation
     const socket = getSocket();
     if (socket?.connected) {
@@ -681,6 +710,12 @@ export const ReceptionDashboard: React.FC = () => {
       }, (res: any) => {
         if (res?.success) {
           setReplyText('');
+          // Keep unread at 0 after reply (staff is clearly reading)
+          setConversations(prev =>
+            prev.map(c =>
+              c.reservationId === activeConversation ? { ...c, unreadCount: 0 } : c
+            )
+          );
         } else {
           setError(res?.error || "Erreur lors de l'envoi.");
         }
@@ -691,6 +726,12 @@ export const ReceptionDashboard: React.FC = () => {
       try {
         await replyToGuest(activeConversation, replyText.trim());
         setReplyText('');
+        // Keep unread at 0 after reply
+        setConversations(prev =>
+          prev.map(c =>
+            c.reservationId === activeConversation ? { ...c, unreadCount: 0 } : c
+          )
+        );
         await handleRefreshConversation();
       } catch (err) {
         const apiErr = err as ApiError;
@@ -1182,33 +1223,11 @@ export const ReceptionDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        icon="🏨"
-        title="Dashboard Réception"
-        description="Vue d'ensemble des réservations, chambres, réclamations et QR codes."
-      />
-
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Réservations"
-          value={reservations.length || '—'}
-          icon="📋"
-          accent="blue"
-        />
-        <StatCard
-          label="Chambres disponibles"
-          value={rooms.filter(r => r.status === 'AVAILABLE').length || '—'}
-          icon="🚪"
-          accent="emerald"
-        />
-        <StatCard
-          label="Réclamations"
-          value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'}
-          icon="📢"
-          accent="red"
-        />
+        <StatCard label="Réservations" value={reservations.length || '—'} icon="📋" accent="blue" />
+        <StatCard label="Chambres disponibles" value={rooms.filter(r => r.status === 'AVAILABLE').length || '—'} icon="🚪" accent="emerald" />
+        <StatCard label="Réclamations" value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'} icon="📢" accent="red" />
         <StatCard
           label="Messages"
           value={conversations.filter(c => c.unreadCount > 0).length || '—'}
@@ -1225,7 +1244,7 @@ export const ReceptionDashboard: React.FC = () => {
       <TabNav
         tabs={tabs}
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
       />
 
       {/* Tab Content */}

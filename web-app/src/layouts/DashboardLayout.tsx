@@ -1,22 +1,41 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '../components/layout/AppSidebar';
 import { DashboardTopbar } from '../components/layout/DashboardTopbar';
 
-// ── Page metadata per route ───────────────────────────────────────────
+// ── Tab labels per route ──────────────────────────────────────────────
 
-const pageMeta: Record<string, { title: string; description: string }> = {
+const routeMeta: Record<string, { title: string; tabs: Record<string, string> }> = {
   '/dashboard/reception': {
-    title: 'Dashboard Réception',
-    description: 'Réservations, chambres, réclamations et QR codes',
+    title: 'Réception',
+    tabs: {
+      reservations: 'Réservations',
+      rooms: 'Chambres',
+      fiches: 'Fiches voyageurs',
+      complaints: 'Réclamations',
+      messages: 'Messages',
+      events: 'Événements',
+      qr: 'QR Codes',
+    },
   },
   '/dashboard/admin': {
-    title: "Console d'Administration",
-    description: 'Utilisateurs, chambres, réclamations, logs et configuration',
+    title: 'Administration',
+    tabs: {
+      users: 'Utilisateurs',
+      rooms: 'Chambres',
+      complaints: 'Réclamations',
+      logs: "Logs d'activité",
+      hotel: 'Infos Hôtel',
+      currency: 'Devises',
+    },
   },
   '/dashboard/manager': {
-    title: 'Dashboard Manager',
-    description: 'Réclamations, employés et tâches de ménage',
+    title: 'Manager',
+    tabs: {
+      complaints: 'Réclamations',
+      employees: 'Employés',
+      housekeeping: 'Ménage',
+    },
   },
 };
 
@@ -25,31 +44,36 @@ const pageMeta: Record<string, { title: string; description: string }> = {
 export const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  const meta = pageMeta[location.pathname] ?? {
-    title: 'LoomStay',
-    description: 'Plateforme de gestion hôtelière',
-  };
+  const meta = routeMeta[location.pathname];
+  const activeTab = searchParams.get('tab') || '';
+  const tabLabel = meta?.tabs[activeTab] || '';
+  const title = meta ? `${meta.title}${tabLabel ? ` — ${tabLabel}` : ''}` : 'LoomStay';
+  const description = 'Plateforme de gestion hôtelière LoomStay';
 
   return (
-    <div className="min-h-screen flex bg-[hsl(var(--background))]">
-      {/* Sidebar */}
+    // Full-screen flex row — sidebar is a flex sibling on desktop
+    <div className="flex h-screen overflow-hidden bg-[hsl(var(--background))]">
+
+      {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <AppSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
-        {/* Topbar */}
+      {/* ── Main column (topbar + scrollable content) ─────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Sticky topbar inside the main column — never overlaps sidebar */}
         <DashboardTopbar
-          title={meta.title}
-          description={meta.description}
+          title={title}
+          description={description}
           onMenuOpen={() => setSidebarOpen(true)}
         />
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        {/* Scrollable page content */}
+        <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-6 md:px-6 lg:px-8">
             <Outlet />
           </div>

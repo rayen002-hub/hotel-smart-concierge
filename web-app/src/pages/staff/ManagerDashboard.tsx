@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   listComplaints,
   getComplaint,
@@ -23,7 +24,6 @@ import {
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
-import { PageHeader } from '../../components/ui/PageHeader';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -110,7 +110,13 @@ export const ManagerDashboard: React.FC = () => {
   const department = user?.role === 'MAINTENANCE_MANAGER' ? 'MAINTENANCE' : 'HOUSEKEEPING';
   const departmentLabel = department === 'MAINTENANCE' ? 'Maintenance' : 'Ménage';
 
-  const [activeTab, setActiveTab] = useState<Tab>('complaints');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read initial tab from URL ?tab= param
+  const urlTab = searchParams.get('tab') as Tab | null;
+  const [activeTab, setActiveTab] = useState<Tab>(
+    urlTab && ['complaints', 'employees', 'housekeeping'].includes(urlTab) ? urlTab : 'complaints'
+  );
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -208,12 +214,27 @@ export const ManagerDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Sync local tab when sidebar changes URL param
+    const t = searchParams.get('tab') as Tab | null;
+    if (t && tabs.find(tab => tab.key === t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
     if (activeTab === 'complaints') {
       fetchComplaints();
       fetchEmployees(); // needed for assign dropdown
     }
     if (activeTab === 'employees') fetchEmployees();
   }, [activeTab, fetchComplaints, fetchEmployees]);
+
+  // Sync URL when tab changes via TabNav click
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // ── Complaint detail ───────────────────────────────────────────────
 
@@ -940,33 +961,11 @@ export const ManagerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        icon={department === 'MAINTENANCE' ? '🔧' : '🧹'}
-        title={`Dashboard Manager — ${departmentLabel}`}
-        description="Gestion des réclamations, employés et interventions de votre service."
-      />
-
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          label="Réclamations actives"
-          value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'}
-          icon="📢"
-          accent="red"
-        />
-        <StatCard
-          label="Employés"
-          value={employees.length || '—'}
-          icon="👷"
-          accent="blue"
-        />
-        <StatCard
-          label="Disponibles"
-          value={employees.filter(e => e.employeeProfile?.isAvailable).length || '—'}
-          icon="✅"
-          accent="emerald"
-        />
+        <StatCard label="Réclamations actives" value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'} icon="📢" accent="red" />
+        <StatCard label="Employés" value={employees.length || '—'} icon="👷" accent="blue" />
+        <StatCard label="Disponibles" value={employees.filter(e => e.employeeProfile?.isAvailable).length || '—'} icon="✅" accent="emerald" />
       </div>
 
       {/* Banners */}
@@ -984,7 +983,7 @@ export const ManagerDashboard: React.FC = () => {
       <TabNav
         tabs={tabs}
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
       />
 
       {/* Tab Content */}
