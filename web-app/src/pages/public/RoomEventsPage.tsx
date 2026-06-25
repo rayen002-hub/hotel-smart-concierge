@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listPublicEvents } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
 import { ErrorMessage } from '../../components';
+import { resolveEventImageUrl } from '../../utils/imageUrl';
 
 interface HotelEvent {
   id: string;
@@ -12,7 +13,33 @@ interface HotelEvent {
   imageUrl: string | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+// ─── Image with fallback placeholder ─────────────────────────────────
+
+const EventImage: React.FC<{ imageUrl: string | null; title: string }> = ({ imageUrl, title }) => {
+  const [errored, setErrored] = useState(false);
+  const resolved = resolveEventImageUrl(imageUrl);
+
+  if (!resolved || errored) {
+    return (
+      <div className="h-48 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 flex items-center justify-center">
+        <span className="text-4xl opacity-40 select-none">🎉</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-48 overflow-hidden">
+      <img
+        src={resolved}
+        alt={title}
+        className="w-full h-full object-cover"
+        onError={() => setErrored(true)}
+      />
+    </div>
+  );
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────
 
 export const RoomEventsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -89,17 +116,8 @@ export const RoomEventsPage: React.FC = () => {
                 key={event.id}
                 className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm overflow-hidden"
               >
-                {/* Image */}
-                {event.imageUrl && (
-                  <div className="h-48 overflow-hidden">
-                    <img
-                      src={event.imageUrl.startsWith('http://') || event.imageUrl.startsWith('https://') ? event.imageUrl : `${API_BASE}${event.imageUrl}`}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  </div>
-                )}
+                {/* Image with graceful fallback */}
+                <EventImage imageUrl={event.imageUrl} title={event.title} />
 
                 {/* Content */}
                 <div className="p-4 space-y-2">

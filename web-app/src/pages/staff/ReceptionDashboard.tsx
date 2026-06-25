@@ -28,6 +28,7 @@ import {
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
+import { resolveEventImageUrl } from '../../utils/imageUrl';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -1264,7 +1265,7 @@ export const ReceptionDashboard: React.FC = () => {
   //  TAB: Événements
   // ═══════════════════════════════════════════════════════════════════
 
-  const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+  // ── Event image helper (per-card error state handled inline via React) ──
 
   const handleOpenEventForm = (event?: HotelEvent) => {
     if (event) {
@@ -1408,11 +1409,24 @@ export const ReceptionDashboard: React.FC = () => {
                 onChange={(e) => setEventImage(e.target.files?.[0] || null)}
                 className="w-full text-xs file:mr-3 file:h-8 file:rounded-lg file:border-0 file:bg-[hsl(var(--muted))] file:px-3 file:text-xs file:font-bold file:cursor-pointer"
               />
+              {/* Preview of newly selected file */}
               {eventImage && (
                 <p className="text-[10px] text-[hsl(var(--muted-foreground))]">
                   📷 {eventImage.name} ({(eventImage.size / 1024).toFixed(0)} KB)
                 </p>
               )}
+              {/* Preview of existing image (edit mode, no new file selected) */}
+              {!eventImage && editingEvent?.imageUrl && resolveEventImageUrl(editingEvent.imageUrl) && (
+                <div className="mt-2 h-24 w-full rounded-lg overflow-hidden border border-[hsl(var(--border))]">
+                  <img
+                    src={resolveEventImageUrl(editingEvent.imageUrl)!}
+                    alt="Image actuelle"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
+
             </div>
 
             <div className="flex items-center gap-2">
@@ -1476,14 +1490,26 @@ export const ReceptionDashboard: React.FC = () => {
                 key={event.id}
                 className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm overflow-hidden"
               >
-                {event.imageUrl && (
-                  <div className="h-32 overflow-hidden">
+                {/* Event image with fallback placeholder */}
+                {resolveEventImageUrl(event.imageUrl) ? (
+                  <div className="h-32 overflow-hidden relative">
                     <img
-                      src={event.imageUrl.startsWith('http://') || event.imageUrl.startsWith('https://') ? event.imageUrl : `${API_BASE}${event.imageUrl}`}
+                      src={resolveEventImageUrl(event.imageUrl)!}
                       alt={event.title}
                       className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onError={(e) => {
+                        const el = e.currentTarget;
+                        el.style.display = 'none';
+                        const parent = el.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="h-32 bg-gradient-to-br from-indigo-900/30 to-purple-900/30 flex items-center justify-center"><span class="text-3xl opacity-30">&#127881;</span></div>';
+                        }
+                      }}
                     />
+                  </div>
+                ) : (
+                  <div className="h-32 bg-gradient-to-br from-indigo-900/30 to-purple-900/30 flex items-center justify-center">
+                    <span className="text-3xl opacity-30 select-none">🎉</span>
                   </div>
                 )}
                 <div className="p-3 space-y-2">
