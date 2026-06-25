@@ -7,10 +7,18 @@ import {
   startHousekeepingTask,
   finishHousekeepingTask,
 } from "../controllers/housekeeping.controller";
+import {
+  listDailyTasks,
+  createDailyTask,
+  startDailyTask,
+  completeDailyTask,
+  deleteDailyTask,
+} from "../controllers/dailyCleaning.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
 import { UserRole } from "@prisma/client";
+
 
 const router = Router();
 
@@ -115,4 +123,76 @@ router.post(
   finishHousekeepingTask
 );
 
+// ─────────────────────────────────────────────────────────────────────────
+//  Daily Cleaning Tasks (Ménage quotidien)
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/housekeeping/daily-tasks
+ * List daily cleaning tasks for a business day.
+ * HOUSEKEEPING_MANAGER or EMPLOYEE.
+ */
+router.get(
+  "/daily-tasks",
+  requireRole(UserRole.HOUSEKEEPING_MANAGER, UserRole.EMPLOYEE),
+  listDailyTasks
+);
+
+/**
+ * POST /api/housekeeping/daily-tasks
+ * Create a daily cleaning assignment.
+ * HOUSEKEEPING_MANAGER only.
+ */
+router.post(
+  "/daily-tasks",
+  requireRole(UserRole.HOUSEKEEPING_MANAGER),
+  [
+    body("roomId").isUUID().withMessage("roomId doit être un UUID valide."),
+    body("workerId").isUUID().withMessage("workerId doit être un UUID valide."),
+    body("note").optional().isString().trim().isLength({ max: 500 }),
+    body("businessDay").optional().isISO8601(),
+  ],
+  validateRequest,
+  createDailyTask
+);
+
+/**
+ * PATCH /api/housekeeping/daily-tasks/:id/start
+ * Worker starts the task.
+ * EMPLOYEE only.
+ */
+router.patch(
+  "/daily-tasks/:id/start",
+  requireRole(UserRole.EMPLOYEE),
+  startDailyTask
+);
+
+/**
+ * PATCH /api/housekeeping/daily-tasks/:id/complete
+ * Worker completes the task.
+ * EMPLOYEE only.
+ */
+router.patch(
+  "/daily-tasks/:id/complete",
+  requireRole(UserRole.EMPLOYEE),
+  [
+    body("done").isBoolean().withMessage("done doit être true ou false."),
+    body("note").optional().isString().trim().isLength({ max: 500 }),
+  ],
+  validateRequest,
+  completeDailyTask
+);
+
+/**
+ * DELETE /api/housekeeping/daily-tasks/:id
+ * Manager deletes an unfinished task.
+ * HOUSEKEEPING_MANAGER only.
+ */
+router.delete(
+  "/daily-tasks/:id",
+  requireRole(UserRole.HOUSEKEEPING_MANAGER),
+  deleteDailyTask
+);
+
 export default router;
+

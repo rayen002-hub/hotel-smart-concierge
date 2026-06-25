@@ -242,3 +242,54 @@ export async function listHousekeepingTasks(filters?: { status?: string; page?: 
   const { data } = await staffClient.get('/housekeeping/tasks', { params: filters });
   return data;
 }
+
+// ─── Shift Scheduling ────────────────────────────────────────────────
+
+export type WorkerShift = 'MORNING' | 'EVENING' | 'NIGHT' | 'DAY_OFF';
+
+export const SHIFT_LABELS: Record<WorkerShift, string> = {
+  MORNING: '07:00–15:00 (Matin)',
+  EVENING: '15:00–23:00 (Soir)',
+  NIGHT:   '23:00–07:00 (Nuit)',
+  DAY_OFF: 'Repos',
+};
+
+export async function getShifts(businessDay?: string) {
+  const { data } = await staffClient.get('/shifts', { params: businessDay ? { businessDay } : {} });
+  return data;
+}
+
+export async function upsertShift(payload: { workerId: string; shift: WorkerShift; businessDay?: string }) {
+  const { data } = await staffClient.put('/shifts', payload);
+  return data;
+}
+
+// ─── Daily Cleaning Tasks ─────────────────────────────────────────────
+
+export type DailyCleaningStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'DONE' | 'SKIPPED';
+
+export async function listDailyCleaningTasks(filters?: {
+  businessDay?: string;
+  workerId?: string;
+  status?: string;
+  roomId?: string;
+}) {
+  const { data } = await staffClient.get('/housekeeping/daily-tasks', { params: filters });
+  return data;
+}
+
+export async function createDailyCleaningTask(payload: {
+  roomId: string;
+  workerId: string;
+  note?: string;
+  businessDay?: string;
+}) {
+  const { data } = await staffClient.post('/housekeeping/daily-tasks', payload);
+  return data;
+}
+
+export async function deleteDailyCleaningTask(id: string) {
+  const { data } = await staffClient.delete(`/housekeeping/daily-tasks/${id}`);
+  return data;
+}
+

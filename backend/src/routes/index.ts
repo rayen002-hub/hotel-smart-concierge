@@ -16,6 +16,7 @@ import staffGuestMessageRoutes from "./staffGuestMessage.routes";
 import eventRoutes from "./event.routes";
 import eventPublicRoutes from "./eventPublic.routes";
 import housekeepingRoutes from "./housekeeping.routes";
+import shiftsRoutes from "./shifts.routes";
 
 import rateLimit from "express-rate-limit";
 
@@ -34,6 +35,7 @@ router.use("/checkin-qr", checkinQrRoutes);
 router.use("/guest-messages", staffGuestMessageRoutes);
 router.use("/events", eventRoutes);
 router.use("/housekeeping", housekeepingRoutes);
+router.use("/shifts", shiftsRoutes);
 
 // Rate limiting strict pour les routes publiques
 const publicLimiter = rateLimit({

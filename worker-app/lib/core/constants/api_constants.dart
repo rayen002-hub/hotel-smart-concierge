@@ -44,6 +44,16 @@ class ApiConstants {
   /// Returns the finish path for housekeeping task [id].
   static String housekeepingTaskFinish(String id) => '/housekeeping/tasks/$id/finish';
 
+  // ── Daily Cleaning Tasks (EMPLOYEE / mobile) ──────────────────────
+  static const String dailyCleaningTasks = '/mobile/daily-cleaning-tasks';
+
+  /// Returns the start path for daily cleaning task [id].
+  static String dailyCleaningTaskStart(String id) => '/mobile/daily-cleaning-tasks/$id/start';
+
+  /// Returns the complete path for daily cleaning task [id].
+  static String dailyCleaningTaskComplete(String id) => '/mobile/daily-cleaning-tasks/$id/complete';
+
+
   // ── Timeouts ─────────────────────────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);

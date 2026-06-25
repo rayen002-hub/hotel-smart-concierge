@@ -9,6 +9,7 @@ import {
   getMobileMessages,
   addMobileMessage,
 } from "../controllers/mobile.controller";
+import { listMyDailyTasks, startDailyTask, completeDailyTask } from "../controllers/dailyCleaning.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/role.middleware";
 import { validateRequest } from "../middlewares/validate.middleware";
@@ -91,6 +92,30 @@ router.post(
   ],
   validateRequest,
   addMobileMessage
+);
+
+/**
+ * GET /api/mobile/daily-cleaning-tasks
+ * Worker's daily cleaning assignments for today's business day.
+ */
+router.get("/daily-cleaning-tasks", listMyDailyTasks);
+
+/**
+ * PATCH /api/mobile/daily-cleaning-tasks/:id/start
+ */
+router.patch("/daily-cleaning-tasks/:id/start", startDailyTask);
+
+/**
+ * PATCH /api/mobile/daily-cleaning-tasks/:id/complete
+ */
+router.patch(
+  "/daily-cleaning-tasks/:id/complete",
+  [
+    body("done").isBoolean().withMessage("done doit être true ou false."),
+    body("note").optional().isString().trim().isLength({ max: 500 }),
+  ],
+  validateRequest,
+  completeDailyTask
 );
 
 export default router;

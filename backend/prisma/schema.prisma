@@ -100,6 +100,22 @@ enum HousekeepingTaskResult {
   NOT_DONE
 }
 
+enum WorkerShift {
+  MORNING   // 07:00 - 15:00
+  EVENING   // 15:00 - 23:00
+  NIGHT     // 23:00 - 07:00
+  DAY_OFF
+}
+
+enum DailyCleaningStatus {
+  ASSIGNED
+  IN_PROGRESS
+  DONE
+  SKIPPED
+}
+
+
+
 // =============================================================
 //  MODELS
 // =============================================================
@@ -126,6 +142,10 @@ model User {
   auditLogs          AuditLog[]
   housekeepingTasksAssigned HousekeepingTask[] @relation("HkTaskAssignedTo")
   housekeepingTasksCreated  HousekeepingTask[] @relation("HkTaskAssignedBy")
+  workerShifts              WorkerShiftSchedule[] @relation("ShiftWorker")
+  managedShifts             WorkerShiftSchedule[] @relation("ShiftCreatedBy")
+  dailyCleaningAssigned     DailyCleaningTask[] @relation("DailyCleaningWorker")
+  dailyCleaningCreated      DailyCleaningTask[] @relation("DailyCleaningAssignedBy")
 
   @@map("users")
 }
@@ -163,9 +183,11 @@ model Room {
   guestStaffMessages GuestStaffMessage[]
   interventionLogs   InterventionLog[]
   housekeepingTasks  HousekeepingTask[]
+  dailyCleaningTasks DailyCleaningTask[] @relation("DailyCleaningRoom")
 
   @@map("rooms")
 }
+
 
 model Reservation {
   id                      String                  @id @default(uuid())
@@ -378,4 +400,44 @@ model HousekeepingTask {
   assignedBy  User         @relation("HkTaskAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
 
   @@map("housekeeping_tasks")
+}
+
+/// Worker shift schedule — one record per worker per business day.
+/// businessDay is stored as midnight UTC of that calendar day.
+model WorkerShiftSchedule {
+  id          String      @id @default(uuid())
+  workerId    String
+  businessDay DateTime    // midnight UTC of the calendar business day
+  shift       WorkerShift
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  worker      User        @relation("ShiftWorker", fields: [workerId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation("ShiftCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, businessDay])
+  @@map("worker_shift_schedules")
+}
+
+/// Daily cleaning task — one task per room per worker per day.
+/// Separate from complaint-based HousekeepingTask.
+model DailyCleaningTask {
+  id           String              @id @default(uuid())
+  roomId       String
+  workerId     String
+  businessDay  DateTime            // midnight UTC of calendar business day
+  status       DailyCleaningStatus @default(ASSIGNED)
+  note         String?
+  assignedById String
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  room         Room                @relation("DailyCleaningRoom", fields: [roomId], references: [id], onDelete: Cascade)
+  worker       User                @relation("DailyCleaningWorker", fields: [workerId], references: [id], onDelete: Cascade)
+  assignedBy   User                @relation("DailyCleaningAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+
+  @@map("daily_cleaning_tasks")
 }

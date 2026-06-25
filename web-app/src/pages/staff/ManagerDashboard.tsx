@@ -10,9 +10,17 @@ import {
   listEmployees,
   createEmployee,
   listOccupiedRooms,
+  listRooms,
   createHousekeepingTask,
   listHousekeepingTasks,
+  getShifts,
+  upsertShift,
+  listDailyCleaningTasks,
+  createDailyCleaningTask,
+  deleteDailyCleaningTask,
+  SHIFT_LABELS,
 } from '../../api/staffApi';
+import type { WorkerShift, DailyCleaningStatus } from '../../api/staffApi';
 import { getStoredUser } from '../../components/AuthGuard';
 import type { ApiError } from '../../api/apiClient';
 import {
@@ -77,14 +85,16 @@ interface Message {
 
 // ─── Constants ───────────────────────────────────────────────────────
 
-type Tab = 'complaints' | 'employees' | 'housekeeping';
+type Tab = 'complaints' | 'employees' | 'housekeeping' | 'planification' | 'daily_cleaning';
 
 const baseTabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'complaints', label: 'Réclamations', icon: '📢' },
   { key: 'employees', label: 'Employés', icon: '👷' },
+  { key: 'planification', label: 'Planning', icon: '📅' },
 ];
 
 const housekeepingTab = { key: 'housekeeping' as Tab, label: 'Ménage', icon: '🏠' };
+const dailyCleaningTab = { key: 'daily_cleaning' as Tab, label: 'Ménage quotidien', icon: '🧹' };
 
 const resultLabels: Record<string, string> = {
   RESOLVED: '✅ Résolu',
@@ -146,8 +156,10 @@ export const ManagerDashboard: React.FC = () => {
   const otherDepartment = department === 'MAINTENANCE' ? 'HOUSEKEEPING' : 'MAINTENANCE';
   const otherDepartmentLabel = department === 'MAINTENANCE' ? 'Ménage' : 'Maintenance';
 
-  // Build tabs dynamically — housekeeping tab only for HOUSEKEEPING_MANAGER
-  const tabs = department === 'HOUSEKEEPING' ? [...baseTabs, housekeepingTab] : baseTabs;
+  // Build tabs dynamically — housekeeping & daily cleaning tabs only for HOUSEKEEPING_MANAGER
+  const tabs = department === 'HOUSEKEEPING'
+    ? [...baseTabs, housekeepingTab, dailyCleaningTab]
+    : baseTabs;
 
   // ── Housekeeping state ──────────────────────────────────────────────
   interface OccupiedRoom {
@@ -183,6 +195,48 @@ export const ManagerDashboard: React.FC = () => {
   const [hkAssignEmployeeId, setHkAssignEmployeeId] = useState('');
   const [hkAssignNote, setHkAssignNote] = useState('');
   const [hkAssignLoading, setHkAssignLoading] = useState(false);
+
+  // ── Shift planning state ────────────────────────────────────────────
+  interface ShiftWorkerEntry {
+    id: string;
+    name: string;
+    email: string;
+    isAvailable: boolean;
+    lastSeenAt?: string | null;
+    shift: WorkerShift | null;
+  }
+  const [shiftWorkers, setShiftWorkers] = useState<ShiftWorkerEntry[]>([]);
+  const [shiftBusinessDay, setShiftBusinessDay] = useState('');
+  const [shiftLoading, setShiftLoading] = useState(false);
+  const [shiftSaving, setShiftSaving] = useState<string | null>(null);
+
+  // ── Daily cleaning state ────────────────────────────────────────────
+  interface DailyCleaningEntry {
+    id: string;
+    roomId: string;
+    workerId: string;
+    businessDay: string;
+    status: DailyCleaningStatus;
+    note?: string | null;
+    startedAt?: string | null;
+    completedAt?: string | null;
+    createdAt: string;
+    room?: { id: string; roomNumber: string; floor: number; type?: string } | null;
+    worker?: { id: string; name: string } | null;
+  }
+  const [dailyTasks, setDailyTasks] = useState<DailyCleaningEntry[]>([]);
+  const [dailyBusinessDay, setDailyBusinessDay] = useState('');
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyRefreshing, setDailyRefreshing] = useState(false);
+  const [dailyFilterWorker, setDailyFilterWorker] = useState('');
+  const [dailyFilterStatus, setDailyFilterStatus] = useState('');
+  const [dailyFilterRoom, setDailyFilterRoom] = useState('');
+  const [showDailyForm, setShowDailyForm] = useState(false);
+  const [dailyFormRoomId, setDailyFormRoomId] = useState('');
+  const [dailyFormWorkerId, setDailyFormWorkerId] = useState('');
+  const [dailyFormNote, setDailyFormNote] = useState('');
+  const [dailyFormLoading, setDailyFormLoading] = useState(false);
+  const [allRooms, setAllRooms] = useState<{ id: string; roomNumber: string; floor: number; type?: string }[]>([]);
 
   // ── Data fetching ──────────────────────────────────────────────────
 
@@ -223,17 +277,81 @@ export const ManagerDashboard: React.FC = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (activeTab === 'complaints') {
-      fetchComplaints();
-      fetchEmployees(); // needed for assign dropdown
-    }
+    if (activeTab === 'complaints') { fetchComplaints(); fetchEmployees(); }
     if (activeTab === 'employees') fetchEmployees();
-  }, [activeTab, fetchComplaints, fetchEmployees]);
+    if (activeTab === 'planification') fetchShifts();
+    if (activeTab === 'daily_cleaning') { fetchDailyTasks(); fetchEmployees(); fetchAllRooms(); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Sync URL when tab changes via TabNav click
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
+  };
+
+  // ── Shift fetch/save ───────────────────────────────────────────────
+  const fetchShifts = useCallback(async () => {
+    setShiftLoading(true);
+    setError('');
+    try {
+      const res = await getShifts();
+      setShiftWorkers(res.data?.workers || []);
+      setShiftBusinessDay(res.data?.businessDay || '');
+    } catch (err) { setError((err as { error?: string }).error || 'Erreur planning.'); }
+    finally { setShiftLoading(false); }
+  }, []);
+
+  const handleUpsertShift = async (workerId: string, shift: WorkerShift) => {
+    setShiftSaving(workerId);
+    try {
+      await upsertShift({ workerId, shift });
+      setShiftWorkers(prev => prev.map(w => w.id === workerId ? { ...w, shift } : w));
+      setSuccess('Planning mis à jour !');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) { setError((err as { error?: string }).error || 'Erreur.'); }
+    finally { setShiftSaving(null); }
+  };
+
+  // ── Daily cleaning fetch/save ──────────────────────────────────────
+  const fetchAllRooms = useCallback(async () => {
+    try {
+      const res = await listRooms();
+      setAllRooms(res.data || []);
+    } catch { /* silent */ }
+  }, []);
+
+  const fetchDailyTasks = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setDailyRefreshing(true);
+    else setDailyLoading(true);
+    try {
+      const res = await listDailyCleaningTasks();
+      setDailyTasks(res.data || []);
+      if (res.businessDay) setDailyBusinessDay(res.businessDay);
+    } catch (err) { setError((err as { error?: string }).error || 'Erreur.'); }
+    finally { setDailyLoading(false); setDailyRefreshing(false); }
+  }, []);
+
+  const handleCreateDailyTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dailyFormRoomId || !dailyFormWorkerId) { setError('Chambre et agent requis.'); return; }
+    setDailyFormLoading(true);
+    try {
+      await createDailyCleaningTask({ roomId: dailyFormRoomId, workerId: dailyFormWorkerId, note: dailyFormNote || undefined });
+      setSuccess('Tâche quotidienne assignée !');
+      setShowDailyForm(false); setDailyFormRoomId(''); setDailyFormWorkerId(''); setDailyFormNote('');
+      await fetchDailyTasks();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) { setError((err as { error?: string }).error || 'Erreur.'); }
+    finally { setDailyFormLoading(false); }
+  };
+
+  const handleDeleteDailyTask = async (id: string) => {
+    try {
+      await deleteDailyCleaningTask(id);
+      setDailyTasks(prev => prev.filter(t => t.id !== id));
+      setSuccess('Tâche supprimée.'); setTimeout(() => setSuccess(''), 3000);
+    } catch (err) { setError((err as { error?: string }).error || 'Erreur.'); }
   };
 
   // ── Complaint detail ───────────────────────────────────────────────
@@ -953,6 +1071,221 @@ export const ManagerDashboard: React.FC = () => {
         )}
       </div>
     );
+  }; // end renderHousekeeping
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  TAB: Planning des quarts (Planification)
+  // ═══════════════════════════════════════════════════════════════════
+
+  const SHIFT_ICONS: Record<WorkerShift, string> = { MORNING: '🌅', EVENING: '🌆', NIGHT: '🌙', DAY_OFF: '😴' };
+  const SHIFT_COLORS: Record<WorkerShift, string> = {
+    MORNING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    EVENING: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    NIGHT:   'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+    DAY_OFF: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  };
+
+  const renderPlanification = () => {
+    if (shiftLoading) return <LoadingSpinner message="Chargement du planning..." />;
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-sm font-bold">📅 Planning des quarts — <span className="font-mono text-[hsl(var(--muted-foreground))]">{shiftBusinessDay || "Aujourd'hui"}</span></h2>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Réinitialisation chaque jour à 06:00. Cliquez pour changer le quart.</p>
+          </div>
+          <button onClick={() => fetchShifts()} className="h-8 px-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-xs font-semibold hover:bg-[hsl(var(--accent))] transition-colors cursor-pointer">🔄 Rafraîchir</button>
+        </div>
+        {shiftWorkers.length === 0 ? (
+          <EmptyState message="Aucun employé" icon="👷" description="Créez des employés dans l'onglet Employés." />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {shiftWorkers.map((w) => (
+              <div key={w.id} className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${w.isAvailable ? 'bg-emerald-400' : 'bg-gray-400'}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold truncate">{w.name}</p>
+                      <p className="text-[10px] text-[hsl(var(--muted-foreground))] truncate">{w.email}</p>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    w.shift ? SHIFT_COLORS[w.shift] : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {w.shift ? `${SHIFT_ICONS[w.shift]} ${SHIFT_LABELS[w.shift]}` : '⬜ Non défini'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(['MORNING', 'EVENING', 'NIGHT', 'DAY_OFF'] as WorkerShift[]).map((shift) => (
+                    <button key={shift} disabled={shiftSaving === w.id} onClick={() => handleUpsertShift(w.id, shift)}
+                      className={`h-8 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border ${
+                        w.shift === shift ? `${SHIFT_COLORS[shift]} border-current` : 'border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 hover:bg-[hsl(var(--accent))]'
+                      } disabled:opacity-50`}>
+                      {shiftSaving === w.id ? '⏳' : `${SHIFT_ICONS[shift]} ${shift === 'DAY_OFF' ? 'Repos' : SHIFT_LABELS[shift].split('–')[0]}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  TAB: Ménage quotidien (Daily Cleaning)
+  // ═══════════════════════════════════════════════════════════════════
+
+  const DAILY_STATUS_LABEL: Record<string, string> = {
+    ASSIGNED: '👤 Assignée', IN_PROGRESS: '🔄 En cours', DONE: '✅ Terminée', SKIPPED: '⏭️ Ignorée',
+  };
+  const DAILY_STATUS_CLS: Record<string, string> = {
+    ASSIGNED: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    IN_PROGRESS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    DONE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    SKIPPED: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+  };
+  const SHIFT_ICONS_DC: Record<WorkerShift, string> = { MORNING: '🌅', EVENING: '🌆', NIGHT: '🌙', DAY_OFF: '😴' };
+  const SHIFT_COLORS_DC: Record<WorkerShift, string> = {
+    MORNING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    EVENING: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    NIGHT:   'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+    DAY_OFF: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  };
+
+  const housekeepingWorkers = employees.filter(e => e.employeeProfile?.department === 'HOUSEKEEPING');
+  const filteredDailyTasks = dailyTasks.filter(t => {
+    const mW = !dailyFilterWorker || t.workerId === dailyFilterWorker;
+    const mS = !dailyFilterStatus || t.status === dailyFilterStatus;
+    const mR = !dailyFilterRoom || (t.room?.roomNumber || '').toLowerCase().includes(dailyFilterRoom.toLowerCase());
+    return mW && mS && mR;
+  });
+
+  const renderDailyCleaning = () => {
+    if (dailyLoading) return <LoadingSpinner message="Chargement du ménage quotidien..." />;
+    return (
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-sm font-bold">🧹 Ménage quotidien — <span className="font-mono text-[hsl(var(--muted-foreground))]">{dailyBusinessDay || "Aujourd'hui"}</span></h2>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Assignation de chambres indépendante des réclamations. Réinitialisation à 06:00.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowDailyForm(v => !v)} className="h-8 px-4 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity">➕ Assigner chambre</button>
+            <button onClick={() => fetchDailyTasks(true)} disabled={dailyRefreshing}
+              className="h-8 px-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-xs font-semibold hover:bg-[hsl(var(--accent))] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5">
+              <span className={dailyRefreshing ? 'animate-spin inline-block' : ''}>🔄</span>
+              {dailyRefreshing ? 'Chargement...' : 'Rafraîchir'}
+            </button>
+          </div>
+        </div>
+
+        {/* Assignment form */}
+        {showDailyForm && (
+          <form onSubmit={handleCreateDailyTask} className="rounded-xl border border-teal-200 dark:border-teal-900/40 bg-teal-50 dark:bg-teal-950/20 p-5 space-y-4">
+            <h3 className="text-xs font-bold text-teal-700 dark:text-teal-300">Nouvelle assignation quotidienne</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Chambre</label>
+                <select required value={dailyFormRoomId} onChange={e => setDailyFormRoomId(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
+                  <option value="">-- Sélectionner --</option>
+                  {allRooms.map(r => <option key={r.id} value={r.id}>Ch. {r.roomNumber} (Étage {r.floor}{r.type ? ` · ${r.type}` : ''})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Agent de ménage</label>
+                <select required value={dailyFormWorkerId} onChange={e => setDailyFormWorkerId(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
+                  <option value="">-- Sélectionner --</option>
+                  {housekeepingWorkers.map(w => {
+                    const wShift = shiftWorkers.find(s => s.id === w.id)?.shift;
+                    return <option key={w.id} value={w.id}>{w.name}{wShift ? ` — ${SHIFT_LABELS[wShift].split('–')[0]}` : ''}</option>;
+                  })}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Note (optionnelle)</label>
+                <input type="text" value={dailyFormNote} onChange={e => setDailyFormNote(e.target.value)} placeholder="Instructions..." maxLength={500}
+                  className="w-full h-9 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setShowDailyForm(false)} className="h-8 px-4 rounded-lg border border-[hsl(var(--border))] text-xs font-semibold cursor-pointer hover:bg-[hsl(var(--muted))] transition-colors">Annuler</button>
+              <button type="submit" disabled={dailyFormLoading} className="h-8 px-5 rounded-lg bg-teal-600 text-white text-xs font-bold cursor-pointer hover:bg-teal-700 transition-colors disabled:opacity-50">
+                {dailyFormLoading ? 'Assignation...' : 'Assigner'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <input type="text" value={dailyFilterRoom} onChange={e => setDailyFilterRoom(e.target.value)} placeholder="🔍 N° chambre"
+            className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] flex-1 min-w-[120px]" />
+          <select value={dailyFilterWorker} onChange={e => setDailyFilterWorker(e.target.value)}
+            className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
+            <option value="">Tous agents</option>
+            {housekeepingWorkers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+          <select value={dailyFilterStatus} onChange={e => setDailyFilterStatus(e.target.value)}
+            className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-xs focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]">
+            <option value="">Tous statuts</option>
+            {['ASSIGNED','IN_PROGRESS','DONE','SKIPPED'].map(s => <option key={s} value={s}>{DAILY_STATUS_LABEL[s]}</option>)}
+          </select>
+          <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{filteredDailyTasks.length}/{dailyTasks.length} tâches</p>
+        </div>
+
+        {/* Task cards */}
+        {filteredDailyTasks.length === 0 ? (
+          <EmptyState message="Aucune tâche" icon="🧹" description="Assignez des chambres avec le bouton ci-dessus." />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {filteredDailyTasks.map(t => {
+              const wShift = shiftWorkers.find(s => s.id === t.workerId)?.shift;
+              return (
+                <div key={t.id} className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-sm space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold">🚪 Chambre {t.room?.roomNumber || '—'}</p>
+                      <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Étage {t.room?.floor ?? '—'} · {t.room?.type || '—'}</p>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${DAILY_STATUS_CLS[t.status] || ''}`}>
+                      {DAILY_STATUS_LABEL[t.status] || t.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Agent:</span>
+                    <span className="text-xs font-medium">{t.worker?.name || '—'}</span>
+                    {wShift && wShift !== 'DAY_OFF' && (
+                      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${SHIFT_COLORS_DC[wShift]}`}>
+                        {SHIFT_ICONS_DC[wShift]} {SHIFT_LABELS[wShift].split('–')[0]}
+                      </span>
+                    )}
+                  </div>
+                  {t.note && <p className="text-[10px] text-[hsl(var(--muted-foreground))] italic">📝 {t.note}</p>}
+                  {(t.startedAt || t.completedAt) && (
+                    <div className="grid grid-cols-2 gap-2 text-[10px] text-[hsl(var(--muted-foreground))] pt-2 border-t border-[hsl(var(--border))]/60">
+                      {t.startedAt && <div><span className="font-semibold">Début:</span> {formatDateTime(t.startedAt)}</div>}
+                      {t.completedAt && <div><span className="font-semibold">Fin:</span> {formatDateTime(t.completedAt)}</div>}
+                    </div>
+                  )}
+                  {t.status !== 'DONE' && (
+                    <button onClick={() => handleDeleteDailyTask(t.id)}
+                      className="w-full h-7 rounded-lg border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-[10px] font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer">
+                      🗑️ Supprimer
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // ═══════════════════════════════════════════════════════════════════
@@ -990,6 +1323,9 @@ export const ManagerDashboard: React.FC = () => {
       {activeTab === 'complaints' && renderComplaints()}
       {activeTab === 'employees' && renderEmployees()}
       {activeTab === 'housekeeping' && renderHousekeeping()}
+      {activeTab === 'planification' && renderPlanification()}
+      {activeTab === 'daily_cleaning' && renderDailyCleaning()}
+
 
       {/* Detail Drawer */}
       {renderDetailDrawer()}

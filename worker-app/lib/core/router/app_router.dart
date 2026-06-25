@@ -9,6 +9,7 @@ import '../../features/tasks/presentation/qr_scanner_screen.dart';
 import '../../features/tasks/presentation/qr_exit_scanner_screen.dart';
 import '../../features/tasks/presentation/messages_screen.dart';
 import '../../features/tasks/presentation/housekeeping_task_detail_screen.dart';
+import '../../features/tasks/presentation/daily_cleaning_task_detail_screen.dart';
 import '../storage/auth_storage.dart';
 
 class AppRouter {
@@ -86,6 +87,13 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final id = state.pathParameters['id']!;
           return HousekeepingTaskDetailScreen(taskId: id);
+        },
+      ),
+      GoRoute(
+        path: '/daily-cleaning/:id',
+        builder: (BuildContext context, GoRouterState state) {
+          final id = state.pathParameters['id']!;
+          return DailyCleaningTaskDetailScreen(taskId: id);
         },
       ),
     ],
