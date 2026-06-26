@@ -15,15 +15,30 @@ const app = express();
 // Helmet : en-tetes HTTP securises
 app.use(helmet());
 
-// CORS : configurable via FRONTEND_URL
+// CORS : accept the Vercel frontend + localhost dev + any extra origin from env
+const ALLOWED_ORIGINS = [
+  env.FRONTEND_URL,                                    // env var (primary)
+  "https://hotel-smart-concierge.vercel.app",          // Vercel production
+  "http://localhost:5173",                             // Vite dev server
+  "http://localhost:3000",                             // CRA / other dev
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, mobile apps, Render health checks)
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // Allow any *.vercel.app preview deployment
+      if (origin.endsWith(".vercel.app")) return callback(null, true);
+      callback(new Error(`CORS policy: origin '${origin}' not allowed`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Client-Room-Token", "X-Checkin-Token"],
   })
 );
+
 
 // Rate limiting global : 100 requetes par 15 minutes par IP
 const limiter = rateLimit({
