@@ -12,12 +12,28 @@ let io: Server;
 export const initSocketIO = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
     cors: {
-      origin: env.SOCKET_CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow no-origin requests (server-to-server, health checks)
+        if (!origin) return callback(null, true);
+        // Accept known origins
+        const allowed = [
+          env.SOCKET_CORS_ORIGIN,
+          env.FRONTEND_URL,
+          "https://hotel-smart-concierge.vercel.app",
+          "http://localhost:5173",
+          "http://localhost:3000",
+        ].filter(Boolean);
+        if (allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+          return callback(null, true);
+        }
+        callback(new Error(`Socket CORS: origin '${origin}' not allowed`));
+      },
       credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
 
   // ── Auth middleware ─────────────────────────────────────────────────
   io.use(authSocketMiddleware as any);
