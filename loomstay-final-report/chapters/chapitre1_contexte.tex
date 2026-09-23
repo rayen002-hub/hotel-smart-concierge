@@ -1,0 +1,101 @@
+\chapter{Contexte général du projet}
+\label{chap:contexte}
+
+\section*{Introduction}
+Dans ce chapitre, nous allons entamer une étude préalable de notre projet. Pour cela, nous présenterons l'organisme d'accueil, le contexte général et la définition du projet. Ensuite, une étude de l'existant sera détaillée afin de comprendre les solutions actuelles sur le marché. Enfin, nous conclurons par la solution proposée et le choix de la méthodologie de gestion du projet.
+
+\section{Présentation de l'organisme d'accueil}
+\textbf{Loomens} est une agence tunisienne de développement web et de transformation digitale située au Cyberparc de Djerba. Elle accompagne les entreprises et les marques dans leur transition numérique à travers la conception de solutions digitales modernes, notamment des sites web, des applications mobiles et des plateformes adaptées aux besoins de ses clients.
+
+\textbf{Loomens} se distingue par son orientation vers la digitalisation des marques et l'amélioration de leur présence en ligne. Grâce à son expertise dans le développement web et mobile, l'agence propose des solutions personnalisées permettant aux entreprises d'optimiser leur communication, de moderniser leurs services et de renforcer leur visibilité dans un environnement numérique en constante évolution.
+
+\safefig{diagrams/hierarchie_loomens.png}{Hiérarchie simplifiée de l'organisme d'accueil Loomens}{hierarchie_loomens}
+
+\section{Contexte et définition du projet}
+Le domaine de la transformation digitale offre de vastes opportunités pour améliorer divers secteurs, y compris le secteur hôtelier. \textbf{Loomens} vise à créer une plateforme innovante dans ce domaine, cherchant à combler certaines limites liées aux méthodes classiques de gestion hôtelière. En Tunisie, plusieurs établissements utilisent encore des procédures manuelles pour le check-in, les réclamations et le suivi des interventions, ce qui peut réduire l'efficacité et la qualité du service. Consciente de cette situation, notre société souhaite s'aligner sur les évolutions technologiques en proposant une solution moderne et adaptée, intitulée \textbf{LoomStay}.
+
+\section{Problématique}
+Les établissements hôteliers font face à plusieurs défis opérationnels :
+\begin{itemize}
+    \item Le check-in reste souvent manuel, long et sujet aux erreurs de saisie.
+    \item Les réclamations clients sont transmises oralement ou par téléphone, sans traçabilité ni catégorisation.
+    \item La communication entre clients étrangers et personnel est limitée par les barrières linguistiques.
+    \item Le suivi des interventions techniques et des tâches de ménage repose sur des fiches papier ou des échanges informels.
+    \item L'absence de suivi en temps réel des interventions et de l'état des chambres réduit la réactivité.
+\end{itemize}
+
+Face à ces constats, la question centrale est : \textit{comment concevoir une plateforme intégrée, web, mobile et intelligente, permettant de digitaliser et d'optimiser les principaux services hôteliers tout en assurant la traçabilité, la communication multilingue et la coordination du personnel~?}
+
+\section{Étude de l'existant}
+Afin de prendre connaissance des solutions déjà existantes dans le secteur de la gestion hôtelière, nous avons effectué une étude de quelques systèmes utilisés dans ce domaine. Les principales solutions prises en considération sont \textbf{ArabSoft XLIA} et \textbf{Optima PMS}.
+
+\subsection{ArabSoft XLIA}
+ArabSoft XLIA est une solution de gestion hôtelière proposée par ArabSoft. Elle est destinée à différentes catégories d'établissements hôteliers tels que les hôtels, les maisons d'hôtes et les villages de vacances. Cette solution propose plusieurs modules, notamment la gestion du front office, du back office, du housekeeping mobile, des réclamations, de la maintenance, des événements ainsi que le scan des passeports~\cite{react}.
+
+% TODO SCREENSHOT: Ajouter une capture d'interface ArabSoft XLIA
+% Fichier attendu : imgs/screenshots/arabsoft_xlia.png
+\safefig{screenshots/arabsoft_xlia.png}{Interface de ArabSoft XLIA}{arabsoft_xlia}
+
+\subsection{Optima PMS}
+Optima PMS est une solution de gestion hôtelière qui permet de gérer plusieurs aspects liés aux opérations d'un établissement hôtelier. Elle propose notamment la gestion des réservations, le profil client, le contrôle du folio ainsi que l'intégration avec les canaux de réservation en ligne. Cette solution vise à centraliser les informations et à faciliter les opérations quotidiennes de l'hôtel.
+
+% TODO SCREENSHOT: Ajouter une capture d'interface Optima PMS
+% Fichier attendu : imgs/screenshots/optima_pms.png
+\safefig{screenshots/optima_pms.png}{Interface de Optima PMS}{optima_pms}
+
+\subsection{Étude comparative et critique}
+Pour concrétiser notre étude de l'existant, nous avons défini plusieurs critères essentiels :
+\begin{itemize}
+    \item \textbf{C[1] Gestion des réservations} : gérer les réservations des clients et les informations liées aux séjours.
+    \item \textbf{C[2] Gestion des chambres} : suivre l'état des chambres et leur disponibilité.
+    \item \textbf{C[3] Gestion du front office} : faciliter les opérations réalisées par la réception.
+    \item \textbf{C[4] Gestion du housekeeping} : suivre les tâches de nettoyage et d'entretien des chambres.
+    \item \textbf{C[5] Gestion des réclamations} : recevoir et traiter les demandes signalées par les clients.
+    \item \textbf{C[6] Gestion de la maintenance} : suivre les interventions techniques.
+    \item \textbf{C[7] Accès client par QR code} : permettre au client d'accéder rapidement à son espace chambre.
+    \item \textbf{C[8] Communication multilingue automatique} : faciliter les échanges à travers la traduction automatique.
+    \item \textbf{C[9] Application mobile pour les employés} : consulter et valider les tâches depuis un téléphone.
+    \item \textbf{C[10] Suivi des interventions par scan QR} : vérifier l'entrée et la sortie lors des interventions.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{Comparaison des solutions de gestion hôtelière}
+\begin{tabularx}{\textwidth}{|X|c|c|}
+\hline
+\textbf{Critères} & \textbf{ArabSoft XLIA} & \textbf{Optima PMS} \\ \hline
+C[1] Gestion des réservations & \textcolor{green}{Oui} & \textcolor{green}{Oui} \\ \hline
+C[2] Gestion des chambres & \textcolor{green}{Oui} & \textcolor{green}{Oui} \\ \hline
+C[3] Gestion du front office & \textcolor{green}{Oui} & \textcolor{green}{Oui} \\ \hline
+C[4] Gestion du housekeeping & \textcolor{green}{Oui} & \textcolor{orange}{Partiel} \\ \hline
+C[5] Gestion des réclamations & \textcolor{green}{Oui} & \textcolor{red}{Non} \\ \hline
+C[6] Gestion de la maintenance & \textcolor{green}{Oui} & \textcolor{red}{Non} \\ \hline
+C[7] Accès client par QR code & \textcolor{red}{Non} & \textcolor{red}{Non} \\ \hline
+C[8] Communication multilingue automatique & \textcolor{red}{Non} & \textcolor{red}{Non} \\ \hline
+C[9] Application mobile employés & \textcolor{green}{Oui} & \textcolor{red}{Non} \\ \hline
+C[10] Suivi interventions par scan QR & \textcolor{red}{Non} & \textcolor{red}{Non} \\ \hline
+\end{tabularx}
+\label{tab:comparatif_hotellerie}
+\end{table}
+\FloatBarrier
+
+\section{Solution proposée}
+Suite à notre étude comparative, nous avons identifié les avantages et les limites des solutions existantes. \textbf{LoomStay} vise à intégrer les fonctionnalités nécessaires à la digitalisation des services hôteliers et à remédier aux lacunes observées. Les objectifs clés de notre solution comprennent :
+\begin{itemize}
+\item Proposer un espace client accessible par QR code, permettant aux clients d'accéder facilement aux services liés à leur chambre.
+\item Mettre en place un check-in numérique afin de réduire les procédures manuelles et de faciliter la gestion des fiches voyageurs.
+\item Offrir une interface web intuitive pour la réception, les responsables de maintenance et la gouvernante générale.
+\item Permettre aux clients de soumettre des réclamations et de suivre leur état de traitement.
+\item Intégrer des modules d'intelligence artificielle pour la traduction automatique des messages et la classification des réclamations.
+\item Fournir une application mobile destinée aux employés, permettant de consulter les tâches affectées et de valider les interventions par scan QR.
+\item Gérer les plannings des employés avec un système de shifts quotidiens et des tâches de ménage journalières.
+\item Garantir la sécurité et la confidentialité des données à travers un système d'authentification, de rôles et de permissions.
+\end{itemize}
+
+\section{Méthodologie de gestion du projet}
+Afin de gérer efficacement le projet, nous avons adopté la méthodologie agile \textbf{Scrum}~\cite{schwaber2020scrum}. Cette méthodologie repose sur un développement itératif et incrémental, permettant de découper le travail en releases et sprints. Elle offre une meilleure visibilité sur l'avancement du projet, facilite les ajustements en cours de réalisation et permet une validation progressive des fonctionnalités.
+
+Le projet est organisé en \textbf{trois releases} contenant au total \textbf{neuf sprints}, conformément au backlog du produit défini au chapitre suivant.
+
+\section*{Conclusion}
+Nous avons présenté l'organisme d'accueil \textbf{Loomens} ainsi que notre projet de plateforme intelligente de services hôteliers \textbf{LoomStay}, en expliquant son contexte, sa problématique et ses objectifs. L'étude des solutions existantes comme ArabSoft XLIA et Optima PMS nous a permis d'identifier les fonctionnalités principales de notre solution. Par la suite, nous adoptons la méthodologie agile Scrum pour gérer le projet, que nous entamons par la phase de préparation au chapitre suivant.

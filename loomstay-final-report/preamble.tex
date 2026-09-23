@@ -1,0 +1,148 @@
+% =============================================================
+%  Préambule — LoomStay — Rapport PFE Final
+% =============================================================
+
+% --- Encodage et langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% --- Polices ---
+\usepackage{lmodern}
+
+% --- Géométrie ---
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+
+% --- Espacement ---
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Images ---
+\usepackage{graphicx}
+\graphicspath{{imgs/}{imgs/diagrams/}{imgs/screenshots/}{imgs/logos/}}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{subcaption}
+
+% --- Tableaux ---
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\renewcommand{\arraystretch}{1.25}
+
+% --- Couleurs ---
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{linkblue}{HTML}{1a5276}
+\definecolor{codegreen}{HTML}{28a745}
+\definecolor{codegray}{HTML}{6c757d}
+\definecolor{codeblue}{HTML}{007bff}
+\definecolor{codebg}{HTML}{f8f9fa}
+\definecolor{mustred}{HTML}{CC0000}
+\definecolor{shouldorange}{HTML}{FF8C00}
+\definecolor{couldgreen}{HTML}{228B22}
+
+% --- Listings (code source) ---
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegray}\itshape,
+  stringstyle=\color{codegreen},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{codegray!30},
+  tabsize=2,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  captionpos=b,
+  columns=fullflexible
+}
+
+% --- Listes ---
+\usepackage{enumitem}
+\setlist[itemize]{itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{itemsep=2pt,topsep=4pt}
+
+% --- Légendes ---
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,justification=centering}
+
+% --- Hyperliens ---
+\usepackage[
+  colorlinks=true,
+  linkcolor=linkblue,
+  citecolor=linkblue,
+  urlcolor=linkblue,
+  bookmarks=true,
+  pdfauthor={Rayen Hmidi},
+  pdftitle={LoomStay — Rapport PFE},
+  pdfsubject={Projet de Fin d'Études — Master Professionnel en Génie Logiciel — ISIMM}
+]{hyperref}
+
+% --- Bibliographie ---
+\usepackage[backend=biber,style=ieee,sorting=nyt]{biblatex}
+\addbibresource{bibliography/references.bib}
+
+% --- En-têtes et pieds de page ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Annexes ---
+\usepackage{appendix}
+
+% --- Titres ---
+\usepackage{titlesec}
+
+% --- Profondeur table des matières ---
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% =============================================================
+%  Commandes personnalisées
+% =============================================================
+
+% --- TODO visible ---
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+% --- Figure sécurisée : affiche l'image si elle existe, sinon un placeholder ---
+\newcommand{\safefig}[4][0.9]{%
+  % #1 = width (default 0.9\textwidth)
+  % #2 = path relative to graphicspath (e.g. diagrams/sprint1_usecase.png)
+  % #3 = caption
+  % #4 = label
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{imgs/#2}{%
+      \includegraphics[width=#1\textwidth]{#2}%
+    }{%
+      \fbox{\begin{minipage}[c][4cm][c]{0.88\textwidth}%
+        \centering\textcolor{codegray}{\textit{Image à ajouter :}}\\[0.3cm]%
+        \texttt{imgs/#2}%
+      \end{minipage}}%
+    }
+    \caption{#3}
+    \label{fig:#4}
+  \end{figure}
+  \FloatBarrier
+}
+
+% --- Screenshot placeholder ---
+\newcommand{\screenshot}[3]{%
+  % #1 = filename (e.g. screenshots/login_staff.png)
+  % #2 = caption
+  % #3 = label
+  \safefig{#1}{#2}{#3}
+}
+
+% --- Priorité colorée ---
+\newcommand{\must}{\textcolor{mustred}{\textbf{Must}}}
+\newcommand{\should}{\textcolor{shouldorange}{\textbf{Should}}}
+\newcommand{\could}{\textcolor{couldgreen}{\textbf{Could}}}

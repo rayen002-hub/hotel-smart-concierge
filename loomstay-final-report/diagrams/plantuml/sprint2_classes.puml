@@ -1,0 +1,99 @@
+@startuml sprint2_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React" {
+  class "ReceptionDashboard.tsx" as RecepDash {
+    +activeTab : string
+    +rooms : Room[]
+    +reservations : Reservation[]
+    +handleCreateReservation()
+    +handleGenerateQR()
+  }
+
+  class "staffApi.ts" as StaffApi {
+    +getRooms()
+    +createRoom(data)
+    +getReservations()
+    +createReservation(data)
+    +generateClientQR(reservationId)
+    +generateWorkerQR(roomId)
+  }
+}
+
+package "Backend Routes" {
+  class "room.routes.ts" as RoomRoutes {
+    GET /api/rooms
+    POST /api/rooms
+    PATCH /api/rooms/:id
+    DELETE /api/rooms/:id
+  }
+
+  class "reservation.routes.ts" as ResRoutes {
+    GET /api/reservations
+    POST /api/reservations
+    PATCH /api/reservations/:id
+    PATCH /api/reservations/:id/checkin
+  }
+
+  class "checkinQr.routes.ts" as QrRoutes {
+    GET /api/qr/client/:reservationId
+    GET /api/qr/worker/:roomId
+  }
+}
+
+package "Backend Services" {
+  class "room.service.ts" as RoomSvc {
+    +findAll()
+    +create(data)
+    +update(id, data)
+    +delete(id)
+  }
+
+  class "reservation.service.ts" as ResSvc {
+    +findAll()
+    +create(data)
+    +update(id, data)
+    +checkIn(id)
+    +checkOut(id)
+  }
+
+  class "qrToken.service.ts" as QrSvc {
+    +generateClientToken(reservationId)
+    +generateWorkerToken(roomId)
+    +verifyClientRoomToken(token)
+    +verifyWorkerToken(token)
+  }
+}
+
+package "Prisma Models" {
+  class "Room" as RoomModel {
+    +roomNumber : string
+    +floor : int
+    +status : RoomStatus
+    +workerQrVersion : int
+  }
+
+  class "Reservation" as ResModel {
+    +reservationNumber : string
+    +guestFirstName : string
+    +status : ReservationStatus
+    +roomId : UUID?
+  }
+}
+
+RecepDash --> StaffApi
+StaffApi --> RoomRoutes : HTTP
+StaffApi --> ResRoutes : HTTP
+StaffApi --> QrRoutes : HTTP
+RoomRoutes --> RoomSvc
+ResRoutes --> ResSvc
+QrRoutes --> QrSvc
+RoomSvc --> RoomModel
+ResSvc --> ResModel
+QrSvc --> ResModel : verify
+QrSvc --> RoomModel : verify
+
+RoomModel "1" -- "*" ResModel
+
+@enduml

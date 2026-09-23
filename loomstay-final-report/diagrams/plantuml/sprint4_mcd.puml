@@ -1,0 +1,34 @@
+@startuml sprint4_mcd
+hide circle
+skinparam linetype ortho
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String <<unique>>
+  floor : Int
+  type : String
+  status : RoomStatus
+}
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String <<unique>>
+  guestFirstName : String
+  guestLastName : String
+  checkInDate : DateTime
+  checkOutDate : DateTime
+  status : ReservationStatus
+  roomId : UUID? <<FK>>
+}
+
+note bottom of Reservation
+  L'accès à l'espace chambre
+  repose sur un token JWT signé
+  contenant reservationId et roomId.
+  Aucune entité Session n'est
+  persistée en base de données.
+end note
+
+Room ||--o{ Reservation
+
+@enduml

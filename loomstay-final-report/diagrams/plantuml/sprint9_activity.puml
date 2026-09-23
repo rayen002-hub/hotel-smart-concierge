@@ -1,0 +1,41 @@
+@startuml sprint9_activity
+start
+
+:Début du jour ouvrable\n(seuil 06h00 via businessDay.ts);
+
+fork
+  :Gouvernante consulte\nchambres occupées;
+
+  :Gouvernante planifie les shifts\n(MORNING / EVENING / NIGHT / DAY_OFF);
+  :WorkerShiftSchedule créé/mis à jour;
+fork again
+  :Gouvernante sélectionne chambres\nà nettoyer;
+end fork
+
+:Gouvernante assigne chaque chambre\nà un employé HK disponible;
+
+:DailyCleaningTask créée\nstatus = **ASSIGNED**;
+
+:Employé HK ouvre Flutter\n(onglet Ménage quotidien);
+
+:Employé sélectionne une tâche;
+
+:Employé se rend à la chambre;
+
+:status = **IN_PROGRESS**;
+
+:Employé effectue le nettoyage;
+
+if (Nettoyage effectué?) then (Oui)
+  :status = **DONE**;
+  :completedAt enregistré;
+else (Non / Impossible)
+  :status = **SKIPPED**;
+  :Note explicative ajoutée;
+endif
+
+:Tâche terminée\nJour ouvrable suivant : nouvelles tâches;
+
+stop
+
+@enduml

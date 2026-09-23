@@ -1,0 +1,103 @@
+@startuml sprint6_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Client" {
+  class "RoomMessagesPage.tsx" as ClientMsg {
+    +messages : Message[]
+    +newMessage : string
+    +sendMessage()
+    +onSocketMessage()
+  }
+}
+
+package "Frontend React — Staff" {
+  class "ReceptionDashboard.tsx" as RecepDash {
+    +conversations : Conversation[]
+    +activeConversation : string?
+    +sendReply()
+    +onSocketMessage()
+  }
+}
+
+package "Frontend API" {
+  class "publicApi.ts" as PublicApi {
+    +getMessages(token)
+    +sendGuestMessage(token, data)
+  }
+
+  class "staffApi.ts" as StaffApi {
+    +getGuestConversations()
+    +sendStaffReply(data)
+  }
+
+  class "socketClient.ts" as SocketClient {
+    +connect(token)
+    +on(event, callback)
+    +emit(event, data)
+    +disconnect()
+  }
+}
+
+package "Backend Routes" {
+  class "guestMessage.routes.ts" as GuestRoutes {
+    GET /api/guest-messages
+    POST /api/guest-messages
+  }
+
+  class "staffGuestMessage.routes.ts" as StaffMsgRoutes {
+    GET /api/staff/guest-messages
+    POST /api/staff/guest-messages/reply
+  }
+}
+
+package "Backend Services" {
+  class "guestMessage.service.ts" as MsgSvc {
+    +getMessages(reservationId)
+    +createClientMessage(data)
+    +createStaffReply(data)
+  }
+
+  class "ai.service.ts" as AiSvc {
+    +detectLanguage(text)
+    +translate(text, src, tgt)
+  }
+}
+
+package "Backend Socket" {
+  class "message.socket.ts" as MsgSocket {
+    +onConnection(socket)
+    +emitNewMessage(roomId, msg)
+  }
+}
+
+package "Service IA (FastAPI)" {
+  class "translation_service.py" as TransSvc {
+    +translate(text, src, tgt)
+    +load_model()
+  }
+
+  class "language_service.py" as LangSvc {
+    +detect_language(text)
+  }
+}
+
+package "Prisma" {
+  class "GuestStaffMessage" as MsgModel
+}
+
+ClientMsg --> PublicApi
+ClientMsg --> SocketClient
+RecepDash --> StaffApi
+RecepDash --> SocketClient
+PublicApi --> GuestRoutes
+StaffApi --> StaffMsgRoutes
+GuestRoutes --> MsgSvc
+StaffMsgRoutes --> MsgSvc
+MsgSvc --> AiSvc
+MsgSvc --> MsgSocket : émettre
+MsgSvc --> MsgModel
+AiSvc --> TransSvc : HTTP
+AiSvc --> LangSvc : HTTP
+
+@enduml

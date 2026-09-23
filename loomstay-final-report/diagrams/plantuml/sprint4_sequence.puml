@@ -1,0 +1,39 @@
+@startuml sprint4_sequence
+actor "Client" as client
+participant "Navigateur" as browser
+participant "RoomLayout.tsx" as layout
+participant "publicApi.ts" as api
+participant "checkinQr.routes" as routes
+participant "qr.controller" as ctrl
+participant "qrToken.service" as svc
+database "PostgreSQL" as db
+
+client -> browser : Scanne QR code
+browser -> layout : Ouvre /room?token=xxx
+layout -> layout : Extraire token de l'URL
+layout -> api : validateRoomToken(token)
+api -> routes : POST /api/qr/validate-client\n{token}
+routes -> ctrl : validateClientQR(req, res)
+ctrl -> svc : verifyClientRoomToken(token)
+svc -> svc : jwt.verify(token, secret)
+
+alt Token valide
+  svc -> db : findUnique Reservation\ninclude: room
+  db --> svc : reservation + room
+  svc -> svc : Vérifier status == CHECKED_IN\nVérifier checkOutDate > now
+  svc --> ctrl : {reservation, room}
+  ctrl --> routes : 200 OK
+  routes --> api : {roomInfo, reservation}
+  api --> layout : session valide
+  layout -> layout : Stocker contexte chambre
+  layout --> browser : Afficher RoomHomePage\n+ RoomNavBar
+  browser --> client : Espace chambre visible
+else Token expiré ou invalide
+  svc --> ctrl : AppError(401)
+  ctrl --> routes : 401 Unauthorized
+  routes --> api : erreur
+  api --> layout : token invalide
+  layout --> browser : Page d'erreur
+end
+
+@enduml

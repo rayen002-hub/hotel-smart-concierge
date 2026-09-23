@@ -1,0 +1,30 @@
+@startuml sprint1_sequence
+actor "Personnel" as user
+participant "LoginPage.tsx" as login
+participant "auth.routes" as routes
+participant "auth.controller" as ctrl
+participant "auth.service" as svc
+database "PostgreSQL" as db
+
+user -> login : Saisir email + mot de passe
+login -> routes : POST /api/auth/login
+routes -> ctrl : login(req, res)
+ctrl -> svc : login(email, password)
+svc -> db : findUnique(email)\ninclude: employeeProfile
+db --> svc : user
+svc -> svc : bcrypt.compare(password, hash)
+alt Identifiants valides
+  svc -> db : update lastLoginAt
+  svc -> svc : jwt.sign({userId, role})
+  svc --> ctrl : {token, user}
+  ctrl --> routes : 200 OK
+  routes --> login : {token, user}
+  login -> login : Stocker JWT\nRediriger vers dashboard
+else Identifiants invalides
+  svc --> ctrl : AppError(401)
+  ctrl --> routes : 401 Unauthorized
+  routes --> login : Erreur
+  login -> user : Message d'erreur
+end
+
+@enduml

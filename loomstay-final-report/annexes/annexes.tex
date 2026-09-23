@@ -1,0 +1,135 @@
+\chapter{Annexes}
+\label{chap:annexes}
+
+\section{Guide d'installation}
+\label{sec:guide_installation}
+
+\subsection{Prérequis}
+\begin{itemize}
+    \item Node.js v18+ et npm
+    \item PostgreSQL v14+
+    \item Python 3.10+ avec pip
+    \item Flutter SDK 3.x
+    \item Git
+\end{itemize}
+
+\subsection{Installation du backend}
+\begin{lstlisting}[language=bash,caption={Installation du backend}]
+cd backend
+npm install
+cp .env.example .env          # Configurer les variables
+npx prisma generate           # Générer le client Prisma
+npx prisma migrate deploy     # Appliquer les migrations
+npm run seed                  # Données initiales
+npm run dev                   # Démarrer en développement
+\end{lstlisting}
+
+\subsection{Installation du frontend}
+\begin{lstlisting}[language=bash,caption={Installation du frontend}]
+cd web-app
+npm install
+cp .env.example .env          # Configurer VITE_API_URL
+npm run dev                   # Démarrer en développement
+npm run build                 # Build de production
+\end{lstlisting}
+
+\subsection{Installation du service IA}
+\begin{lstlisting}[language=bash,caption={Installation du service IA}]
+cd ai-service
+pip install -r requirements.txt
+python training/train_classifier.py   # Entraîner le modèle
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+\end{lstlisting}
+
+\subsection{Installation de l'application Flutter}
+\begin{lstlisting}[language=bash,caption={Installation de l'application Flutter}]
+cd worker-app
+flutter pub get
+# Configurer l'URL du backend dans lib/core/constants/env.dart
+flutter run                   # Développement
+flutter build apk --release   # Build APK de production
+\end{lstlisting}
+
+
+\section{Schéma de base de données}
+\label{sec:schema_bdd}
+Le schéma complet de la base de données est défini dans le fichier \texttt{backend/prisma/schema.prisma} (446~lignes). Il contient 14~enums et 17~modèles. Les principales relations sont :
+\begin{itemize}
+    \item \texttt{User} $\leftrightarrow$ \texttt{EmployeeProfile} : relation 1:1 pour les profils employés.
+    \item \texttt{Room} $\leftrightarrow$ \texttt{Reservation} : relation 1:N pour les réservations par chambre.
+    \item \texttt{Reservation} $\leftrightarrow$ \texttt{GuestForm} : relation 1:N pour les fiches voyageurs.
+    \item \texttt{Reservation} $\leftrightarrow$ \texttt{Complaint} : relation 1:N pour les réclamations.
+    \item \texttt{Complaint} $\leftrightarrow$ \texttt{InterventionLog} : relation 1:N pour les interventions.
+    \item \texttt{Complaint} $\leftrightarrow$ \texttt{InternalMessage} : relation 1:N pour la messagerie interne.
+    \item \texttt{Room} $\leftrightarrow$ \texttt{DailyCleaningTask} : relation 1:N pour les tâches de ménage quotidien.
+    \item \texttt{User} $\leftrightarrow$ \texttt{WorkerShiftSchedule} : relation 1:N pour les plannings.
+\end{itemize}
+
+
+\section{Résultats détaillés de la classification IA}
+\label{sec:resultats_ia}
+
+\subsection{Rapport de classification par catégorie}
+
+\begin{table}[H]
+\centering
+\caption{Rapport de classification détaillé --- Modèle LR\_combined}
+\small
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Catégorie} & \textbf{Précision} & \textbf{Rappel} & \textbf{F1-score} & \textbf{Support} \\ \hline
+COMPLAINT & 0.88 & 0.88 & 0.88 & 24 \\ \hline
+HOUSEKEEPING & 0.90 & 0.90 & 0.90 & 20 \\ \hline
+MAINTENANCE & 0.93 & 0.93 & 0.93 & 27 \\ \hline
+OTHER & 0.68 & 0.72 & 0.70 & 18 \\ \hline
+RECEPTION & 0.81 & 0.81 & 0.81 & 16 \\ \hline
+RESTAURANT & 0.94 & 0.94 & 0.94 & 16 \\ \hline
+\hline
+\textbf{Macro avg} & 0.86 & 0.86 & 0.86 & 121 \\ \hline
+\textbf{Weighted avg} & 0.86 & 0.86 & 0.86 & 121 \\ \hline
+\end{tabular}
+\label{tab:classification_detail}
+\end{table}
+
+\subsection{Observations}
+\begin{itemize}
+    \item Les catégories \texttt{MAINTENANCE}, \texttt{RESTAURANT} et \texttt{HOUSEKEEPING} obtiennent les meilleurs scores (F1 $>$ 0.90), car les réclamations associées contiennent des termes distinctifs.
+    \item La catégorie \texttt{OTHER} présente les scores les plus faibles (F1 = 0.70), ce qui est attendu pour une catégorie résiduelle.
+    \item La validation croisée 5-fold (CV F1 macro = 0.7702 $\pm$ 0.0450) confirme la robustesse du modèle mais indique une variabilité liée à la taille limitée du dataset.
+\end{itemize}
+
+
+\section{Structure du projet}
+\label{sec:structure_projet}
+\begin{lstlisting}[caption={Arborescence simplifiée du projet LoomStay}]
+hotel-smart-concierge/
++-- backend/
+|   +-- prisma/schema.prisma        # Schema BDD (446 lignes)
+|   +-- src/
+|   |   +-- controllers/            # 14 controllers
+|   |   +-- services/               # 17 services
+|   |   +-- routes/                 # 20 fichiers de routes
+|   |   +-- middlewares/            # auth, role, validate, error
+|   |   +-- socket/                 # Socket.IO (messagerie)
+|   |   +-- utils/                  # audit, encryption, permissions
+|   +-- tests/                      # 7 fichiers de tests
++-- web-app/
+|   +-- src/
+|   |   +-- pages/staff/            # 3 dashboards + login
+|   |   +-- pages/public/           # 8 pages client
+|   |   +-- components/             # Composants réutilisables
+|   |   +-- routes/                 # Configuration React Router
++-- ai-service/
+|   +-- app/
+|   |   +-- main.py                 # FastAPI endpoints
+|   |   +-- services/               # classifier, translation, language
+|   +-- training/                   # Script d'entraînement
+|   +-- models/                     # Modèle sérialisé (.joblib)
+|   +-- tests/                      # Tests Pytest
++-- worker-app/
+|   +-- lib/
+|   |   +-- features/               # auth, home, tasks, splash
+|   |   +-- core/                   # API client, router, constants
+|   |   +-- shared/                 # Widgets réutilisables
++-- dataset/                        # Dataset de réclamations (604 ex.)
+\end{lstlisting}

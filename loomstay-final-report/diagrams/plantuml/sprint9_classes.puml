@@ -1,0 +1,134 @@
+@startuml sprint9_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Manager" {
+  class "ManagerDashboard.tsx" as MgrDash {
+    +dailyTasks : DailyCleaningTask[]
+    +shifts : WorkerShift[]
+    +employees : Employee[]
+    +occupiedRooms : Room[]
+    +handleAssignCleaning(roomId, workerId)
+    +handleSetShift(workerId, shift)
+  }
+
+  class "staffApi.ts" as StaffApi {
+    +getDailyCleaningTasks()
+    +createDailyCleaningTask(data)
+    +getShifts(date)
+    +setShift(data)
+    +getHousekeepingTasks()
+    +createHousekeepingTask(data)
+  }
+}
+
+package "Backend Routes" {
+  class "housekeeping.routes.ts" as HkRoutes {
+    GET/POST /api/housekeeping
+    PATCH /api/housekeeping/:id
+  }
+
+  class "shifts.routes.ts" as ShiftRoutes {
+    GET /api/shifts
+    POST /api/shifts
+    PATCH /api/shifts/:id
+  }
+
+  class "admin.routes.ts" as AdminRoutes {
+    GET /api/admin/audit-logs
+  }
+}
+
+package "Backend Services" {
+  class "dailyCleaning.service.ts" as DCSvc {
+    +findByDate(businessDay)
+    +create(roomId, workerId, assignedById)
+    +updateStatus(id, status)
+  }
+
+  class "housekeeping.service.ts" as HkSvc {
+    +findAll(filters)
+    +create(data)
+    +updateStatus(id, status)
+    +scanEntry(id, qrData)
+    +scanExit(id, qrData)
+    +submitResult(id, result)
+  }
+
+  class "shifts.service.ts" as ShiftSvc {
+    +findByDate(date, department)
+    +upsertShift(workerId, businessDay, shift)
+  }
+
+  class "dailyCleaning.controller.ts" as DCCtrl {
+    +getTasks(req, res)
+    +createTask(req, res)
+    +updateTask(req, res)
+  }
+
+  class "housekeeping.controller.ts" as HkCtrl {
+    +getTasks(req, res)
+    +createTask(req, res)
+    +scanEntry(req, res)
+    +scanExit(req, res)
+    +submitResult(req, res)
+  }
+
+  class "shifts.controller.ts" as ShiftCtrl {
+    +getShifts(req, res)
+    +setShift(req, res)
+  }
+}
+
+package "Flutter (worker-app)" {
+  class "task_list_screen.dart" as FlutterTasks {
+    +tabController : TabController
+    +complaints tab
+    +dailyCleaning tab
+  }
+
+  class "daily_cleaning_task_detail_screen.dart" as FlutterDCDetail {
+    +task : DailyCleaningTask
+    +markDone()
+    +markSkipped()
+  }
+
+  class "housekeeping_task_detail_screen.dart" as FlutterHkDetail {
+    +task : HousekeepingTask
+    +scanEntry()
+    +scanExit()
+    +submitResult()
+  }
+
+  class "daily_cleaning_task_service.dart" as FlutterDCSvc {
+    +getTasks()
+    +updateStatus(id, status)
+  }
+}
+
+package "Prisma" {
+  class "DailyCleaningTask" as DCModel
+  class "HousekeepingTask" as HkModel
+  class "WorkerShiftSchedule" as ShiftModel
+  class "AuditLog" as AuditModel
+}
+
+MgrDash --> StaffApi
+StaffApi --> HkRoutes
+StaffApi --> ShiftRoutes
+HkRoutes --> HkCtrl
+HkCtrl --> HkSvc
+HkCtrl --> DCSvc
+ShiftRoutes --> ShiftCtrl
+ShiftCtrl --> ShiftSvc
+AdminRoutes --> AuditModel
+
+FlutterTasks --> FlutterDCDetail
+FlutterTasks --> FlutterHkDetail
+FlutterDCDetail --> FlutterDCSvc
+FlutterDCSvc ..> DCModel
+HkSvc --> HkModel
+DCSvc --> DCModel
+ShiftSvc --> ShiftModel
+
+@enduml

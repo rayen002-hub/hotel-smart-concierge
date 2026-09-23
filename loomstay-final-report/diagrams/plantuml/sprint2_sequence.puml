@@ -1,0 +1,33 @@
+@startuml sprint2_sequence
+actor "Réceptionniste" as recep
+participant "ReceptionDashboard" as dash
+participant "staffApi.ts" as api
+participant "checkinQr.routes" as routes
+participant "qr.controller" as ctrl
+participant "qrToken.service" as svc
+database "PostgreSQL" as db
+
+recep -> dash : Demander QR client\npour réservation
+dash -> api : generateClientQR(reservationId)
+api -> routes : GET /api/qr/client/:reservationId
+routes -> ctrl : getClientQR(req, res)
+ctrl -> svc : generateClientToken(reservationId)
+svc -> db : findUnique Reservation\ninclude: room
+db --> svc : reservation
+
+alt Réservation valide et CHECKED_IN
+  svc -> svc : jwt.sign(\n{reservationId, roomId},\nsecret,\n{expiresIn: checkOutDate})
+  svc --> ctrl : {token, qrUrl}
+  ctrl --> routes : 200 OK
+  routes --> api : {token, qrUrl}
+  api --> dash : QR data
+  dash -> dash : Afficher QR code\navec qrcode.react
+  dash --> recep : QR visible
+else Réservation invalide ou pas CHECKED_IN
+  svc --> ctrl : AppError(400)
+  ctrl --> routes : 400 Bad Request
+  routes --> api : erreur
+  api --> dash : message erreur
+end
+
+@enduml

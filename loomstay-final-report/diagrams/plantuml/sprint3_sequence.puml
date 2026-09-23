@@ -1,0 +1,41 @@
+@startuml sprint3_sequence
+actor "Client" as client
+participant "CheckInPage.tsx" as page
+participant "checkin.routes" as routes
+participant "checkin.service" as svc
+participant "encryption.ts" as enc
+database "PostgreSQL" as db
+
+client -> page : Saisir numéro de réservation
+page -> routes : POST /api/checkin/verify\n{reservationNumber}
+routes -> svc : verifyReservation(number)
+svc -> db : findUnique(reservationNumber)\ninclude: room, guestForms
+db --> svc : reservation
+alt Réservation valide (CHECKED_IN)
+  svc --> routes : 200 {reservation, adultsCount, childrenCount}
+  routes --> page : Données réservation
+  page -> client : Afficher formulaires voyageurs
+
+  loop Pour chaque voyageur (adulte/enfant)
+    client -> page : Remplir fiche\n(nom, nationalité, passeport, tel)
+    page -> routes : POST /api/checkin/guest-form\n{reservationId, travelerIndex, data}
+    routes -> svc : saveGuestForm(data)
+    svc -> enc : encrypt(passportNumber)
+    enc --> svc : passportEncrypted
+    svc -> db : upsert GuestForm\n{fullName, nationality,\npassportEncrypted, phone}
+    svc -> svc : updateCompletionStatus()
+    svc -> db : update Reservation\n{checkinCompletionStatus}
+    db --> svc : OK
+    svc --> routes : 200 OK
+    routes --> page : Fiche enregistrée
+  end
+
+  page --> client : Check-in complété
+
+else Réservation invalide
+  svc --> routes : 404 Not Found
+  routes --> page : Erreur
+  page --> client : Numéro invalide
+end
+
+@enduml

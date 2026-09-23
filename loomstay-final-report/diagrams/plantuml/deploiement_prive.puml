@@ -1,0 +1,43 @@
+@startuml deploiement_prive
+skinparam componentStyle rectangle
+
+node "Serveur Hôtel" {
+  node "Frontend" {
+    [Nginx\nServeur Web] as NGINX
+    [React Build\n(PWA + Staff)] as REACT
+  }
+
+  node "Backend" {
+    [Node.js Express\nAPI REST + Socket.IO] as API
+    [Prisma ORM] as PRISMA
+  }
+
+  node "Service IA" {
+    [FastAPI Python\nPort 8000] as FASTAPI
+    [NLLB-200\n(~1.2 Go RAM)] as MODEL
+    [Classificateur\nTF-IDF + LR] as CLF
+  }
+
+  database "PostgreSQL\n(local)" as DB
+  storage "Stockage Images\n(système de fichiers)" as FS
+}
+
+node "Réseau Wi-Fi Hôtel" {
+  [Smartphones Employés\nFlutter APK] as PHONES
+  [Navigateurs Clients\n(PWA Chambre)] as BROWSERS
+  [Postes Staff\n(Dashboards)] as DESKTOPS
+}
+
+BROWSERS --> NGINX : HTTPS
+DESKTOPS --> NGINX : HTTPS
+PHONES --> API : HTTPS
+NGINX --> REACT
+NGINX --> API : Reverse Proxy
+API --> PRISMA
+PRISMA --> DB
+API --> FASTAPI : HTTP interne
+API --> FS
+FASTAPI --> MODEL
+FASTAPI --> CLF
+
+@enduml

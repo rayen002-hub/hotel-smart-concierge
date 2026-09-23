@@ -1,0 +1,356 @@
+\chapter{Release 3 : Réclamations, interventions et intelligence intégrée}
+\label{chap:release3}
+\section*{Introduction}
+Cette release couvre le workflow complet des réclamations avec classification automatique, l'application Flutter des employés, le suivi des interventions par scan QR, la gestion des tâches de ménage quotidien et la planification des shifts.
+
+%% ================================================================
+%%  SPRINT 7
+%% ================================================================
+\section{Sprint 7 : Réclamations clients et classification IA}
+\label{sec:sprint7}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 7}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S7-US01 & Soumettre une réclamation en texte libre & Client & Must & 3j & Terminé \\ \hline
+S7-US02 & Analyser la réclamation par IA (détection, traduction, classification) & Système IA & Must & 5j & Terminé \\ \hline
+S7-US03 & Suivre le statut de la réclamation & Client & Must & 3j & Terminé \\ \hline
+S7-US04 & Confirmer ou rouvrir une réclamation & Client & Must & 3j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint7_usecase.png}{Diagramme de cas d'utilisation du Sprint~7 --- Réclamations et classification IA}{sprint7_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Soumettre une réclamation »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Soumettre une réclamation \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Permettre au client de déclarer un problème depuis son espace chambre. \\ \hline
+Précondition & Le client possède une session chambre valide. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le client saisit sa réclamation en texte libre sur \texttt{RoomComplaintPage.tsx}.
+\item Le backend reçoit le message et appelle le pipeline IA via \texttt{/analyze}.
+\item Le service IA détecte la langue, traduit vers l'anglais, classifie en 6~catégories, puis traduit vers la langue du staff.
+\item Le backend enregistre la réclamation dans \texttt{Complaint} avec la langue détectée, le message normalisé, la catégorie et le score de confiance.
+\item Le statut initial est \texttt{PENDING}.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & IA indisponible : catégorie \texttt{OTHER} par défaut, message original conservé. \\ \hline
+Postcondition & La réclamation est enregistrée avec catégorie, traduction et statut. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Confirmer une résolution »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Confirmer une résolution \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Valider que l'intervention a résolu le problème. \\ \hline
+Précondition & La réclamation est en statut \texttt{RESOLVED}. \\ \hline
+Scénario nominal & Le client confirme la résolution ; le statut passe à \texttt{CONFIRMED}. \\ \hline
+Scénarios alternatifs & Client non satisfait : il saisit un commentaire et la réclamation passe à \texttt{REOPENED}. \\ \hline
+Postcondition & La réclamation est clôturée ou renvoyée au traitement. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Pipeline d'analyse IA}
+Le endpoint \texttt{/analyze} du service FastAPI exécute un pipeline en quatre étapes :
+\begin{enumerate}
+\item \textbf{Détection de langue} : \texttt{language\_service.py} identifie la langue du message via \texttt{langdetect}.
+\item \textbf{Traduction vers l'anglais} : \texttt{translation\_service.py} traduit le message vers l'anglais pour normaliser l'entrée du classificateur.
+\item \textbf{Classification} : \texttt{classifier\_service.py} applique le pipeline TF-IDF + Régression Logistique entraîné (\texttt{LR\_combined}) pour prédire la catégorie parmi : \texttt{MAINTENANCE}, \texttt{HOUSEKEEPING}, \texttt{RECEPTION}, \texttt{RESTAURANT}, \texttt{COMPLAINT}, \texttt{OTHER}.
+\item \textbf{Traduction vers la langue du staff} : le message est traduit vers le français pour le personnel.
+\end{enumerate}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit l'entité \texttt{Complaint} avec les champs : \texttt{originalMessage}, \texttt{detectedLanguage}, \texttt{normalizedMessageEn}, \texttt{staffMessage}, \texttt{category} (enum \texttt{ComplaintCategory}), \texttt{status} (enum \texttt{ComplaintStatus} à 7~états : \texttt{PENDING}, \texttt{ASSIGNED}, \texttt{IN\_PROGRESS}, \texttt{RESOLVED}, \texttt{CONFIRMED}, \texttt{NEEDS\_REVIEW}, \texttt{REOPENED}).
+
+\safefig{diagrams/sprint7_mcd.png}{Modèle conceptuel de données du Sprint~7}{sprint7_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint7_sequence.png}{Diagramme de séquence du Sprint~7 --- Réclamation avec pipeline IA}{sprint7_sequence}
+
+\subsection{Diagramme de classes de conception}
+\safefig{diagrams/sprint7_classes.png}{Diagramme de classes de conception du Sprint~7}{sprint7_classes}
+
+\subsection{Diagramme d'activité}
+Le diagramme d'activité ci-dessous illustre le cycle de vie complet d'une réclamation, depuis la soumission par le client jusqu'à la confirmation ou la réouverture, en passant par les sept statuts définis.
+
+\safefig{diagrams/sprint7_activity.png}{Diagramme d'activité du Sprint~7 --- Cycle de vie d'une réclamation}{sprint7_activity}
+
+\subsection{Réalisation}
+La page \texttt{RoomComplaintPage.tsx} permet au client de soumettre une réclamation. La page \texttt{RoomComplaintsPage.tsx} affiche l'historique et permet de confirmer ou rouvrir les réclamations résolues. Le service backend \texttt{complaint.service.ts} orchestre l'appel au microservice IA via \texttt{ai.service.ts}. Les résultats sont stockés dans le modèle \texttt{Complaint}.
+
+\screenshot{screenshots/complaint_form.png}{Formulaire de soumission d'une réclamation}{screenshot_complaint_form}
+\screenshot{screenshots/complaints_list.png}{Historique des réclamations --- Côté client}{screenshot_complaints_list}
+
+\subsection{Évaluation du modèle de classification}
+Le meilleur modèle obtenu est \texttt{LR\_combined} (TF-IDF + Régression Logistique), entraîné sur un jeu de données de 604~exemples répartis en 6~catégories~\cite{scikitlearn}. Les métriques principales sont :
+
+\begin{table}[H]
+\centering
+\caption{Résultats du modèle de classification LR\_combined}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Métrique} & \textbf{Valeur} \\ \hline
+Accuracy & 0.8595 \\ \hline
+F1 macro & 0.8605 \\ \hline
+F1 weighted & 0.8604 \\ \hline
+CV F1 macro (5-fold) & 0.7702 $\pm$ 0.0450 \\ \hline
+\end{tabular}
+\label{tab:classification_results}
+\end{table}
+
+Ces résultats restent dépendants du jeu de données et doivent être interprétés avec prudence. Les limites observées concernent les messages courts, les ambiguïtés entre \texttt{RECEPTION}, \texttt{RESTAURANT} et \texttt{OTHER}, ainsi que la taille limitée du dataset.
+
+\subsection{Tests et validation}
+Les tests \texttt{clientComplaints.test.ts} valident la création et le suivi des réclamations. Les tests IA dans \texttt{test\_app.py} et \texttt{test\_language\_detection.py} vérifient les endpoints FastAPI.
+
+\subsection{Revue et rétrospective}
+Le sprint livre le cœur intelligent de LoomStay. La classification offre de bons résultats mais reste perfectible avec davantage de données réelles.
+
+
+%% ================================================================
+%%  SPRINT 8
+%% ================================================================
+\section{Sprint 8 : Affectation des réclamations et application Flutter}
+\label{sec:sprint8}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 8}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S8-US01 & Assigner une réclamation à un employé & Responsable & Must & 4j & Terminé \\ \hline
+S8-US02 & Consulter les tâches dans l'app Flutter & Employé & Must & 3j & Terminé \\ \hline
+S8-US03 & Scanner le QR entrée/sortie & Employé & Must & 4j & Terminé \\ \hline
+S8-US04 & Saisir le résultat et un commentaire & Employé & Must & 3j & Terminé \\ \hline
+S8-US05 & Échanger des messages internes & Employé/Manager & Should & 3j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint8_usecase.png}{Diagramme de cas d'utilisation du Sprint~8 --- Affectation et Flutter}{sprint8_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Assigner une réclamation »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Assigner une réclamation \\ \hline
+Acteur principal & Responsable (maintenance ou housekeeping) \\ \hline
+Objectif & Affecter une réclamation à un employé disponible du département. \\ \hline
+Précondition & Le responsable est connecté et la réclamation est en attente. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le responsable consulte les réclamations sur \texttt{ManagerDashboard.tsx}.
+\item Il sélectionne une réclamation et choisit un employé disponible.
+\item Le statut passe de \texttt{PENDING} à \texttt{ASSIGNED}.
+\item L'employé voit la tâche dans son application Flutter.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Aucun employé disponible : assignation reportée. Transfert vers un autre service : changement de catégorie. \\ \hline
+Postcondition & La réclamation est assignée et visible par l'employé. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Exécuter une intervention »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Exécuter une intervention \\ \hline
+Acteur principal & Employé \\ \hline
+Objectif & Réaliser une intervention en validant l'entrée et la sortie par scan QR. \\ \hline
+Précondition & L'employé est connecté et possède une tâche assignée. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item L'employé ouvre la tâche dans \texttt{task\_detail\_screen.dart}.
+\item Il scanne le QR de la chambre à l'entrée via \texttt{qr\_scanner\_screen.dart}.
+\item Le backend valide le QR worker et enregistre \texttt{entryTime}.
+\item L'employé réalise l'intervention.
+\item Il scanne le QR à la sortie via \texttt{qr\_exit\_scanner\_screen.dart}.
+\item Il saisit le résultat (\texttt{FIXED} / \texttt{NOT\_FIXED}) et un commentaire via \texttt{intervention\_result\_screen.dart}.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & QR invalide : scan refusé. \texttt{NOT\_FIXED} : la réclamation passe à \texttt{NEEDS\_REVIEW}. \\ \hline
+Postcondition & L'intervention est enregistrée dans \texttt{InterventionLog} avec \texttt{entryTime}, \texttt{exitTime} et résultat. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit les entités \texttt{InterventionLog} (complaintId, employeeId, roomId, entryTime, exitTime, result, employeeComment) et \texttt{InternalMessage} (complaintId, senderId, receiverId, message, readAt).
+
+\safefig{diagrams/sprint8_mcd.png}{Modèle conceptuel de données du Sprint~8}{sprint8_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint8_sequence.png}{Diagramme de séquence du Sprint~8 --- Intervention avec scan QR}{sprint8_sequence}
+
+\subsection{Diagramme de classes de conception}
+\safefig{diagrams/sprint8_classes.png}{Diagramme de classes de conception du Sprint~8}{sprint8_classes}
+
+\subsection{Diagramme d'activité}
+Le diagramme d'activité ci-dessous modélise le workflow d'intervention complet : de l'assignation par le responsable jusqu'à la validation du résultat par l'employé terrain.
+
+\safefig{diagrams/sprint8_activity.png}{Diagramme d'activité du Sprint~8 --- Workflow d'intervention maintenance}{sprint8_activity}
+
+\subsection{Réalisation}
+Le dashboard \texttt{ManagerDashboard.tsx} permet aux responsables d'assigner les réclamations et de créer des employés dans leur département. L'application Flutter utilise une architecture feature-based avec :
+\begin{itemize}
+\item \texttt{task\_list\_screen.dart} : liste des tâches avec deux onglets (Réclamations et Ménage quotidien).
+\item \texttt{task\_detail\_screen.dart} : détails d'une réclamation avec le workflow de scan.
+\item \texttt{qr\_scanner\_screen.dart} et \texttt{qr\_exit\_scanner\_screen.dart} : scan QR entrée et sortie.
+\item \texttt{intervention\_result\_screen.dart} : saisie du résultat (\texttt{FIXED}/\texttt{NOT\_FIXED}) et commentaire.
+\item \texttt{messages\_screen.dart} : messagerie interne liée à une réclamation.
+\end{itemize}
+
+Les routes backend \texttt{mobile.routes.ts} et \texttt{staffComplaint.routes.ts} fournissent les API nécessaires. Le service \texttt{complaint.service.ts} gère les transitions de statut et l'enregistrement des interventions. Le client API Flutter utilise Dio avec un intercepteur JWT (\texttt{api\_client.dart}).
+
+\screenshot{screenshots/manager_complaints.png}{Dashboard manager --- Assignation des réclamations}{screenshot_manager_assign}
+\screenshot{screenshots/flutter_tasks.png}{Application Flutter --- Liste des tâches}{screenshot_flutter_tasks}
+\screenshot{screenshots/flutter_qr_scan.png}{Application Flutter --- Scan QR d'entrée}{screenshot_flutter_qr}
+
+\subsection{Tests et validation}
+Les tests \texttt{employeeScan.test.ts} valident les scans d'entrée/sortie et la mise à jour des statuts. L'application est contrôlée par \texttt{flutter analyze}.
+
+\subsection{Revue et rétrospective}
+Le sprint livre la coordination entre managers et employés terrain. La difficulté principale concerne la validation du QR worker versionné et la synchronisation des statuts.
+
+
+%% ================================================================
+%%  SPRINT 9
+%% ================================================================
+\section{Sprint 9 : Tâches housekeeping, ménage quotidien et shifts}
+\label{sec:sprint9}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 9}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S9-US01 & Gérer les tâches de ménage quotidien par chambre & Gouvernante & Must & 4j & Terminé \\ \hline
+S9-US02 & Gérer les shifts des employés (planning quotidien) & Responsable & Must & 3j & Terminé \\ \hline
+S9-US03 & Exécuter une tâche housekeeping/ménage dans Flutter & Employé HK & Must & 4j & Terminé \\ \hline
+S9-US04 & Consulter les journaux d'audit & Admin & Should & 2j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint9_usecase.png}{Diagramme de cas d'utilisation du Sprint~9 --- Housekeeping, ménage et shifts}{sprint9_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Gérer les tâches de ménage quotidien »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Gérer les tâches de ménage quotidien \\ \hline
+Acteur principal & Gouvernante générale \\ \hline
+Objectif & Assigner des tâches de nettoyage quotidien aux employés housekeeping. \\ \hline
+Précondition & La gouvernante est connectée et des chambres occupées existent. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item La gouvernante accède à l'onglet Ménage quotidien de \texttt{ManagerDashboard.tsx}.
+\item Elle sélectionne une ou plusieurs chambres et un employé housekeeping.
+\item Le système crée une \texttt{DailyCleaningTask} par chambre pour le jour ouvrable courant.
+\item L'employé voit les tâches dans l'onglet Ménage de l'application Flutter.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Aucun employé disponible : assignation reportée. Tâche déjà existante pour cette chambre/jour : création refusée. \\ \hline
+Postcondition & Les tâches de ménage sont créées en statut \texttt{ASSIGNED}. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Gérer les shifts des employés »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Gérer les shifts des employés \\ \hline
+Acteur principal & Responsable (maintenance ou housekeeping) \\ \hline
+Objectif & Planifier les horaires quotidiens des employés. \\ \hline
+Précondition & Le responsable est authentifié et des employés existent dans son département. \\ \hline
+Scénario nominal & Le responsable accède à la gestion des shifts, sélectionne un employé et assigne un shift pour le jour courant : \texttt{MORNING} (07h--15h), \texttt{EVENING} (15h--23h), \texttt{NIGHT} (23h--07h) ou \texttt{DAY\_OFF}. \\ \hline
+Scénarios alternatifs & Shift déjà assigné : mise à jour du shift existant. \\ \hline
+Postcondition & Le planning du jour est enregistré dans \texttt{WorkerShiftSchedule}. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit trois nouvelles entités :
+\begin{itemize}
+\item \texttt{DailyCleaningTask} : tâche de ménage quotidien par chambre, par employé et par jour ouvrable, avec les statuts \texttt{ASSIGNED}, \texttt{IN\_PROGRESS}, \texttt{DONE}, \texttt{SKIPPED}.
+\item \texttt{WorkerShiftSchedule} : planning d'un employé pour un jour ouvrable donné, avec contrainte d'unicité par (workerId, businessDay).
+\item \texttt{HousekeepingTask} : tâche housekeeping liée à une réclamation, distincte du ménage quotidien.
+\end{itemize}
+
+Le jour ouvrable hôtelier (\texttt{businessDay}) est calculé par l'utilitaire \texttt{businessDay.ts} avec un seuil à 06h00 : toute action avant 06h00 est rattachée au jour précédent.
+
+\safefig{diagrams/sprint9_mcd.png}{Modèle conceptuel de données du Sprint~9}{sprint9_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint9_sequence.png}{Diagramme de séquence du Sprint~9 --- Assignation ménage quotidien}{sprint9_sequence}
+
+\subsection{Diagramme de classes de conception}
+\safefig{diagrams/sprint9_classes.png}{Diagramme de classes de conception du Sprint~9}{sprint9_classes}
+
+\subsection{Diagramme d'activité}
+Le diagramme d'activité ci-dessous modélise le cycle de vie d'une tâche de ménage quotidien, du début du jour ouvrable (seuil 06h00) jusqu'à la complétion ou le report de la tâche.
+
+\safefig{diagrams/sprint9_activity.png}{Diagramme d'activité du Sprint~9 --- Cycle de vie du ménage quotidien}{sprint9_activity}
+
+\subsection{Réalisation}
+Le module housekeeping/ménage quotidien est traité séparément des réclamations. La gouvernante utilise l'onglet dédié de \texttt{ManagerDashboard.tsx} pour consulter les chambres occupées, assigner des tâches de ménage et gérer les shifts quotidiens.
+
+Côté backend :
+\begin{itemize}
+\item \texttt{dailyCleaning.service.ts} et \texttt{dailyCleaning.controller.ts} gèrent le CRUD des tâches de ménage quotidien.
+\item \texttt{housekeeping.service.ts}, \texttt{housekeeping.controller.ts} et \texttt{housekeeping.routes.ts} gèrent les tâches housekeeping liées aux réclamations.
+\item \texttt{shifts.service.ts} et \texttt{shifts.controller.ts} gèrent les plannings.
+\item Le modèle \texttt{AuditLog} enregistre les actions critiques avec métadonnées JSON.
+\end{itemize}
+
+Côté Flutter :
+\begin{itemize}
+\item \texttt{daily\_cleaning\_task\_model.dart} et \texttt{daily\_cleaning\_task\_service.dart} modélisent et récupèrent les tâches de ménage.
+\item \texttt{daily\_cleaning\_task\_detail\_screen.dart} affiche les détails et permet de marquer la tâche comme \texttt{DONE} ou \texttt{NOT\_DONE}.
+\item \texttt{housekeeping\_task\_detail\_screen.dart} gère les tâches housekeeping liées aux réclamations avec le même workflow de scan QR que les interventions de maintenance.
+\item L'écran \texttt{task\_list\_screen.dart} utilise un \texttt{TabController} avec deux onglets : Réclamations et Ménage quotidien.
+\end{itemize}
+
+\screenshot{screenshots/manager_housekeeping.png}{Dashboard manager --- Ménage quotidien}{screenshot_manager_hk}
+\screenshot{screenshots/flutter_daily.png}{Application Flutter --- Tâches de ménage}{screenshot_flutter_daily}
+
+\subsection{Tests et validation}
+Les validations manuelles couvrent l'assignation d'une tâche de ménage, le scan d'entrée/sortie, la saisie du résultat et la gestion des shifts. Les actions critiques sont tracées via \texttt{AuditLog}.
+
+\subsection{Revue et rétrospective}
+Le sprint livre la gestion complète du ménage quotidien et des shifts. Une amélioration future consiste à enrichir la planification avec des notifications et des priorités horaires.
+
+\section*{Conclusion}
+Cette release a complété la plateforme avec la gestion intelligente des réclamations, l'application mobile des agents terrain, le suivi des interventions par scan QR, la gestion du ménage quotidien et la planification des shifts.

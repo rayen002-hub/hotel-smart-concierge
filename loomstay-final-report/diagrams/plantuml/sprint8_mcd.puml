@@ -1,0 +1,70 @@
+@startuml sprint8_mcd
+hide circle
+skinparam linetype ortho
+
+entity "Complaint" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  category : ComplaintCategory
+  status : ComplaintStatus
+  assignedToId : UUID? <<FK>>
+  assignedById : UUID? <<FK>>
+}
+
+entity "InterventionLog" {
+  id : UUID <<PK>>
+  complaintId : UUID <<FK>>
+  employeeId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  entryTime : DateTime?
+  exitTime : DateTime?
+  result : InterventionResult?
+  employeeComment : String?
+  createdAt : DateTime
+}
+
+entity "InternalMessage" {
+  id : UUID <<PK>>
+  complaintId : UUID <<FK>>
+  senderId : UUID <<FK>>
+  receiverId : UUID <<FK>>
+  message : String
+  createdAt : DateTime
+  readAt : DateTime?
+}
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  role : UserRole
+}
+
+entity "EmployeeProfile" {
+  id : UUID <<PK>>
+  userId : UUID <<FK, unique>>
+  department : Department
+  isAvailable : Boolean
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String
+  workerQrVersion : Int
+}
+
+note right of InterventionLog
+  InterventionResult:
+  FIXED | NOT_FIXED
+end note
+
+Complaint ||--o{ InterventionLog
+Complaint ||--o{ InternalMessage
+Complaint }o--o| User : assignedTo
+InterventionLog }o--|| User : employee
+InterventionLog }o--|| Room
+InternalMessage }o--|| User : sender
+InternalMessage }o--|| User : receiver
+User ||--o| EmployeeProfile
+
+@enduml

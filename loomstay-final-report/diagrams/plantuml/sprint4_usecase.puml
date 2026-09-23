@@ -1,0 +1,23 @@
+@startuml sprint4_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as client
+actor "Système" as sys
+
+rectangle "Sprint 4 : Espace client PWA" {
+  usecase "Scanner QR code chambre" as UC1
+  usecase "Valider token JWT" as UC2
+  usecase "Accéder à l'espace chambre" as UC3
+  usecase "Naviguer dans le menu" as UC4
+  usecase "Installer la PWA" as UC5
+}
+
+client --> UC1
+UC1 ..> UC2 : <<include>>
+UC2 --> sys
+UC2 ..> UC3 : <<include>>
+client --> UC4
+client --> UC5
+
+@enduml

@@ -1,0 +1,107 @@
+\chapter{Sprint 0 : Analyse et préparation}
+\label{chap:sprint0}
+
+\section*{Introduction}
+Ce chapitre présente la phase de préparation du projet. Il regroupe l'identification des acteurs, la capture des besoins fonctionnels et non fonctionnels, le diagramme de contexte, le diagramme de cas d'utilisation global, le backlog du produit, la planification des releases et l'environnement technique utilisé.
+
+\section{Analyse et spécification des besoins}
+
+\subsection{Identification des acteurs}
+La plateforme \textbf{LoomStay} est destinée à plusieurs types d'utilisateurs :
+\begin{itemize}
+    \item \textbf{Client} : accède à son espace chambre via QR code, effectue le check-in numérique, consulte les services de l'hôtel, envoie des messages et soumet des réclamations.
+    \item \textbf{Réceptionniste} : gère les réservations, suit les check-ins, consulte les fiches voyageurs, communique avec les clients et gère les événements.
+    \item \textbf{Administrateur} : gère les utilisateurs, les chambres, les informations de l'hôtel, les événements et consulte les journaux d'audit.
+    \item \textbf{Responsable maintenance} : consulte les réclamations techniques, affecte les interventions aux employés, gère les shifts et suit l'avancement.
+    \item \textbf{Gouvernante générale} : gère les réclamations housekeeping, affecte les tâches de ménage quotidien, gère les shifts et suit l'état des chambres.
+    \item \textbf{Employé maintenance} : consulte les tâches assignées, scanne le QR code de la chambre, valide l'intervention et communique avec le responsable.
+    \item \textbf{Employé housekeeping} : consulte les réclamations et les tâches de ménage quotidien, scanne le QR code et valide les tâches.
+    \item \textbf{Système IA} : acteur technique secondaire appelé par le backend pour la détection de langue, la traduction automatique et la classification des réclamations.
+\end{itemize}
+
+\subsection{Diagramme de contexte du système}
+\safefig{diagrams/contexte_global.png}{Diagramme de contexte de la plateforme LoomStay}{contexte_global}
+
+\subsection{Capture des besoins fonctionnels}
+\input{tables/besoins_fonctionnels}
+
+\subsection{Capture des besoins non fonctionnels}
+\input{tables/besoins_non_fonctionnels}
+
+\subsection{Diagramme de cas d'utilisation global}
+\safefig{diagrams/usecase_global.png}{Diagramme de cas d'utilisation global simplifié}{usecase_global}
+
+\section{Backlog du produit}
+\input{tables/backlog_produit}
+
+\section{Planification des releases}
+\input{tables/planification_releases}
+
+\section{Planification des sprints}
+\input{tables/sprints_par_release}
+
+\section{Environnement de travail}
+\subsection{Technologies de développement}
+\input{tables/technologies_developpement}
+
+\subsection{Technologies complémentaires}
+\input{tables/technologies_complementaires}
+
+\section{Architecture d'application}
+
+\subsection{Architecture logique}
+La solution repose sur une architecture orientée services composée de quatre modules principaux :
+\begin{itemize}
+    \item \textbf{Application web React/TypeScript} : interface pour le personnel (réception, administration, managers) et espace client chambre (PWA). Le frontend communique avec le backend via des API REST et Socket.IO pour le temps réel.
+    \item \textbf{Backend Node.js/Express/TypeScript} : centralise la logique métier selon une architecture en couches (Routes $\rightarrow$ Controllers $\rightarrow$ Services $\rightarrow$ Prisma/PostgreSQL). Il expose les API REST, gère l'authentification JWT, le contrôle d'accès RBAC et communique avec le service IA.
+    \item \textbf{Service IA FastAPI/Python} : fournit la détection de langue, la traduction via NLLB-200 et la classification des réclamations via TF-IDF / Régression Logistique. Il est appelé par le backend en tant que microservice.
+    \item \textbf{Application mobile Flutter/Dart} : destinée aux employés terrain (maintenance et housekeeping). Elle permet de consulter les tâches, scanner les QR codes et valider les interventions.
+\end{itemize}
+
+\safefig{diagrams/architecture_generale.png}{Architecture générale de LoomStay}{architecture_generale}
+
+\subsection{Architecture frontend orientée composants}
+Le frontend React adopte une architecture orientée composants. Les pages sont organisées par rôle (\texttt{staff/} pour le personnel, \texttt{public/} pour les clients). Les routes sont protégées par le composant \texttt{AuthGuard.tsx} qui vérifie le rôle JWT. L'espace client chambre est protégé par \texttt{RoomLayout.tsx} qui valide le token QR. Les services API sont centralisés dans le dossier \texttt{api/}.
+
+\subsection{Architecture backend en couches}
+Le backend suit une architecture en couches clairement séparée :
+\begin{enumerate}
+    \item \textbf{Routes} : définissent les endpoints REST et appliquent les middlewares d'authentification et de rôle.
+    \item \textbf{Controllers} : reçoivent les requêtes HTTP, valident les entrées et délèguent aux services.
+    \item \textbf{Services} : contiennent la logique métier et interagissent avec Prisma ORM.
+    \item \textbf{Prisma/PostgreSQL} : couche de persistance avec le schéma déclaratif et les migrations.
+\end{enumerate}
+
+\subsection{Architecture mobile}
+L'application Flutter adopte une structure par fonctionnalités (\textit{feature-based}) :
+\begin{itemize}
+    \item \texttt{features/auth/} : authentification et stockage sécurisé du JWT.
+    \item \texttt{features/tasks/} : liste des tâches, détails, scan QR, résultat d'intervention, messagerie.
+    \item \texttt{features/home/} : tableau de bord de l'employé.
+    \item \texttt{core/} : client API (Dio), routeur (GoRouter), constantes.
+    \item \texttt{shared/} : widgets réutilisables.
+\end{itemize}
+
+\subsection{Architecture du service IA}
+Le service IA FastAPI est structuré en trois services spécialisés :
+\begin{itemize}
+    \item \texttt{language\_service.py} : détection de langue avec \texttt{langdetect} et mapping vers les codes NLLB.
+    \item \texttt{translation\_service.py} : traduction avec le modèle pré-entraîné \texttt{facebook/nllb-200-distilled-600M}, chargement paresseux et cache.
+    \item \texttt{classifier\_service.py} : classification des réclamations avec un pipeline TF-IDF + Régression Logistique entraîné sur un jeu de données de 604~exemples en 6~catégories.
+\end{itemize}
+
+\subsection{Déploiement cible}
+Le déploiement réel visé repose sur une infrastructure privée au sein de l'hôtel. Les plateformes Vercel, Render, Hugging Face Spaces et Supabase ont été utilisées uniquement pour la démonstration. Le chapitre~\ref{chap:deploiement} détaille l'architecture de déploiement cible.
+
+\safefig{diagrams/deploiement_prive.png}{Architecture de déploiement cible sur serveur privé hôtelier}{deploiement_prive}
+
+\subsection{Modèle de données global}
+Le modèle de données global regroupe les 17~entités de la base PostgreSQL et leurs relations. Ce modèle est détaillé progressivement au fil des sprints.
+
+\safefig{diagrams/modele_global.png}{Modèle de données global de LoomStay}{modele_global}
+
+\section{Définition de Done}
+Dans ce projet, un incrément de sprint est considéré comme terminé lorsque les fonctionnalités développées sont intégrées, testées, validées et documentées. Les tests, la construction de l'application et la validation sont des activités continues intégrées à chaque sprint, conformément aux principes Scrum. Le chapitre~\ref{chap:build_tests} constitue un chapitre de validation technique globale et non une release Scrum supplémentaire.
+
+\section*{Conclusion}
+Ce chapitre a permis de définir les besoins, les acteurs, le backlog, la planification et l'architecture générale de la solution. Le projet est organisé en trois releases principales, chacune contenant trois sprints fonctionnels.

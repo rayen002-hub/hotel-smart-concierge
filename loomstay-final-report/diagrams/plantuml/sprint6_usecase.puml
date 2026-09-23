@@ -1,0 +1,27 @@
+@startuml sprint6_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as client
+actor "Réceptionniste" as recep
+actor "Système IA" as ia
+
+rectangle "Sprint 6 : Messagerie et traduction" {
+  usecase "Envoyer un message" as UC1
+  usecase "Répondre au client" as UC2
+  usecase "Détecter la langue" as UC3
+  usecase "Traduire le message\n(NLLB-200)" as UC4
+  usecase "Recevoir en temps réel\n(Socket.IO)" as UC5
+}
+
+client --> UC1
+recep --> UC2
+UC1 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC2 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+UC2 ..> UC5 : <<include>>
+UC3 --> ia
+UC4 --> ia
+
+@enduml

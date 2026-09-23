@@ -1,0 +1,24 @@
+@startuml sprint5_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as client
+actor "Admin / Réception" as admin
+
+rectangle "Sprint 5 : Services hôteliers" {
+  usecase "Consulter infos hôtel" as UC1
+  usecase "Consulter événements" as UC2
+  usecase "Convertir devises\nvers TND" as UC3
+  usecase "Gérer infos hôtel" as UC4
+  usecase "Gérer événements\n(publier/dépublier)" as UC5
+  usecase "Gérer taux de change" as UC6
+}
+
+client --> UC1
+client --> UC2
+client --> UC3
+admin --> UC4
+admin --> UC5
+admin --> UC6
+
+@enduml

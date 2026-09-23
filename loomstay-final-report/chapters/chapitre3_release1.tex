@@ -1,0 +1,243 @@
+\chapter{Release 1 : Socle système et gestion hôtelière}
+\label{chap:release1}
+\section*{Introduction}
+Cette release établit le socle fonctionnel et technique de la plateforme LoomStay. Elle comprend l'authentification, la gestion des rôles, la gestion des chambres, des réservations, des QR codes, ainsi que le check-in numérique avec fiches voyageurs.
+
+%% ================================================================
+%%  SPRINT 1
+%% ================================================================
+\section{Sprint 1 : Authentification, rôles et sécurité}
+\label{sec:sprint1}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 1}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S1-US01 & Se connecter avec email et mot de passe & Staff & Must & 3j & Terminé \\ \hline
+S1-US02 & Protéger les routes selon le rôle utilisateur & Système & Must & 3j & Terminé \\ \hline
+S1-US03 & Sécuriser les mots de passe et les sessions JWT & Système & Must & 2j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint1_usecase.png}{Diagramme de cas d'utilisation du Sprint~1 --- Authentification et rôles}{sprint1_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « S'authentifier »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & S'authentifier \\ \hline
+Acteur principal & Personnel hôtelier (Admin, Réceptionniste, Responsable, Employé) \\ \hline
+Objectif & Permettre au personnel autorisé d'accéder au dashboard correspondant à son rôle. \\ \hline
+Précondition & L'utilisateur possède un compte actif créé par un administrateur ou un responsable. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item L'utilisateur saisit son email et mot de passe sur \texttt{LoginPage.tsx}.
+\item Le backend vérifie les identifiants via \texttt{auth.service.ts} (bcrypt compare).
+\item Un token JWT est généré contenant \texttt{userId} et \texttt{role}.
+\item Le frontend redirige vers le dashboard adapté au rôle.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Identifiants invalides : message d'erreur. Compte inactif : accès refusé. \\ \hline
+Postcondition & L'utilisateur est authentifié, le JWT est stocké et \texttt{lastLoginAt} mis à jour. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Le MCD de ce sprint regroupe les entités \texttt{User} et \texttt{EmployeeProfile}. L'entité \texttt{User} contient les informations d'authentification (email, passwordHash, role) tandis que \texttt{EmployeeProfile} étend le profil avec le département, la disponibilité et les timestamps de connexion.
+
+\safefig{diagrams/sprint1_mcd.png}{Modèle conceptuel de données du Sprint~1}{sprint1_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint1_sequence.png}{Diagramme de séquence du Sprint~1 --- Authentification}{sprint1_sequence}
+
+\subsection{Diagramme de classes de conception}
+Les éléments concernés sont : \texttt{LoginPage.tsx}, \texttt{AuthGuard.tsx}, \texttt{auth.routes.ts}, \texttt{auth.controller.ts}, \texttt{auth.service.ts}, \texttt{auth.middleware.ts}, \texttt{role.middleware.ts}, et les modèles Prisma \texttt{User} et \texttt{EmployeeProfile}.
+
+\safefig{diagrams/sprint1_classes.png}{Diagramme de classes de conception du Sprint~1}{sprint1_classes}
+
+\subsection{Réalisation}
+Le module d'authentification repose sur \texttt{LoginPage.tsx} pour la saisie des identifiants et \texttt{AuthGuard.tsx} pour protéger les routes selon les rôles autorisés. Le backend expose les routes via \texttt{auth.routes.ts}, traitées par \texttt{auth.controller.ts} et \texttt{auth.service.ts}. Les mots de passe sont hachés avec bcrypt (10~rounds). Les sessions utilisent des tokens JWT signés avec une clé secrète configurable. Le contrôle d'accès RBAC est assuré par les middlewares \texttt{auth.middleware.ts} (vérification du token) et \texttt{role.middleware.ts} (vérification du rôle). Les cinq rôles supportés sont : \texttt{ADMIN}, \texttt{RECEPTIONIST}, \texttt{MAINTENANCE\_MANAGER}, \texttt{HOUSEKEEPING\_MANAGER} et \texttt{EMPLOYEE}.
+
+% TODO SCREENSHOT: Ajouter capture de la page de connexion staff
+\screenshot{screenshots/login_staff.png}{Page de connexion du personnel}{screenshot_login}
+
+\subsection{Tests et validation}
+La validation repose sur les tests d'authentification dans \texttt{auth.test.ts}, qui vérifient la connexion réussie, les identifiants invalides et l'accès protégé par rôle.
+
+\subsection{Revue et rétrospective}
+Le sprint livre un socle de sécurité fonctionnel permettant aux différents profils du personnel d'accéder aux espaces autorisés. La difficulté principale concerne la séparation claire entre les cinq rôles et la redirection vers le bon dashboard.
+
+
+%% ================================================================
+%%  SPRINT 2
+%% ================================================================
+\section{Sprint 2 : Gestion des chambres, réservations et QR codes}
+\label{sec:sprint2}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 2}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S2-US01 & Gérer les chambres de l'hôtel (CRUD, statut, étage) & Admin/Réception & Must & 4j & Terminé \\ \hline
+S2-US02 & Gérer les réservations (créer, modifier, affecter chambre) & Réception & Must & 4j & Terminé \\ \hline
+S2-US03 & Générer les QR codes client et worker sécurisés & Système & Must & 3j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint2_usecase.png}{Diagramme de cas d'utilisation du Sprint~2 --- Chambres, réservations et QR codes}{sprint2_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Gérer une réservation »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Gérer une réservation \\ \hline
+Acteur principal & Réceptionniste \\ \hline
+Objectif & Créer, modifier et consulter les réservations. \\ \hline
+Précondition & Le réceptionniste est authentifié. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le réceptionniste accède à l'onglet Réservations du dashboard.
+\item Il saisit les informations (nom, prénom, dates, nombre d'adultes/enfants).
+\item Il sélectionne une chambre disponible.
+\item Le système crée la réservation avec un numéro unique.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Chambre non disponible : affectation refusée. Données incomplètes : validation échouée. \\ \hline
+Postcondition & La réservation est enregistrée avec statut \texttt{PENDING}. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Générer un QR code client »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Générer un QR code client \\ \hline
+Acteur principal & Réceptionniste \\ \hline
+Objectif & Produire un lien sécurisé vers l'espace chambre client. \\ \hline
+Précondition & La réservation existe et possède une chambre affectée en statut \texttt{CHECKED\_IN}. \\ \hline
+Scénario nominal & Le réceptionniste demande la génération ; \texttt{qrToken.service.ts} produit un JWT signé contenant la réservation et la chambre, expirant à la date de checkout. \\ \hline
+Scénarios alternatifs & Réservation non active : génération refusée. \\ \hline
+Postcondition & Le QR code est affiché et peut être remis au client. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit les entités \texttt{Room} (roomNumber, floor, type, status, workerQrVersion) et \texttt{Reservation} (reservationNumber, guest info, dates, status, checkinCompletionStatus, adultsCount, childrenCount).
+
+\safefig{diagrams/sprint2_mcd.png}{Modèle conceptuel de données du Sprint~2}{sprint2_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint2_sequence.png}{Diagramme de séquence du Sprint~2 --- Génération QR code}{sprint2_sequence}
+
+\subsection{Diagramme de classes de conception}
+Les éléments concernés sont : \texttt{ReceptionDashboard.tsx}, \texttt{reservation.routes.ts}, \texttt{reservation.service.ts}, \texttt{room.routes.ts}, \texttt{room.service.ts}, \texttt{qr.controller.ts}, \texttt{qrToken.service.ts}, et les modèles \texttt{Room} et \texttt{Reservation}.
+
+\safefig{diagrams/sprint2_classes.png}{Diagramme de classes de conception du Sprint~2}{sprint2_classes}
+
+\subsection{Réalisation}
+La gestion des chambres utilise le modèle \texttt{Room} avec quatre statuts : \texttt{AVAILABLE}, \texttt{OCCUPIED}, \texttt{CLEANING}, \texttt{MAINTENANCE}. Les réservations supportent les statuts \texttt{PENDING}, \texttt{CHECKED\_IN}, \texttt{CHECKED\_OUT} et \texttt{CANCELLED}. La génération des QR codes repose sur \texttt{qrToken.service.ts} qui produit deux types de tokens : un token client (JWT signé selon la réservation et la date de checkout) pour l'accès à l'espace chambre, et un token worker (versionné via \texttt{workerQrVersion}) pour les scans d'intervention.
+
+% TODO SCREENSHOT: Captures d'écran réservations et QR codes
+\screenshot{screenshots/reservations_list.png}{Liste des réservations --- Dashboard réception}{screenshot_reservations}
+\screenshot{screenshots/qr_code_client.png}{QR code client généré}{screenshot_qr_client}
+
+\subsection{Tests et validation}
+Les tests \texttt{checkin.test.ts} et les scénarios manuels vérifient la création de chambres, la création de réservations et la génération/validation des QR codes.
+
+\subsection{Revue et rétrospective}
+Le sprint livre les modules de gestion de base. La difficulté principale concerne la gestion correcte des transitions de statut des chambres et réservations.
+
+
+%% ================================================================
+%%  SPRINT 3
+%% ================================================================
+\section{Sprint 3 : Check-in numérique et fiches voyageurs}
+\label{sec:sprint3}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 3}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S3-US01 & Vérifier une réservation par numéro & Client & Must & 2j & Terminé \\ \hline
+S3-US02 & Remplir les fiches voyageurs (adultes et enfants) & Client & Must & 4j & Terminé \\ \hline
+S3-US03 & Suivre le taux de complétion du check-in & Réception & Must & 3j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint3_usecase.png}{Diagramme de cas d'utilisation du Sprint~3 --- Check-in numérique}{sprint3_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Effectuer le check-in numérique »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Effectuer le check-in numérique \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Permettre au client de compléter les fiches voyageurs avant ou lors de l'arrivée. \\ \hline
+Précondition & Le client possède un numéro de réservation valide. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le client accède à \texttt{/checkin} et saisit son numéro de réservation.
+\item Le système valide le numéro via \texttt{checkin.service.ts}.
+\item Les formulaires voyageurs sont affichés (un par adulte, un par enfant).
+\item Le client remplit chaque fiche (nom, nationalité, passeport, téléphone, adresse).
+\item Les données sensibles (passeport) sont chiffrées avec AES-256-CBC avant stockage.
+\item Le statut de complétion est mis à jour (\texttt{NOT\_STARTED} → \texttt{PARTIAL} → \texttt{COMPLETED}).
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Numéro invalide : message d'erreur. Formulaire incomplet : soumission refusée. \\ \hline
+Postcondition & Les fiches voyageurs sont enregistrées dans \texttt{GuestForm} et le statut est mis à jour. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit l'entité \texttt{GuestForm} liée à \texttt{Reservation} avec un index par voyageur. Chaque fiche contient le nom, la nationalité, le passeport chiffré, le téléphone et l'adresse. Le type de voyageur (\texttt{ADULT} / \texttt{CHILD}) est géré par l'enum \texttt{TravelerType}.
+
+\safefig{diagrams/sprint3_mcd.png}{Modèle conceptuel de données du Sprint~3}{sprint3_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint3_sequence.png}{Diagramme de séquence du Sprint~3 --- Check-in numérique}{sprint3_sequence}
+
+\subsection{Diagramme de classes de conception}
+Les éléments concernés sont : \texttt{CheckInPage.tsx}, \texttt{checkin.routes.ts}, \texttt{checkin.controller.ts}, \texttt{checkin.service.ts}, \texttt{checkinToken.service.ts}, \texttt{encryption.ts}, et les modèles \texttt{GuestForm} et \texttt{Reservation}.
+
+\safefig{diagrams/sprint3_classes.png}{Diagramme de classes de conception du Sprint~3}{sprint3_classes}
+
+\subsection{Réalisation}
+La page \texttt{CheckInPage.tsx} permet au client de saisir son numéro de réservation, puis de remplir les formulaires pour chaque voyageur. Le service \texttt{checkin.service.ts} gère la validation, l'enregistrement des fiches et le calcul du taux de complétion. Les numéros de passeport sont chiffrés via \texttt{encryption.ts} (AES-256-CBC) avant stockage. Le tableau de bord de la réception affiche le statut de complétion (\texttt{NOT\_STARTED}, \texttt{PARTIAL}, \texttt{COMPLETED}) pour chaque réservation.
+
+% TODO SCREENSHOT: Captures d'écran du check-in
+\screenshot{screenshots/checkin_form.png}{Formulaire de check-in numérique}{screenshot_checkin}
+
+\subsection{Tests et validation}
+Les tests \texttt{checkin.test.ts} valident la vérification de réservation, l'enregistrement des fiches et la mise à jour du statut de complétion.
+
+\subsection{Revue et rétrospective}
+Le sprint livre le module de check-in numérique complet. La difficulté principale concerne la gestion du nombre variable de voyageurs (adultes + enfants) et le chiffrement des données sensibles.
+
+\section*{Conclusion}
+Cette release a permis de construire le socle technique et fonctionnel de LoomStay : authentification sécurisée, gestion des chambres et réservations, génération de QR codes et check-in numérique avec fiches voyageurs chiffrées.

@@ -1,0 +1,254 @@
+\chapter{Release 2 : Parcours client et services numériques}
+\label{chap:release2}
+\section*{Introduction}
+Cette release concerne l'expérience client après l'arrivée à l'hôtel. Elle couvre l'espace chambre PWA, les services hôteliers numériques, les événements, le convertisseur de devises et la messagerie multilingue avec la réception.
+
+%% ================================================================
+%%  SPRINT 4
+%% ================================================================
+\section{Sprint 4 : Espace client PWA et accès chambre}
+\label{sec:sprint4}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 4}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S4-US01 & Accéder à l'espace chambre via QR sécurisé & Client & Must & 3j & Terminé \\ \hline
+S4-US02 & Naviguer dans l'espace chambre PWA installable & Client & Must & 3j & Terminé \\ \hline
+S4-US03 & Valider le token de chambre côté backend & Système & Must & 2j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint4_usecase.png}{Diagramme de cas d'utilisation du Sprint~4 --- Espace client PWA}{sprint4_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Accéder à l'espace chambre »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Accéder à l'espace chambre \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Permettre au client d'ouvrir l'espace chambre après scan du QR. \\ \hline
+Précondition & La réservation est en statut \texttt{CHECKED\_IN} et le token est valide. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le client scanne le QR code remis par la réception.
+\item Le navigateur ouvre l'URL contenant le token JWT.
+\item \texttt{RoomLayout.tsx} extrait le token et appelle le backend pour validation.
+\item Le backend vérifie la signature, l'expiration et le statut de la réservation.
+\item L'espace chambre s'affiche avec la barre de navigation \texttt{RoomNavBar.tsx}.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Token expiré ou invalide : accès refusé avec message explicite. Réservation non \texttt{CHECKED\_IN} : accès refusé. \\ \hline
+Postcondition & Le client accède à son espace chambre et peut naviguer vers les services. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint réutilise les entités \texttt{Room} et \texttt{Reservation} existantes. Aucune nouvelle entité n'est introduite ; la logique repose sur la validation du token JWT côté backend.
+
+\safefig{diagrams/sprint4_mcd.png}{Modèle conceptuel de données du Sprint~4}{sprint4_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint4_sequence.png}{Diagramme de séquence du Sprint~4 --- Validation token et accès chambre}{sprint4_sequence}
+
+\subsection{Diagramme de classes de conception}
+\safefig{diagrams/sprint4_classes.png}{Diagramme de classes de conception du Sprint~4}{sprint4_classes}
+
+\subsection{Réalisation}
+L'espace client est implémenté sous les routes \texttt{/room/*}. Le composant \texttt{RoomLayout.tsx} vérifie le paramètre \texttt{token} transmis dans l'URL et charge la session client. La page \texttt{RoomHomePage.tsx} affiche les informations liées à la chambre et propose les liens vers les services disponibles. La barre de navigation \texttt{RoomNavBar.tsx} offre un accès rapide aux pages Réclamations, Messages, Services, Événements et Devise.
+
+La PWA est configurée via le \texttt{manifest.json} et un service worker. L'installabilité concerne uniquement l'espace client chambre ; la page de check-in et les dashboards staff restent des interfaces web classiques. Le composant \texttt{PwaInstallBanner.tsx} affiche une bannière d'installation sur les appareils compatibles.
+
+\screenshot{screenshots/room_home.png}{Page d'accueil de l'espace chambre client}{screenshot_room_home}
+
+\subsection{Tests et validation}
+Les validations portent sur les cas de token valide, token expiré et réservation non active.
+
+\subsection{Revue et rétrospective}
+Le sprint livre l'espace client chambre et son accès sécurisé. La difficulté principale concerne la gestion de l'expiration des tokens en fonction de la date de checkout.
+
+
+%% ================================================================
+%%  SPRINT 5
+%% ================================================================
+\section{Sprint 5 : Services hôteliers, événements et devise}
+\label{sec:sprint5}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 5}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S5-US01 & Consulter les informations de l'hôtel & Client & Should & 2j & Terminé \\ \hline
+S5-US02 & Consulter les événements publiés avec images & Client & Should & 3j & Terminé \\ \hline
+S5-US03 & Utiliser le convertisseur de devises & Client & Could & 2j & Terminé \\ \hline
+S5-US04 & Gérer les contenus, événements et devises & Admin/Réception & Should & 4j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint5_usecase.png}{Diagramme de cas d'utilisation du Sprint~5 --- Services hôteliers}{sprint5_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Consulter les services hôteliers »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Consulter les services hôteliers \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Afficher les informations et services utiles de l'hôtel. \\ \hline
+Précondition & Le client dispose d'un accès chambre valide. \\ \hline
+Scénario nominal & Le client ouvre la page des informations, le frontend récupère les contenus publiés via l'API publique et les affiche par type (wifi, restaurant, spa, etc.). \\ \hline
+Scénarios alternatifs & Aucune information publiée : affichage d'un état vide. \\ \hline
+Postcondition & Les informations de l'hôtel sont consultées. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Utiliser le convertisseur de devises »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Utiliser le convertisseur de devises \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Convertir un montant étranger en dinar tunisien (TND). \\ \hline
+Précondition & Les taux de change sont disponibles côté backend. \\ \hline
+Scénario nominal & Le client saisit un montant et sélectionne une devise source ; le système calcule et affiche le montant équivalent en TND. \\ \hline
+Scénarios alternatifs & Taux absent : message d'indisponibilité. \\ \hline
+Postcondition & Le montant converti est affiché. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit les entités \texttt{HotelInfo} (title, content, type), \texttt{HotelEvent} (title, description, eventDate, imageUrl, imagePath, isPublished) et \texttt{CurrencyRate} (currency, rateToTnd).
+
+\safefig{diagrams/sprint5_mcd.png}{Modèle conceptuel de données du Sprint~5}{sprint5_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint5_sequence.png}{Diagramme de séquence du Sprint~5 --- Consultation services}{sprint5_sequence}
+
+\subsection{Diagramme de classes de conception}
+\safefig{diagrams/sprint5_classes.png}{Diagramme de classes de conception du Sprint~5}{sprint5_classes}
+
+\subsection{Réalisation}
+Ce sprint ajoute les pages \texttt{RoomHotelInfoPage.tsx}, \texttt{RoomEventsPage.tsx} et \texttt{RoomCurrencyPage.tsx}. Les contenus sont gérés via \texttt{hotel.service.ts}, \texttt{event.service.ts} et \texttt{currency.service.ts}. Les images des événements sont stockées sur Supabase Storage (démonstration) via \texttt{storage.service.ts}, avec un stockage local prévu pour le déploiement privé. Les routes publiques \texttt{hotelPublic.routes.ts} et \texttt{eventPublic.routes.ts} permettent l'accès sans authentification staff.
+
+\screenshot{screenshots/hotel_info.png}{Page des informations hôtelières}{screenshot_hotel_info}
+\screenshot{screenshots/events_page.png}{Page des événements}{screenshot_events}
+\screenshot{screenshots/currency_page.png}{Convertisseur de devises}{screenshot_currency}
+
+\subsection{Tests et validation}
+Les tests manuels valident l'affichage des informations, la publication/dépublication des événements et le calcul des conversions.
+
+\subsection{Revue et rétrospective}
+Le sprint livre les services numériques client non liés aux réclamations. Une amélioration possible consiste à enrichir les contenus multimédias.
+
+
+%% ================================================================
+%%  SPRINT 6
+%% ================================================================
+\section{Sprint 6 : Messagerie client-réception et traduction}
+\label{sec:sprint6}
+
+\subsection{Backlog du sprint}
+\begin{table}[H]
+\centering
+\caption{Backlog du Sprint 6}
+\small
+\begin{tabularx}{\textwidth}{|c|X|p{2.2cm}|c|c|c|}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Acteur} & \textbf{Priorité} & \textbf{Est.} & \textbf{État} \\ \hline
+S6-US01 & Envoyer un message à la réception & Client & Should & 3j & Terminé \\ \hline
+S6-US02 & Répondre au client depuis le dashboard & Réception & Should & 3j & Terminé \\ \hline
+S6-US03 & Traduire automatiquement les messages & Système IA & Must & 4j & Terminé \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Diagramme de cas d'utilisation}
+\safefig{diagrams/sprint6_usecase.png}{Diagramme de cas d'utilisation du Sprint~6 --- Messagerie et traduction}{sprint6_usecase}
+
+\subsection{Description textuelle des cas d'utilisation}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Envoyer un message bilingue »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Envoyer un message bilingue \\ \hline
+Acteur principal & Client \\ \hline
+Objectif & Permettre au client de communiquer avec la réception dans sa langue. \\ \hline
+Précondition & Le client dispose d'un accès chambre valide. \\ \hline
+Scénario nominal &
+\begin{enumerate}[nosep]
+\item Le client écrit un message sur \texttt{RoomMessagesPage.tsx}.
+\item Le backend reçoit le message via \texttt{guestMessage.service.ts}.
+\item Le service appelle le microservice IA (\texttt{/detect-language} puis \texttt{/translate}).
+\item La langue est détectée ; le message est traduit vers le français pour le staff.
+\item Le message est stocké dans \texttt{GuestStaffMessage} avec les deux versions.
+\item La réception reçoit le message en temps réel via Socket.IO.
+\end{enumerate} \\ \hline
+Scénarios alternatifs & Service IA indisponible : le message original est conservé sans traduction. \\ \hline
+Postcondition & Le message est enregistré et visible par la réception. \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Description textuelle de « Répondre au client »}
+\small
+\begin{tabularx}{\textwidth}{|p{3.5cm}|X|}
+\hline
+Cas d'utilisation & Répondre au client \\ \hline
+Acteur principal & Réceptionniste \\ \hline
+Objectif & Envoyer une réponse compréhensible par le client. \\ \hline
+Précondition & La conversation existe et le réceptionniste est authentifié. \\ \hline
+Scénario nominal & La réception écrit une réponse en français ; le backend la traduit vers la langue détectée du client via NLLB-200 ; le client reçoit la réponse traduite via Socket.IO. \\ \hline
+Scénarios alternatifs & Échec traduction : la réponse en français est conservée. \\ \hline
+Postcondition & Le client reçoit la réponse dans sa langue. \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Modèle conceptuel de données}
+Ce sprint introduit l'entité \texttt{GuestStaffMessage} qui stocke pour chaque message : le message original, la langue détectée, la version traduite pour le staff (\texttt{staffMessage}) et la version traduite pour le client (\texttt{clientMessage}). Le type d'expéditeur est géré par l'enum \texttt{MessageSenderType} (\texttt{CLIENT} / \texttt{STAFF}).
+
+\safefig{diagrams/sprint6_mcd.png}{Modèle conceptuel de données du Sprint~6}{sprint6_mcd}
+
+\subsection{Diagramme de séquence}
+\safefig{diagrams/sprint6_sequence.png}{Diagramme de séquence du Sprint~6 --- Message client avec traduction}{sprint6_sequence}
+
+\subsection{Diagramme de classes de conception}
+Les éléments concernés sont : \texttt{RoomMessagesPage.tsx}, \texttt{ReceptionDashboard.tsx}, \texttt{guestMessage.routes.ts}, \texttt{staffGuestMessage.routes.ts}, \texttt{guestMessage.service.ts}, \texttt{message.socket.ts}, \texttt{ai.service.ts}, \texttt{translation\_service.py}, \texttt{language\_service.py} et le modèle \texttt{GuestStaffMessage}.
+
+\safefig{diagrams/sprint6_classes.png}{Diagramme de classes de conception du Sprint~6}{sprint6_classes}
+
+\subsection{Réalisation}
+La messagerie est disponible côté client via \texttt{RoomMessagesPage.tsx} et côté réception via l'onglet messages de \texttt{ReceptionDashboard.tsx}. Les échanges reposent sur le modèle \texttt{GuestStaffMessage} et sur Socket.IO via \texttt{message.socket.ts} pour la livraison temps réel. Le backend utilise \texttt{guestMessage.service.ts} et \texttt{ai.service.ts} pour appeler le service FastAPI.
+
+La traduction utilise le modèle pré-entraîné \texttt{facebook/nllb-200-distilled-600M}~\cite{nllb200}, chargé en lazy loading au premier appel. Le service \texttt{translation\_service.py} implémente un cache mémoire et un glossaire hôtelier en post-traitement pour améliorer la qualité des traductions spécifiques au domaine. La détection de langue repose sur \texttt{langdetect} avec un mapping vers les codes NLLB supportés.
+
+\screenshot{screenshots/chat_client.png}{Interface de messagerie --- Côté client}{screenshot_chat_client}
+\screenshot{screenshots/chat_reception.png}{Interface de messagerie --- Côté réception}{screenshot_chat_reception}
+
+\subsection{Tests et validation}
+Les tests incluent la validation WebSocket via \texttt{websocket.test.ts}. Les tests du service IA dans \texttt{test\_language\_detection.py} vérifient la détection de langue. Les validations manuelles portent sur l'envoi client, la réception en temps réel et la réponse traduite.
+
+\subsection{Revue et rétrospective}
+Le sprint livre une messagerie bilingue temps réel. La principale difficulté concerne le coût mémoire du modèle de traduction ($\approx$~1.2~Go en RAM). Le lazy loading et le cache atténuent ce problème.
+
+\section*{Conclusion}
+Cette release a enrichi l'expérience client avec un espace chambre PWA complet : services hôteliers, événements avec images, convertisseur de devises et messagerie bilingue avec traduction automatique via NLLB-200.

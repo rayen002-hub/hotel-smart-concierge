@@ -1,0 +1,30 @@
+@startuml sprint2_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Réceptionniste" as recep
+actor "Administrateur" as admin
+actor "Système" as sys
+
+rectangle "Sprint 2 : Chambres, Réservations, QR" {
+  usecase "Gérer les chambres\n(CRUD)" as UC1
+  usecase "Créer une réservation" as UC2
+  usecase "Affecter une chambre" as UC3
+  usecase "Modifier statut réservation" as UC4
+  usecase "Générer QR client" as UC5
+  usecase "Générer QR worker" as UC6
+  usecase "Signer token JWT" as UC7
+}
+
+recep --> UC1
+admin --> UC1
+recep --> UC2
+recep --> UC3
+recep --> UC4
+recep --> UC5
+recep --> UC6
+UC5 ..> UC7 : <<include>>
+UC6 ..> UC7 : <<include>>
+UC7 --> sys
+
+@enduml

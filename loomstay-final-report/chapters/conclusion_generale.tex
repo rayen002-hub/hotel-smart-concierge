@@ -1,0 +1,29 @@
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+\markboth{Conclusion générale}{Conclusion générale}
+
+Ce projet de fin d'études a permis de concevoir et développer \textbf{LoomStay}, une plateforme intelligente de services numériques destinée aux établissements hôteliers. La solution proposée répond à plusieurs besoins identifiés dans le secteur hôtelier, notamment la digitalisation du check-in, l'accès client par QR code, la gestion des réclamations, la communication multilingue et le suivi des interventions du personnel.
+
+Le travail réalisé couvre plusieurs modules complémentaires :
+\begin{itemize}
+    \item Une \textbf{application web React/TypeScript} offrant trois dashboards (réception, manager, administration) et un espace client chambre installable en tant que PWA.
+    \item Un \textbf{backend Node.js/Express/TypeScript} structuré en couches avec Prisma ORM et PostgreSQL, exposant des API REST sécurisées et des communications temps réel via Socket.IO.
+    \item Un \textbf{service d'intelligence artificielle FastAPI} intégrant le modèle pré-entraîné NLLB-200 pour la traduction multilingue et un classificateur TF-IDF / Régression Logistique pour la catégorisation automatique des réclamations.
+    \item Une \textbf{application mobile Flutter} pour les employés de maintenance et de housekeeping, permettant de consulter les tâches, scanner les QR codes de chambre et valider les interventions.
+\end{itemize}
+
+L'intégration de l'intelligence artificielle permet d'assurer la traduction automatique des messages entre clients internationaux et personnel francophone, ainsi que la classification des réclamations en six catégories pour faciliter leur routage vers les services concernés. Ces fonctionnalités sont intégrées au parcours métier comme des composants transparents et non comme des modules séparés.
+
+La méthodologie Scrum a permis d'organiser le projet en trois releases et neuf sprints, assurant une progression structurée et une validation continue. Les tests backend (Vitest), les tests du service IA (Pytest) et les analyses statiques (ESLint, \texttt{flutter analyze}) contribuent à la fiabilité de la solution.
+
+\medskip
+
+Comme perspectives d'amélioration, la plateforme peut être enrichie par :
+\begin{itemize}
+    \item L'ajout de \textbf{notifications push} pour alerter les employés et les managers en temps réel.
+    \item Des \textbf{tableaux de bord statistiques} avancés avec des indicateurs de performance (temps de résolution, taux de satisfaction).
+    \item Un \textbf{module de réservation restaurant} plus complet intégré à l'espace client.
+    \item L'intégration avec des \textbf{systèmes PMS existants} pour faciliter l'adoption dans les hôtels déjà équipés.
+    \item L'\textbf{élargissement du jeu de données IA} avec des réclamations réelles provenant de plusieurs hôtels afin d'améliorer la précision du classificateur.
+    \item La mise en place d'un \textbf{système de feedback client} pour évaluer la qualité des interventions.
+\end{itemize}

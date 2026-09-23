@@ -1,0 +1,31 @@
+@startuml sprint8_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Responsable" as mgr
+actor "Employé" as emp
+
+rectangle "Sprint 8 : Affectation et Flutter" {
+  usecase "Consulter réclamations\ndu département" as UC1
+  usecase "Assigner réclamation\nà un employé" as UC2
+  usecase "Transférer réclamation\nentre services" as UC3
+  usecase "Créer un employé" as UC4
+  usecase "Consulter tâches\n(Flutter)" as UC5
+  usecase "Scanner QR entrée" as UC6
+  usecase "Scanner QR sortie" as UC7
+  usecase "Saisir résultat\n(FIXED/NOT_FIXED)" as UC8
+  usecase "Échanger messages\ninternes" as UC9
+}
+
+mgr --> UC1
+mgr --> UC2
+mgr --> UC3
+mgr --> UC4
+emp --> UC5
+emp --> UC6
+emp --> UC7
+emp --> UC8
+emp --> UC9
+mgr --> UC9
+
+@enduml

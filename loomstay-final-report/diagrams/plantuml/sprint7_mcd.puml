@@ -1,0 +1,51 @@
+@startuml sprint7_mcd
+hide circle
+skinparam linetype ortho
+
+entity "Complaint" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  originalMessage : String
+  detectedLanguage : String?
+  normalizedMessageEn : String?
+  staffMessage : String?
+  category : ComplaintCategory
+  status : ComplaintStatus
+  assignedToId : UUID? <<FK>>
+  assignedById : UUID? <<FK>>
+  createdAt : DateTime
+  resolvedAt : DateTime?
+  confirmedAt : DateTime?
+  reopenedAt : DateTime?
+  needsReviewAt : DateTime?
+}
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String
+  roomId : UUID? <<FK>>
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String
+}
+
+note right of Complaint
+  ComplaintCategory:
+  MAINTENANCE | HOUSEKEEPING
+  RECEPTION | RESTAURANT
+  COMPLAINT | OTHER
+
+  ComplaintStatus:
+  PENDING | ASSIGNED
+  IN_PROGRESS | RESOLVED
+  CONFIRMED | NEEDS_REVIEW
+  REOPENED
+end note
+
+Reservation ||--o{ Complaint
+Room ||--o{ Complaint
+
+@enduml

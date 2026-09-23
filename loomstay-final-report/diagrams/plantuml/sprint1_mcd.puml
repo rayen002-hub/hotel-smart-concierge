@@ -1,0 +1,46 @@
+@startuml sprint1_mcd
+hide circle
+skinparam linetype ortho
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  email : String <<unique>>
+  passwordHash : String
+  role : UserRole
+  isActive : Boolean
+  createdAt : DateTime
+}
+
+entity "EmployeeProfile" {
+  id : UUID <<PK>>
+  userId : UUID <<FK, unique>>
+  department : Department
+  isAvailable : Boolean
+  lastSeenAt : DateTime?
+  lastLoginAt : DateTime?
+  lastLogoutAt : DateTime?
+  createdById : UUID? <<FK>>
+}
+
+note right of User
+  UserRole:
+  ADMIN
+  RECEPTIONIST
+  MAINTENANCE_MANAGER
+  HOUSEKEEPING_MANAGER
+  EMPLOYEE
+end note
+
+note right of EmployeeProfile
+  Department:
+  RECEPTION
+  MAINTENANCE
+  HOUSEKEEPING
+  RESTAURANT
+  GENERAL
+end note
+
+User ||--o| EmployeeProfile : "1..1"
+
+@enduml

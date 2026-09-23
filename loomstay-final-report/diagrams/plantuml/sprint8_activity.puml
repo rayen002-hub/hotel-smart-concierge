@@ -1,0 +1,50 @@
+@startuml sprint8_activity
+start
+
+:Responsable consulte réclamations\ndu département;
+
+:Responsable vérifie\nemployés disponibles;
+
+:Responsable assigne\nla réclamation à un employé;
+:status = **ASSIGNED**;
+
+:Employé ouvre l'app Flutter;
+:Employé consulte task_list_screen;
+:Employé ouvre task_detail_screen;
+
+:Employé scanne QR chambre\n(qr_scanner_screen);
+
+if (QR worker valide?) then (Oui)
+  :Backend enregistre entryTime\ndans InterventionLog;
+  :status = **IN_PROGRESS**;
+
+  :Employé réalise l'intervention;
+
+  :Employé scanne QR sortie\n(qr_exit_scanner_screen);
+
+  if (QR sortie valide?) then (Oui)
+    :Backend enregistre exitTime;
+
+    :Employé saisit résultat\n(intervention_result_screen);
+
+    if (Résultat?) then (FIXED)
+      :InterventionLog.result = FIXED;
+      :status = **RESOLVED**;
+    else (NOT_FIXED)
+      :InterventionLog.result = NOT_FIXED;
+      :status = **NEEDS_REVIEW**;
+    endif
+
+  else (Non)
+    :Scan refusé\n(mauvais QR ou chambre);
+    stop
+  endif
+
+else (Non)
+  :Scan refusé\n(token worker invalide);
+  stop
+endif
+
+stop
+
+@enduml

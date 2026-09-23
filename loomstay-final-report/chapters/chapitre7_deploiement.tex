@@ -1,0 +1,78 @@
+\chapter{Déploiement sur serveur privé hôtelier}
+\label{chap:deploiement}
+
+\section*{Introduction}
+Ce chapitre présente le déploiement cible prévu pour LoomStay. Les environnements Vercel, Render, Hugging Face Spaces et Supabase ont été utilisés uniquement pour la démonstration et la soutenance. Le déploiement réel visé repose sur un serveur privé ou une infrastructure interne dédiée à l'hôtel.
+
+\section{Objectif du déploiement cible}
+L'objectif est de permettre à l'hôtel de contrôler ses données, ses services et son infrastructure. Les données clients, les fiches voyageurs, les réclamations, les journaux d'audit et les passeports chiffrés doivent rester sous la maîtrise de l'établissement, conformément aux réglementations en vigueur.
+
+\section{Différence entre environnement de démonstration et environnement réel}
+
+\begin{table}[H]
+\centering
+\caption{Comparaison des environnements de déploiement}
+\small
+\begin{tabularx}{\textwidth}{|p{3cm}|X|X|}
+\hline
+\textbf{Module} & \textbf{Démonstration} & \textbf{Cible privée} \\ \hline
+Frontend React & Vercel & Serveur web Nginx interne \\ \hline
+Backend Express & Render & Serveur Node.js interne \\ \hline
+Service IA & Hugging Face Spaces & Serveur Python interne \\ \hline
+Base PostgreSQL & Supabase (cloud) & PostgreSQL sur serveur local \\ \hline
+Stockage images & Supabase Storage & Système de fichiers local \\ \hline
+App Flutter & APK distribué & APK sur smartphones hôtel \\ \hline
+\end{tabularx}
+\label{tab:deploiement_comparaison}
+\end{table}
+
+\section{Architecture cible privée}
+L'architecture cible regroupe les composants suivants sur un serveur interne ou un mini-cluster :
+\begin{itemize}
+    \item Un serveur backend Node.js/Express avec TypeScript compilé.
+    \item Une base de données PostgreSQL locale.
+    \item Un service IA FastAPI avec le modèle NLLB-200 et le classificateur.
+    \item Un serveur web Nginx pour servir l'application React et les fichiers PWA.
+    \item Un stockage local pour les images (événements, etc.).
+    \item Les smartphones des employés utilisant l'application Flutter sur le réseau Wi-Fi de l'hôtel.
+\end{itemize}
+
+\safefig{diagrams/deploiement_prive.png}{Architecture de déploiement cible privé de LoomStay}{deploiement_prive_ch7}
+
+\section{Installation des modules}
+L'installation cible nécessite :
+\begin{itemize}
+    \item \textbf{Node.js} (v18+) pour le backend.
+    \item \textbf{PostgreSQL} (v14+) pour la base de données.
+    \item \textbf{Python} (v3.10+) avec les dépendances FastAPI, transformers, scikit-learn.
+    \item \textbf{Nginx} ou reverse proxy pour le frontend et le routage.
+    \item \textbf{Flutter SDK} pour la compilation de l'APK mobile.
+\end{itemize}
+
+Les variables d'environnement doivent être configurées avec des secrets forts :
+\begin{lstlisting}[language=bash,caption={Variables d'environnement critiques}]
+DATABASE_URL=postgresql://user:pass@localhost:5432/loomstay
+JWT_SECRET=<secret_fort_256_bits>
+JWT_EXPIRES_IN=24h
+ENCRYPTION_KEY=<cle_aes_256_hex>
+AI_SERVICE_URL=http://localhost:8000
+SUPABASE_URL=<non_utilise_en_prive>
+\end{lstlisting}
+
+\section{Sécurité, réseau et sauvegarde}
+La sécurité repose sur :
+\begin{itemize}
+    \item \textbf{HTTPS/TLS} via Nginx avec certificats SSL.
+    \item \textbf{JWT} pour l'authentification avec rotation des clés.
+    \item \textbf{RBAC} pour le contrôle d'accès par middleware.
+    \item \textbf{bcrypt} (10~rounds) pour le hachage des mots de passe.
+    \item \textbf{AES-256-CBC} pour le chiffrement des passeports.
+    \item \textbf{Rate limiting} pour la protection contre les abus.
+    \item \textbf{CORS} configuré pour limiter les origines autorisées.
+    \item \textbf{AuditLog} pour la traçabilité des actions critiques.
+\end{itemize}
+
+Les sauvegardes peuvent être réalisées via \texttt{pg\_dump} en cron quotidien. L'accès administratif doit être restreint au réseau interne ou à un VPN sécurisé.
+
+\section*{Conclusion}
+Le déploiement privé correspond mieux aux contraintes d'un établissement hôtelier, notamment en matière de confidentialité, de disponibilité interne et de contrôle des données. L'architecture modulaire de LoomStay facilite la migration depuis l'environnement de démonstration vers l'infrastructure privée.

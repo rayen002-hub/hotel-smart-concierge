@@ -1,0 +1,33 @@
+@startuml sprint7_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as client
+actor "Système IA" as ia
+
+rectangle "Sprint 7 : Réclamations et classification IA" {
+  usecase "Soumettre réclamation\nen texte libre" as UC1
+  usecase "Détecter langue" as UC2
+  usecase "Traduire vers anglais" as UC3
+  usecase "Classifier réclamation\n(6 catégories)" as UC4
+  usecase "Traduire vers français\n(staff)" as UC5
+  usecase "Suivre statut\nréclamation" as UC6
+  usecase "Confirmer résolution" as UC7
+  usecase "Rouvrir réclamation" as UC8
+}
+
+client --> UC1
+client --> UC6
+client --> UC7
+client --> UC8
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+UC2 --> ia
+UC3 --> ia
+UC4 --> ia
+UC5 --> ia
+UC7 .> UC8 : <<extend>>
+
+@enduml

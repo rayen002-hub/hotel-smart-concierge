@@ -1,0 +1,48 @@
+@startuml sprint2_mcd
+hide circle
+skinparam linetype ortho
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String <<unique>>
+  floor : Int
+  type : String
+  status : RoomStatus
+  workerQrVersion : Int
+}
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String <<unique>>
+  guestFirstName : String
+  guestLastName : String
+  guestEmail : String?
+  guestPhone : String?
+  nationality : String?
+  checkInDate : DateTime
+  checkOutDate : DateTime
+  status : ReservationStatus
+  roomId : UUID? <<FK>>
+  adultsCount : Int
+  childrenCount : Int
+}
+
+note right of Room
+  RoomStatus:
+  AVAILABLE
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+end note
+
+note right of Reservation
+  ReservationStatus:
+  PENDING
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+end note
+
+Room ||--o{ Reservation : "1..*"
+
+@enduml

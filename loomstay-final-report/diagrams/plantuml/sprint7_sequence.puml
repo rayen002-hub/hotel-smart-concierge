@@ -1,0 +1,40 @@
+@startuml sprint7_sequence
+actor "Client" as client
+participant "RoomComplaintPage" as page
+participant "complaint.routes" as routes
+participant "complaint.service" as svc
+participant "ai.service" as ai_svc
+participant "FastAPI /analyze" as fastapi
+participant "language_service" as lang
+participant "translation_service" as trans
+participant "classifier_service" as clf
+database "PostgreSQL" as db
+
+client -> page : Saisir réclamation
+page -> routes : POST /api/complaints
+routes -> svc : createComplaint(message, roomId, reservationId)
+svc -> ai_svc : analyzeComplaint(message, staffLang="fr")
+ai_svc -> fastapi : POST /analyze {message, staff_language}
+
+fastapi -> lang : detect_language(message)
+lang --> fastapi : {language: "de", confidence: 0.99}
+
+fastapi -> trans : translate(message, "de" -> "en")
+trans --> fastapi : normalized_message_en
+
+fastapi -> clf : predict(normalized_message_en)
+clf --> fastapi : {category: "MAINTENANCE", confidence: 0.92}
+
+fastapi -> trans : translate(normalized_en, "en" -> "fr")
+trans --> fastapi : staff_message
+
+fastapi --> ai_svc : AnalyzeResponse
+ai_svc --> svc : {category, staffMessage, detectedLanguage, normalizedEn}
+
+svc -> db : create Complaint\n{originalMessage, detectedLanguage,\nnormalizedMessageEn, staffMessage,\ncategory, status: PENDING}
+db --> svc : complaint
+svc --> routes : 201 Created
+routes --> page : complaint
+page --> client : "Réclamation envoyée"
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml sprint8_sequence
+actor "Responsable" as mgr
+actor "Employé" as emp
+participant "ManagerDashboard" as dash
+participant "staffComplaint.routes" as staff_routes
+participant "complaint.service" as comp_svc
+participant "Flutter\ntask_list_screen" as flutter_list
+participant "Flutter\nqr_scanner_screen" as flutter_qr
+participant "Flutter\nintervention_result" as flutter_result
+participant "mobile.routes" as mob_routes
+participant "mobile.controller" as mob_ctrl
+database "PostgreSQL" as db
+
+== Assignation ==
+mgr -> dash : Sélectionner réclamation + employé
+dash -> staff_routes : PATCH /api/staff/complaints/:id/assign
+staff_routes -> comp_svc : assignComplaint(complaintId, employeeId)
+comp_svc -> db : update Complaint\n{assignedToId, status: ASSIGNED}
+db --> comp_svc : complaint
+comp_svc --> dash : 200 OK
+
+== Intervention Flutter ==
+emp -> flutter_list : Consulter tâches
+flutter_list -> mob_routes : GET /api/mobile/complaints
+mob_routes --> flutter_list : [complaints]
+
+emp -> flutter_qr : Scanner QR entrée
+flutter_qr -> mob_routes : POST /api/mobile/scan-entry\n{complaintId, qrData}
+mob_routes -> mob_ctrl : scanEntry()
+mob_ctrl -> db : create InterventionLog\n{entryTime, complaintId}
+mob_ctrl -> db : update Complaint\n{status: IN_PROGRESS}
+db --> mob_ctrl : OK
+mob_ctrl --> flutter_qr : 200 OK
+
+emp -> emp : Réaliser intervention
+
+emp -> flutter_qr : Scanner QR sortie
+flutter_qr -> mob_routes : POST /api/mobile/scan-exit\n{complaintId, qrData}
+mob_routes -> mob_ctrl : scanExit()
+mob_ctrl -> db : update InterventionLog\n{exitTime}
+mob_ctrl --> flutter_qr : 200 OK
+
+emp -> flutter_result : Saisir résultat + commentaire
+flutter_result -> mob_routes : POST /api/mobile/intervention-result\n{result: FIXED, comment}
+mob_routes -> mob_ctrl : submitResult()
+mob_ctrl -> db : update InterventionLog\n{result, employeeComment}
+mob_ctrl -> db : update Complaint\n{status: RESOLVED}
+mob_ctrl --> flutter_result : 200 OK
+
+@enduml

@@ -1,0 +1,97 @@
+@startuml sprint5_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Espace Chambre" {
+  class "RoomHotelInfoPage.tsx" as InfoPage {
+    +infos : HotelInfo[]
+    +fetchInfos()
+  }
+
+  class "RoomEventsPage.tsx" as EventsPage {
+    +events : HotelEvent[]
+    +fetchEvents()
+  }
+
+  class "RoomCurrencyPage.tsx" as CurrencyPage {
+    +rates : CurrencyRate[]
+    +amount : number
+    +selectedCurrency : string
+    +convert()
+  }
+
+  class "publicApi.ts" as PublicApi {
+    +getHotelInfos(token)
+    +getPublishedEvents(token)
+    +getCurrencyRates(token)
+  }
+}
+
+package "Backend Routes" {
+  class "hotelPublic.routes.ts" as InfoPubRoutes {
+    GET /api/public/hotel-info
+  }
+
+  class "eventPublic.routes.ts" as EvtPubRoutes {
+    GET /api/public/events
+  }
+
+  class "hotel.routes.ts" as HotelRoutes {
+    GET/POST/PATCH/DELETE /api/hotel-info
+    GET/POST/PATCH/DELETE /api/currency-rates
+  }
+
+  class "event.routes.ts" as EventRoutes {
+    GET/POST/PATCH/DELETE /api/events
+  }
+}
+
+package "Backend Services" {
+  class "hotel.service.ts" as HotelSvc {
+    +findAllInfos()
+    +createInfo(data)
+    +updateInfo(id, data)
+    +deleteInfo(id)
+  }
+
+  class "event.service.ts" as EventSvc {
+    +findAllEvents()
+    +findPublished()
+    +createEvent(data)
+    +updateEvent(id, data)
+    +deleteEvent(id)
+  }
+
+  class "currency.service.ts" as CurrencySvc {
+    +findAllRates()
+    +upsertRate(data)
+    +deleteRate(id)
+  }
+
+  class "storage.service.ts" as StorageSvc {
+    +uploadImage(file)
+    +deleteImage(path)
+    +getPublicUrl(path)
+  }
+}
+
+package "Prisma Models" {
+  class "HotelInfo" as InfoModel
+  class "HotelEvent" as EventModel
+  class "CurrencyRate" as RateModel
+}
+
+InfoPage --> PublicApi
+EventsPage --> PublicApi
+CurrencyPage --> PublicApi
+PublicApi --> InfoPubRoutes
+PublicApi --> EvtPubRoutes
+HotelRoutes --> HotelSvc
+EventRoutes --> EventSvc
+HotelRoutes --> CurrencySvc
+EventSvc --> StorageSvc : upload image
+HotelSvc --> InfoModel
+EventSvc --> EventModel
+CurrencySvc --> RateModel
+
+@enduml

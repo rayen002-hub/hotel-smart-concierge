@@ -1,0 +1,42 @@
+@startuml sprint6_sequence
+actor "Client" as client
+participant "RoomMessagesPage" as page
+participant "guestMessage.routes" as routes
+participant "guestMessage.service" as svc
+participant "ai.service" as ai
+participant "FastAPI" as fastapi
+participant "message.socket" as sock
+participant "ReceptionDashboard" as recep
+database "PostgreSQL" as db
+
+== Client envoie un message ==
+client -> page : Écrire un message
+page -> routes : POST /api/guest-messages\n{message, roomId, reservationId}
+routes -> svc : createMessage(message)
+svc -> ai : detectAndTranslate(message, "fr")
+ai -> fastapi : POST /detect-language
+fastapi --> ai : {language: "en"}
+ai -> fastapi : POST /translate\n{text, src: "en", tgt: "fr"}
+fastapi --> ai : staffMessage (traduit)
+ai --> svc : {detectedLanguage, staffMessage}
+svc -> db : create GuestStaffMessage\n{originalMessage, detectedLanguage,\nstaffMessage, senderType: CLIENT}
+db --> svc : message
+svc -> sock : emit("new_guest_message")
+sock -> recep : Notification temps réel
+svc --> routes : 201 Created
+routes --> page : message
+page --> client : Message envoyé
+
+== Réception répond ==
+recep -> routes : POST /api/staff/guest-messages\n{message, reservationId}
+routes -> svc : createStaffReply(message)
+svc -> ai : translate(message, "fr" -> clientLang)
+ai -> fastapi : POST /translate
+fastapi --> ai : clientMessage (traduit)
+ai --> svc : {clientMessage}
+svc -> db : create GuestStaffMessage\n{originalMessage, clientMessage,\nsenderType: STAFF}
+svc -> sock : emit("new_staff_message")
+sock -> page : Notification temps réel
+page --> client : Réponse reçue (traduite)
+
+@enduml

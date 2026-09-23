@@ -1,0 +1,29 @@
+@startuml sprint5_sequence
+actor "Client" as client
+participant "RoomEventsPage.tsx" as page
+participant "publicApi.ts" as api
+participant "eventPublic.routes" as routes
+participant "event.service.ts" as svc
+participant "storage.service.ts" as storage
+database "PostgreSQL" as db
+
+client -> page : Ouvre page événements
+page -> api : getPublishedEvents(token)
+api -> routes : GET /api/public/events\nHeader: x-room-token
+routes -> routes : Valider token chambre
+routes -> svc : findPublished()
+svc -> db : findMany HotelEvent\nwhere: isPublished = true\norderBy: eventDate desc
+db --> svc : events[]
+
+loop Pour chaque événement avec imagePath
+  svc -> storage : getPublicUrl(imagePath)
+  storage --> svc : imageUrl
+end
+
+svc --> routes : events[] avec URLs
+routes --> api : 200 OK
+api --> page : events[]
+page -> page : Afficher liste\navec images et dates
+page --> client : Événements visibles
+
+@enduml

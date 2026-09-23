@@ -1,0 +1,40 @@
+@startuml sprint5_mcd
+hide circle
+skinparam linetype ortho
+
+entity "HotelInfo" {
+  id : UUID <<PK>>
+  title : String
+  content : String
+  type : String
+  updatedAt : DateTime
+}
+
+entity "HotelEvent" {
+  id : UUID <<PK>>
+  title : String
+  description : String
+  eventDate : DateTime
+  imageUrl : String?
+  imagePath : String?
+  isPublished : Boolean
+  createdById : UUID <<FK>>
+  createdAt : DateTime
+}
+
+entity "CurrencyRate" {
+  id : UUID <<PK>>
+  currency : String <<unique>>
+  rateToTnd : Float
+  updatedAt : DateTime
+}
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  role : UserRole
+}
+
+User ||--o{ HotelEvent : createdBy
+
+@enduml

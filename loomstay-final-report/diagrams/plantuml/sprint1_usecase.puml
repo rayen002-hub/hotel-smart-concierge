@@ -1,0 +1,24 @@
+@startuml sprint1_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Personnel" as staff
+actor "Système" as sys
+
+rectangle "Sprint 1 : Authentification" {
+  usecase "S'authentifier\n(email + mot de passe)" as UC1
+  usecase "Vérifier identifiants\n(bcrypt)" as UC2
+  usecase "Générer token JWT" as UC3
+  usecase "Contrôler accès\npar rôle (RBAC)" as UC4
+  usecase "Rediriger vers\ndashboard approprié" as UC5
+}
+
+staff --> UC1
+UC1 ..> UC2 : <<include>>
+UC2 ..> UC3 : <<include>>
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+UC2 --> sys
+UC3 --> sys
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml contexte_global
+left to right direction
+skinparam actorStyle awesome
+skinparam rectangleBackgroundColor #FEFECE
+
+actor "Client" as client
+actor "Réceptionniste" as recep
+actor "Administrateur" as admin
+actor "Resp. Maintenance" as maint
+actor "Gouvernante\nGénérale" as gouv
+actor "Employé\nMaintenance" as emp_m
+actor "Employé\nHousekeeping" as emp_h
+
+rectangle "Système IA\n(FastAPI)" as ia
+
+rectangle "<<système>>\nLoomStay" as sys
+
+client --> sys
+recep --> sys
+admin --> sys
+maint --> sys
+gouv --> sys
+emp_m --> sys
+emp_h --> sys
+sys --> ia
+
+@enduml

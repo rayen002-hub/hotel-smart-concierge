@@ -1,0 +1,75 @@
+@startuml sprint4_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Espace Chambre" {
+  class "RoomLayout.tsx" as RoomLayout {
+    +token : string
+    +roomContext : RoomContext?
+    +validateToken()
+    +renderChildren()
+  }
+
+  class "RoomHomePage.tsx" as RoomHome {
+    +roomInfo : RoomInfo
+    +renderWelcome()
+  }
+
+  class "RoomNavBar.tsx" as RoomNav {
+    +activeTab : string
+    +tabs : NavItem[]
+  }
+
+  class "PwaInstallBanner.tsx" as PwaBanner {
+    +canInstall : boolean
+    +handleInstall()
+  }
+
+  class "publicApi.ts" as PublicApi {
+    +validateRoomToken(token)
+    +getRoomInfo(token)
+  }
+}
+
+package "Backend" {
+  class "checkinQr.routes.ts" as QrRoutes {
+    POST /api/qr/validate-client
+    GET /api/qr/room-info
+  }
+
+  class "qr.controller.ts" as QrCtrl {
+    +validateClientQR(req, res)
+    +getRoomInfo(req, res)
+  }
+
+  class "qrToken.service.ts" as QrSvc {
+    +verifyClientRoomToken(token)
+    +generateClientToken(reservationId)
+  }
+}
+
+package "Prisma Models" {
+  class "Room" as RoomModel {
+    +roomNumber : string
+    +floor : int
+    +status : RoomStatus
+  }
+
+  class "Reservation" as ResModel {
+    +reservationNumber : string
+    +status : ReservationStatus
+    +checkOutDate : DateTime
+  }
+}
+
+RoomLayout --> PublicApi : validate
+RoomLayout --> RoomHome
+RoomLayout --> RoomNav
+RoomHome --> PwaBanner
+PublicApi --> QrRoutes : HTTP
+QrRoutes --> QrCtrl
+QrCtrl --> QrSvc
+QrSvc --> RoomModel : verify
+QrSvc --> ResModel : verify expiration
+
+@enduml

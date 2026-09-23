@@ -1,0 +1,23 @@
+\begin{table}[H]
+\centering
+\caption{Besoins non fonctionnels de la plateforme LoomStay}
+\small
+\begin{tabularx}{\textwidth}{|c|p{2.8cm}|X|}
+\hline
+\textbf{ID} & \textbf{Catégorie} & \textbf{Description} \\ \hline
+BNF-01 & Sécurité & Authentification par JWT, mots de passe hachés avec bcrypt (10~rounds), contrôle d'accès RBAC par middleware. \\ \hline
+BNF-02 & Sécurité & Chiffrement AES-256-CBC des données sensibles (numéros de passeport) via le module \texttt{encryption.ts}. \\ \hline
+BNF-03 & Sécurité & Tokens QR signés par JWT avec expiration automatique basée sur la date de checkout. \\ \hline
+BNF-04 & Performance & Chargement paresseux (lazy loading) du modèle de traduction NLLB-200 pour optimiser la mémoire du service IA. \\ \hline
+BNF-05 & Performance & Mise en cache des traductions fréquentes côté service IA pour réduire les appels au modèle. \\ \hline
+BNF-06 & Performance & Communication temps réel via Socket.IO pour la messagerie, avec authentification par token sur chaque connexion. \\ \hline
+BNF-07 & Utilisabilité & Interface responsive avec design sombre premium pour l'application Flutter. \\ \hline
+BNF-08 & Utilisabilité & Espace chambre client installable en PWA avec manifest et service worker. \\ \hline
+BNF-09 & Maintenabilité & Code source organisé en couches (Routes, Controllers, Services, Prisma) avec séparation des responsabilités. \\ \hline
+BNF-10 & Maintenabilité & Schéma de base de données déclaratif avec Prisma ORM et migrations versionnées. \\ \hline
+BNF-11 & Traçabilité & Journalisation des actions critiques via le modèle \texttt{AuditLog} avec métadonnées JSON. \\ \hline
+BNF-12 & Fiabilité & Gestion du jour ouvrable hôtelier (business day) avec seuil à 06h00 pour les shifts et tâches quotidiennes. \\ \hline
+\end{tabularx}
+\label{tab:besoins_non_fonctionnels}
+\end{table}
+\FloatBarrier

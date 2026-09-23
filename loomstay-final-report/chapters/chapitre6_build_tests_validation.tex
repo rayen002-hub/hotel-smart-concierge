@@ -1,0 +1,96 @@
+\chapter{Build, tests et validation}
+\label{chap:build_tests}
+
+\section*{Introduction}
+Ce chapitre présente la validation technique globale de la solution. Il ne constitue pas une release Scrum séparée ; les builds, tests et validations font partie de la définition de Done de chaque sprint.
+
+\section{Build frontend}
+Le frontend React est construit avec Vite~\cite{vite}. Les scripts de validation sont :
+\begin{lstlisting}[language=bash,caption={Scripts de build frontend}]
+npm run build     # Compilation TypeScript + build Vite
+npm run lint      # Analyse statique ESLint
+npm run preview   # Prévisualisation du build de production
+\end{lstlisting}
+
+\section{Build backend}
+Le backend Express/TypeScript dispose des scripts suivants :
+\begin{lstlisting}[language=bash,caption={Scripts de build backend}]
+npm run build           # Compilation TypeScript
+npm run start           # Démarrage du serveur
+npm run test            # Exécution des tests Vitest
+npm run prisma:generate # Génération du client Prisma
+npm run prisma:migrate  # Application des migrations
+npm run seed            # Initialisation des données
+\end{lstlisting}
+
+\section{Build mobile Flutter}
+L'application mobile est développée avec Flutter~\cite{flutter}. Les commandes de validation sont :
+\begin{lstlisting}[language=bash,caption={Scripts de build Flutter}]
+flutter analyze      # Analyse statique du code Dart
+flutter test         # Exécution des tests unitaires
+flutter build apk    # Construction de l'APK Android
+\end{lstlisting}
+
+\section{Build service IA}
+Le service IA FastAPI~\cite{fastapi} est validé avec :
+\begin{lstlisting}[language=bash,caption={Scripts de validation du service IA}]
+pytest tests/                              # Tests Pytest
+python training/train_classifier.py        # Entraînement du modèle
+uvicorn app.main:app --host 0.0.0.0        # Démarrage du service
+\end{lstlisting}
+
+\section{Tests backend}
+Le dossier \texttt{backend/tests/} contient sept fichiers de tests :
+\begin{itemize}
+\item \texttt{auth.test.ts} : connexion réussie, identifiants invalides, accès protégé par rôle.
+\item \texttt{checkin.test.ts} : vérification de réservation, enregistrement des fiches voyageurs, statut de complétion.
+\item \texttt{clientComplaints.test.ts} : création de réclamation, suivi du statut, confirmation et réouverture.
+\item \texttt{employeeScan.test.ts} : scan QR entrée/sortie, validation du token worker, mise à jour des statuts.
+\item \texttt{health.test.ts} : vérification du endpoint de santé.
+\item \texttt{testSupabase.test.ts} : intégration avec le stockage Supabase.
+\item \texttt{websocket.test.ts} : connexion Socket.IO, envoi et réception de messages en temps réel.
+\end{itemize}
+
+\section{Tests du service IA}
+Le service IA contient deux fichiers de tests Pytest :
+\begin{itemize}
+\item \texttt{test\_app.py} : tests des endpoints FastAPI (\texttt{/health}, \texttt{/classify}, \texttt{/detect-language}, \texttt{/translate}, \texttt{/analyze}).
+\item \texttt{test\_language\_detection.py} : tests de détection de langue pour le français, l'anglais, l'arabe, l'allemand et les textes courts.
+\end{itemize}
+
+\section{Validation du modèle de classification}
+Le modèle sélectionné est \texttt{LR\_combined} (TF-IDF + Régression Logistique)~\cite{scikitlearn}. L'entraînement a été réalisé avec le script \texttt{training/train\_classifier.py} sur un dataset de 604~exemples en 6~catégories. Plusieurs modèles ont été comparés : Logistic Regression, SVM et Naive Bayes, avec différentes configurations de features (TF-IDF message seul, catégorie combinée, les deux).
+
+\begin{table}[H]
+\centering
+\caption{Comparaison des modèles de classification}
+\small
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Modèle} & \textbf{Accuracy} & \textbf{F1 macro} & \textbf{F1 weighted} & \textbf{CV F1 macro} \\ \hline
+LR\_combined & \textbf{0.8595} & \textbf{0.8605} & \textbf{0.8604} & 0.7702 $\pm$ 0.0450 \\ \hline
+SVM\_combined & 0.8430 & 0.8430 & 0.8434 & 0.7688 $\pm$ 0.0427 \\ \hline
+NB\_combined & 0.7851 & 0.7911 & 0.7911 & 0.7139 $\pm$ 0.0419 \\ \hline
+LR\_message & 0.8182 & 0.8166 & 0.8165 & 0.7430 $\pm$ 0.0480 \\ \hline
+\end{tabular}
+\label{tab:model_comparison}
+\end{table}
+
+Le modèle \texttt{LR\_combined} a été sérialisé via \texttt{joblib} dans le fichier \texttt{models/complaint\_classifier.joblib} et chargé au démarrage du service FastAPI.
+
+\section{Validation fonctionnelle}
+La validation fonctionnelle couvre les parcours suivants :
+\begin{enumerate}
+\item Connexion staff (5~rôles) et redirection vers le dashboard approprié.
+\item Gestion complète des chambres (CRUD) et des réservations (création, affectation, check-in/out).
+\item Check-in numérique avec fiches voyageurs et chiffrement des passeports.
+\item Accès chambre par QR code et navigation dans l'espace PWA.
+\item Messagerie bilingue en temps réel avec traduction NLLB-200.
+\item Réclamation client avec classification IA et suivi du statut.
+\item Affectation d'intervention et scan QR entrée/sortie.
+\item Tâches de ménage quotidien et gestion des shifts.
+\item Journaux d'audit et traçabilité des actions.
+\end{enumerate}
+
+\section*{Conclusion}
+Les tests et validations confirment la cohérence entre les interfaces web, l'API backend, le service IA et l'application mobile Flutter. Les principaux modules de LoomStay sont opérationnels et vérifiés.

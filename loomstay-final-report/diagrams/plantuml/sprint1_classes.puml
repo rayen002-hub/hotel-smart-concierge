@@ -1,0 +1,93 @@
+@startuml sprint1_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React" {
+  class "LoginPage.tsx" as LoginPage {
+    +email : string
+    +password : string
+    +handleLogin()
+  }
+
+  class "AuthGuard.tsx" as AuthGuard {
+    +allowedRoles : UserRole[]
+    +children : ReactNode
+    +checkAuth()
+  }
+
+  class "authApi.ts" as AuthApi {
+    +login(email, password)
+    +getProfile()
+    +logout()
+  }
+}
+
+package "Backend Routes / Controllers" {
+  class "auth.routes.ts" as AuthRoutes {
+    POST /api/auth/login
+    GET /api/auth/profile
+    POST /api/auth/logout
+  }
+
+  class "auth.controller.ts" as AuthCtrl {
+    +login(req, res)
+    +getProfile(req, res)
+    +logout(req, res)
+  }
+}
+
+package "Backend Services" {
+  class "auth.service.ts" as AuthSvc {
+    +login(email, password)
+    +getProfile(userId)
+    +logout(userId)
+  }
+
+  class "AppError" as AppError {
+    +message : string
+    +statusCode : number
+  }
+}
+
+package "Backend Middlewares" {
+  class "auth.middleware.ts" as AuthMw {
+    +verifyToken(req, res, next)
+  }
+
+  class "role.middleware.ts" as RoleMw {
+    +requireRole(...roles)
+  }
+}
+
+package "Prisma Models" {
+  class "User" as UserModel {
+    +id : UUID
+    +name : string
+    +email : string
+    +passwordHash : string
+    +role : UserRole
+    +isActive : boolean
+  }
+
+  class "EmployeeProfile" as EmpModel {
+    +userId : UUID
+    +department : Department
+    +isAvailable : boolean
+    +lastLoginAt : DateTime?
+  }
+}
+
+LoginPage --> AuthApi : calls
+AuthApi --> AuthRoutes : HTTP POST
+AuthRoutes --> AuthMw : middleware
+AuthRoutes --> AuthCtrl : delegates
+AuthCtrl --> AuthSvc : delegates
+AuthSvc --> UserModel : Prisma query
+AuthSvc --> EmpModel : update timestamps
+AuthSvc ..> AppError : throws
+AuthGuard --> AuthApi : verifies
+AuthRoutes --> RoleMw : role check
+
+UserModel "1" -- "0..1" EmpModel
+
+@enduml

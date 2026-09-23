@@ -1,0 +1,43 @@
+@startuml sprint9_sequence
+actor "Gouvernante" as gov
+participant "ManagerDashboard.tsx" as dash
+participant "staffApi.ts" as api
+participant "housekeeping.routes" as routes
+participant "dailyCleaning.controller" as ctrl
+participant "dailyCleaning.service" as svc
+participant "businessDay.ts" as bd
+database "PostgreSQL" as db
+participant "Flutter\ntask_list_screen" as flutter
+
+gov -> dash : Ouvre onglet Ménage quotidien
+dash -> api : getDailyCleaningTasks()
+api -> routes : GET /api/housekeeping/daily-cleaning
+routes -> ctrl : getTasks(req, res)
+ctrl -> bd : getBusinessDay(now)
+bd --> ctrl : businessDay (seuil 06h00)
+ctrl -> svc : findByDate(businessDay)
+svc -> db : findMany DailyCleaningTask\nwhere: businessDay\ninclude: room, worker
+db --> svc : tasks[]
+svc --> ctrl : tasks[]
+ctrl --> dash : tasks[]
+dash --> gov : Afficher tâches du jour
+
+gov -> dash : Sélectionner chambre + employé
+dash -> api : createDailyCleaningTask(\n{roomId, workerId, note})
+api -> routes : POST /api/housekeeping/daily-cleaning
+routes -> ctrl : createTask(req, res)
+ctrl -> bd : getBusinessDay(now)
+bd --> ctrl : businessDay
+ctrl -> svc : create(roomId, workerId,\nassignedById, businessDay)
+svc -> db : create DailyCleaningTask\n{status: ASSIGNED}
+db --> svc : task
+svc --> ctrl : task
+ctrl --> dash : 201 Created
+dash --> gov : Tâche assignée
+
+== Employé dans Flutter ==
+flutter -> routes : GET /api/mobile/daily-cleaning
+routes --> flutter : [tâches du jour]
+flutter -> flutter : Afficher dans onglet\nMénage quotidien
+
+@enduml

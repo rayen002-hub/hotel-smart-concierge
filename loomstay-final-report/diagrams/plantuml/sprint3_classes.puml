@@ -1,0 +1,84 @@
+@startuml sprint3_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React" {
+  class "CheckInPage.tsx" as CheckInPage {
+    +reservationNumber : string
+    +reservation : Reservation?
+    +guestForms : GuestForm[]
+    +handleVerify()
+    +handleSubmitForm()
+  }
+
+  class "publicApi.ts" as PublicApi {
+    +verifyReservation(number)
+    +submitGuestForm(data)
+    +getCheckinStatus(reservationId)
+  }
+}
+
+package "Backend Routes" {
+  class "checkin.routes.ts" as CheckinRoutes {
+    POST /api/checkin/verify
+    POST /api/checkin/guest-form
+    GET /api/checkin/status/:id
+  }
+}
+
+package "Backend Controllers / Services" {
+  class "checkin.controller.ts" as CheckinCtrl {
+    +verifyReservation(req, res)
+    +submitGuestForm(req, res)
+    +getCheckinStatus(req, res)
+  }
+
+  class "checkin.service.ts" as CheckinSvc {
+    +verifyReservation(number)
+    +saveGuestForm(data)
+    +updateCompletionStatus(reservationId)
+    +getCheckinStatus(reservationId)
+  }
+
+  class "checkinToken.service.ts" as TokenSvc {
+    +generateCheckinToken(reservationId)
+    +verifyCheckinToken(token)
+  }
+}
+
+package "Backend Utils" {
+  class "encryption.ts" as Encryption {
+    +encrypt(text) : string
+    +decrypt(ciphertext) : string
+  }
+}
+
+package "Prisma Models" {
+  class "Reservation" as ResModel {
+    +reservationNumber : string
+    +adultsCount : int
+    +childrenCount : int
+    +checkinCompletionStatus
+  }
+
+  class "GuestForm" as GFModel {
+    +reservationId : UUID
+    +travelerIndex : int
+    +travelerType : TravelerType
+    +fullName : string
+    +passportEncrypted : string?
+  }
+}
+
+CheckInPage --> PublicApi
+PublicApi --> CheckinRoutes : HTTP
+CheckinRoutes --> CheckinCtrl
+CheckinCtrl --> CheckinSvc
+CheckinSvc --> Encryption : chiffrer passeport
+CheckinSvc --> ResModel : mise à jour statut
+CheckinSvc --> GFModel : upsert fiche
+CheckinRoutes ..> TokenSvc : validation
+
+ResModel "1" -- "*" GFModel
+
+@enduml

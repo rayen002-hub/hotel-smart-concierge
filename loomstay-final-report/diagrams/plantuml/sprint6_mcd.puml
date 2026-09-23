@@ -1,0 +1,50 @@
+@startuml sprint6_mcd
+hide circle
+skinparam linetype ortho
+
+entity "GuestStaffMessage" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  senderType : MessageSenderType
+  senderUserId : UUID? <<FK>>
+  originalMessage : String
+  detectedLanguage : String?
+  staffMessage : String
+  clientMessage : String
+  createdAt : DateTime
+  readAt : DateTime?
+}
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String
+}
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  role : UserRole
+}
+
+note right of GuestStaffMessage
+  MessageSenderType:
+  CLIENT | STAFF
+
+  staffMessage: version traduite
+  pour le personnel (français)
+
+  clientMessage: version traduite
+  pour le client (sa langue)
+end note
+
+Reservation ||--o{ GuestStaffMessage
+Room ||--o{ GuestStaffMessage
+User |o--o{ GuestStaffMessage : senderUser
+
+@enduml

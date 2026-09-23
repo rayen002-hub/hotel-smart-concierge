@@ -1,0 +1,196 @@
+@startuml modele_global
+skinparam linetype ortho
+hide circle
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  email : String <<unique>>
+  passwordHash : String
+  role : UserRole
+  isActive : Boolean
+}
+
+entity "EmployeeProfile" {
+  id : UUID <<PK>>
+  userId : UUID <<FK, unique>>
+  department : Department
+  isAvailable : Boolean
+  lastLoginAt : DateTime?
+  createdById : UUID? <<FK>>
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String <<unique>>
+  floor : Int
+  type : String
+  status : RoomStatus
+  workerQrVersion : Int
+}
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String <<unique>>
+  guestFirstName : String
+  guestLastName : String
+  checkInDate : DateTime
+  checkOutDate : DateTime
+  status : ReservationStatus
+  roomId : UUID? <<FK>>
+  adultsCount : Int
+  childrenCount : Int
+  checkinCompletionStatus : CheckinCompletionStatus
+}
+
+entity "GuestForm" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  travelerIndex : Int
+  travelerType : TravelerType
+  fullName : String
+  nationality : String
+  passportEncrypted : String?
+}
+
+entity "Complaint" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  originalMessage : String
+  detectedLanguage : String?
+  normalizedMessageEn : String?
+  staffMessage : String?
+  category : ComplaintCategory
+  status : ComplaintStatus
+  assignedToId : UUID? <<FK>>
+  assignedById : UUID? <<FK>>
+}
+
+entity "InterventionLog" {
+  id : UUID <<PK>>
+  complaintId : UUID <<FK>>
+  employeeId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  entryTime : DateTime?
+  exitTime : DateTime?
+  result : InterventionResult?
+  employeeComment : String?
+}
+
+entity "InternalMessage" {
+  id : UUID <<PK>>
+  complaintId : UUID <<FK>>
+  senderId : UUID <<FK>>
+  receiverId : UUID <<FK>>
+  message : String
+  readAt : DateTime?
+}
+
+entity "GuestStaffMessage" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  roomId : UUID <<FK>>
+  senderType : MessageSenderType
+  originalMessage : String
+  detectedLanguage : String?
+  staffMessage : String
+  clientMessage : String
+}
+
+entity "HotelInfo" {
+  id : UUID <<PK>>
+  title : String
+  content : String
+  type : String
+}
+
+entity "HotelEvent" {
+  id : UUID <<PK>>
+  title : String
+  description : String
+  eventDate : DateTime
+  imageUrl : String?
+  isPublished : Boolean
+  createdById : UUID <<FK>>
+}
+
+entity "CurrencyRate" {
+  id : UUID <<PK>>
+  currency : String <<unique>>
+  rateToTnd : Float
+}
+
+entity "HousekeepingTask" {
+  id : UUID <<PK>>
+  roomId : UUID <<FK>>
+  reservationId : UUID? <<FK>>
+  assignedToId : UUID <<FK>>
+  assignedById : UUID <<FK>>
+  status : HousekeepingTaskStatus
+  result : HousekeepingTaskResult?
+}
+
+entity "DailyCleaningTask" {
+  id : UUID <<PK>>
+  roomId : UUID <<FK>>
+  workerId : UUID <<FK>>
+  businessDay : DateTime
+  status : DailyCleaningStatus
+  assignedById : UUID <<FK>>
+}
+
+entity "WorkerShiftSchedule" {
+  id : UUID <<PK>>
+  workerId : UUID <<FK>>
+  businessDay : DateTime
+  shift : WorkerShift
+  createdById : UUID <<FK>>
+}
+
+entity "AuditLog" {
+  id : UUID <<PK>>
+  actorId : UUID? <<FK>>
+  action : String
+  entity : String
+  entityId : String?
+  metadata : Json?
+}
+
+User ||--o| EmployeeProfile
+User ||--o{ AuditLog
+User ||--o{ HotelEvent
+
+Room ||--o{ Reservation
+Room ||--o{ Complaint
+Room ||--o{ GuestStaffMessage
+Room ||--o{ InterventionLog
+Room ||--o{ HousekeepingTask
+Room ||--o{ DailyCleaningTask
+
+Reservation ||--o{ GuestForm
+Reservation ||--o{ Complaint
+Reservation ||--o{ GuestStaffMessage
+Reservation ||--o{ HousekeepingTask
+
+Complaint ||--o{ InterventionLog
+Complaint ||--o{ InternalMessage
+Complaint }o--o| User : assignedTo
+
+InterventionLog }o--|| User : employee
+
+InternalMessage }o--|| User : sender
+InternalMessage }o--|| User : receiver
+
+GuestStaffMessage }o--o| User : senderUser
+
+HousekeepingTask }o--|| User : assignedTo
+HousekeepingTask }o--|| User : assignedBy
+
+DailyCleaningTask }o--|| User : worker
+DailyCleaningTask }o--|| User : assignedBy
+
+WorkerShiftSchedule }o--|| User : worker
+WorkerShiftSchedule }o--|| User : createdBy
+
+@enduml

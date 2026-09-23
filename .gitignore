@@ -15,3 +15,5 @@ ios/Pods
 .DS_Store
 uploads
 *.log
+_report*_extracted/
+*.zip

@@ -1,0 +1,42 @@
+@startuml architecture_generale
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+package "Client" {
+  [Navigateur Web\n(PWA Espace Chambre)] as PWA
+  [Navigateur Web\n(Check-in)] as CHECKIN
+}
+
+package "Personnel" {
+  [Navigateur Web\n(Dashboards Staff)] as STAFF
+  [Application Flutter\n(Employés Terrain)] as FLUTTER
+}
+
+package "Backend" {
+  [Node.js / Express\nAPI REST + Socket.IO] as API
+  [Prisma ORM] as PRISMA
+}
+
+package "Service IA" {
+  [FastAPI\nPython] as FASTAPI
+  [NLLB-200\nTraduction] as NLLB
+  [TF-IDF + LR\nClassification] as CLASSIFIER
+}
+
+database "PostgreSQL" as DB
+storage "Stockage Images\n(Supabase / Local)" as STORAGE
+
+PWA --> API : HTTPS / WSS
+CHECKIN --> API : HTTPS
+STAFF --> API : HTTPS / WSS
+FLUTTER --> API : HTTPS
+
+API --> PRISMA
+PRISMA --> DB
+API --> FASTAPI : HTTP interne
+API --> STORAGE
+
+FASTAPI --> NLLB
+FASTAPI --> CLASSIFIER
+
+@enduml

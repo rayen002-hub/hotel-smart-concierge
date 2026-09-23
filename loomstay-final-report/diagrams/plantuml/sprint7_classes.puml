@@ -1,0 +1,92 @@
+@startuml sprint7_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Client" {
+  class "RoomComplaintPage.tsx" as ComplaintPage {
+    +message : string
+    +handleSubmit()
+  }
+
+  class "RoomComplaintsPage.tsx" as ComplaintsList {
+    +complaints : Complaint[]
+    +handleConfirm(id)
+    +handleReopen(id, comment)
+  }
+
+  class "complaintApi.ts" as ComplaintApi {
+    +submitComplaint(data)
+    +getMyComplaints(token)
+    +confirmComplaint(id)
+    +reopenComplaint(id, comment)
+  }
+}
+
+package "Backend Routes" {
+  class "complaint.routes.ts" as CompRoutes {
+    POST /api/complaints
+    GET /api/complaints
+    PATCH /api/complaints/:id/confirm
+    PATCH /api/complaints/:id/reopen
+  }
+}
+
+package "Backend Services" {
+  class "complaint.controller.ts" as CompCtrl {
+    +createComplaint(req, res)
+    +getComplaints(req, res)
+    +confirmComplaint(req, res)
+    +reopenComplaint(req, res)
+  }
+
+  class "complaint.service.ts" as CompSvc {
+    +create(data)
+    +findByReservation(reservationId)
+    +confirm(id)
+    +reopen(id, comment)
+  }
+
+  class "ai.service.ts" as AiSvc {
+    +analyzeComplaint(message, staffLang)
+  }
+}
+
+package "Service IA (FastAPI)" {
+  class "main.py" as FastMain {
+    POST /analyze
+    POST /classify
+    POST /translate
+    POST /detect-language
+  }
+
+  class "classifier_service.py" as ClfSvc {
+    +predict(text)
+    +load_model()
+  }
+
+  class "translation_service.py" as TransSvc {
+    +translate(text, src, tgt)
+  }
+
+  class "language_service.py" as LangSvc {
+    +detect_language(text)
+  }
+}
+
+package "Prisma" {
+  class "Complaint" as CompModel
+}
+
+ComplaintPage --> ComplaintApi
+ComplaintsList --> ComplaintApi
+ComplaintApi --> CompRoutes : HTTP
+CompRoutes --> CompCtrl
+CompCtrl --> CompSvc
+CompSvc --> AiSvc : analyze
+CompSvc --> CompModel : Prisma
+AiSvc --> FastMain : HTTP POST
+FastMain --> LangSvc
+FastMain --> TransSvc
+FastMain --> ClfSvc
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml sprint3_usecase
+left to right direction
+skinparam actorStyle awesome
+
+actor "Client" as client
+actor "Réceptionniste" as recep
+actor "Système" as sys
+
+rectangle "Sprint 3 : Check-in numérique" {
+  usecase "Vérifier réservation\npar numéro" as UC1
+  usecase "Remplir fiche voyageur\n(adulte)" as UC2
+  usecase "Remplir fiche voyageur\n(enfant)" as UC3
+  usecase "Chiffrer passeport\n(AES-256)" as UC4
+  usecase "Mettre à jour\nstatut complétion" as UC5
+  usecase "Consulter fiches\nvoyageurs" as UC6
+}
+
+client --> UC1
+client --> UC2
+client --> UC3
+recep --> UC6
+UC2 ..> UC4 : <<include>>
+UC2 ..> UC5 : <<include>>
+UC3 ..> UC5 : <<include>>
+UC4 --> sys
+
+@enduml

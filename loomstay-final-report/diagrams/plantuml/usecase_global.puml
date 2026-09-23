@@ -1,0 +1,90 @@
+@startuml usecase_global
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Client" as client
+actor "Réceptionniste" as recep
+actor "Administrateur" as admin
+actor "Resp. Maintenance" as maint_mgr
+actor "Gouvernante" as hk_mgr
+actor "Employé" as emp
+actor "Système IA" as ia
+
+rectangle "LoomStay" {
+  usecase "Check-in numérique" as UC1
+  usecase "Accéder espace chambre (QR)" as UC2
+  usecase "Soumettre réclamation" as UC3
+  usecase "Suivre réclamation" as UC4
+  usecase "Envoyer message" as UC5
+  usecase "Consulter services hôtel" as UC6
+  usecase "Convertir devises" as UC7
+
+  usecase "Gérer réservations" as UC10
+  usecase "Gérer chambres" as UC11
+  usecase "Générer QR codes" as UC12
+  usecase "Répondre aux messages" as UC13
+  usecase "Consulter fiches voyageurs" as UC14
+
+  usecase "Assigner réclamation" as UC20
+  usecase "Transférer réclamation" as UC21
+  usecase "Gérer employés" as UC22
+  usecase "Gérer shifts" as UC23
+  usecase "Assigner ménage quotidien" as UC24
+
+  usecase "Consulter tâches (Flutter)" as UC30
+  usecase "Scanner QR entrée/sortie" as UC31
+  usecase "Rapporter résultat" as UC32
+  usecase "Messagerie interne" as UC33
+
+  usecase "Gérer utilisateurs" as UC40
+  usecase "Gérer événements" as UC41
+  usecase "Consulter audit" as UC42
+
+  usecase "Classifier réclamation" as UC50
+  usecase "Traduire message" as UC51
+  usecase "Détecter langue" as UC52
+}
+
+client --> UC1
+client --> UC2
+client --> UC3
+client --> UC4
+client --> UC5
+client --> UC6
+client --> UC7
+
+recep --> UC10
+recep --> UC11
+recep --> UC12
+recep --> UC13
+recep --> UC14
+
+maint_mgr --> UC20
+maint_mgr --> UC21
+maint_mgr --> UC22
+maint_mgr --> UC23
+
+hk_mgr --> UC20
+hk_mgr --> UC22
+hk_mgr --> UC23
+hk_mgr --> UC24
+
+emp --> UC30
+emp --> UC31
+emp --> UC32
+emp --> UC33
+
+admin --> UC40
+admin --> UC41
+admin --> UC42
+
+UC3 ..> UC50 : <<include>>
+UC3 ..> UC51 : <<include>>
+UC5 ..> UC51 : <<include>>
+UC5 ..> UC52 : <<include>>
+UC50 ..> ia
+UC51 ..> ia
+UC52 ..> ia
+
+@enduml

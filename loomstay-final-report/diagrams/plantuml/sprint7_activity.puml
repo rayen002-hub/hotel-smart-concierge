@@ -1,0 +1,50 @@
+@startuml sprint7_activity
+start
+
+:Client saisit réclamation\nen texte libre;
+
+:Backend reçoit le message;
+
+partition "Pipeline IA (/analyze)" {
+  :Détecter la langue\n(langdetect);
+  :Traduire vers l'anglais\n(NLLB-200);
+  :Classifier en 6 catégories\n(TF-IDF + Régression Logistique);
+  :Traduire vers le français\npour le staff (NLLB-200);
+}
+
+:Créer Complaint en base\nstatus = **PENDING**;
+
+:Responsable consulte\nles réclamations;
+:Responsable assigne\nun employé;
+
+:status = **ASSIGNED**;
+
+:Employé scanne QR entrée;
+:status = **IN_PROGRESS**;
+
+:Employé réalise intervention;
+:Employé scanne QR sortie;
+:Employé saisit résultat;
+
+if (Résultat?) then (FIXED)
+  :status = **RESOLVED**;
+
+  :Client consulte le résultat;
+
+  if (Client satisfait?) then (Oui)
+    :status = **CONFIRMED**;
+    stop
+  else (Non)
+    :Client saisit commentaire;
+    :status = **REOPENED**;
+    :Retour au responsable;
+    stop
+  endif
+
+else (NOT_FIXED)
+  :status = **NEEDS_REVIEW**;
+  :Responsable réévalue;
+  stop
+endif
+
+@enduml

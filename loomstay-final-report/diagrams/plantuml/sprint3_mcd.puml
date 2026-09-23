@@ -1,0 +1,58 @@
+@startuml sprint3_mcd
+hide circle
+skinparam linetype ortho
+
+entity "Reservation" {
+  id : UUID <<PK>>
+  reservationNumber : String <<unique>>
+  guestFirstName : String
+  guestLastName : String
+  checkInDate : DateTime
+  checkOutDate : DateTime
+  status : ReservationStatus
+  roomId : UUID? <<FK>>
+  adultsCount : Int
+  childrenCount : Int
+  totalGuests : Int
+  checkinCompletionStatus : CheckinCompletionStatus
+}
+
+entity "GuestForm" {
+  id : UUID <<PK>>
+  reservationId : UUID <<FK>>
+  travelerIndex : Int
+  travelerType : TravelerType
+  isCompleted : Boolean
+  fullName : String
+  nationality : String
+  passportEncrypted : String?
+  phone : String?
+  address : String?
+  submittedAt : DateTime
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String <<unique>>
+  floor : Int
+  type : String
+  status : RoomStatus
+}
+
+note bottom of GuestForm
+  TravelerType: ADULT | CHILD
+  Contrainte unique:
+  (reservationId, travelerIndex)
+end note
+
+note bottom of Reservation
+  CheckinCompletionStatus:
+  NOT_STARTED
+  PARTIAL
+  COMPLETED
+end note
+
+Room ||--o{ Reservation
+Reservation ||--o{ GuestForm : "1..*"
+
+@enduml

@@ -1,0 +1,97 @@
+@startuml sprint9_mcd
+hide circle
+skinparam linetype ortho
+
+entity "DailyCleaningTask" {
+  id : UUID <<PK>>
+  roomId : UUID <<FK>>
+  workerId : UUID <<FK>>
+  businessDay : DateTime
+  status : DailyCleaningStatus
+  note : String?
+  assignedById : UUID <<FK>>
+  startedAt : DateTime?
+  completedAt : DateTime?
+}
+
+entity "HousekeepingTask" {
+  id : UUID <<PK>>
+  roomId : UUID <<FK>>
+  reservationId : UUID? <<FK>>
+  assignedToId : UUID <<FK>>
+  assignedById : UUID <<FK>>
+  note : String?
+  status : HousekeepingTaskStatus
+  entryTime : DateTime?
+  exitTime : DateTime?
+  result : HousekeepingTaskResult?
+  workerComment : String?
+}
+
+entity "WorkerShiftSchedule" {
+  id : UUID <<PK>>
+  workerId : UUID <<FK>>
+  businessDay : DateTime
+  shift : WorkerShift
+  createdById : UUID <<FK>>
+}
+
+entity "AuditLog" {
+  id : UUID <<PK>>
+  actorId : UUID? <<FK>>
+  action : String
+  entity : String
+  entityId : String?
+  metadata : Json?
+  createdAt : DateTime
+}
+
+entity "Room" {
+  id : UUID <<PK>>
+  roomNumber : String
+  status : RoomStatus
+}
+
+entity "User" {
+  id : UUID <<PK>>
+  name : String
+  role : UserRole
+}
+
+note right of DailyCleaningTask
+  DailyCleaningStatus:
+  ASSIGNED | IN_PROGRESS
+  DONE | SKIPPED
+end note
+
+note right of WorkerShiftSchedule
+  WorkerShift:
+  MORNING (07h-15h)
+  EVENING (15h-23h)
+  NIGHT (23h-07h)
+  DAY_OFF
+
+  Unique: (workerId, businessDay)
+end note
+
+note right of HousekeepingTask
+  HousekeepingTaskStatus:
+  PENDING | ASSIGNED
+  IN_PROGRESS | COMPLETED
+  NEEDS_REVIEW | CANCELLED
+
+  HousekeepingTaskResult:
+  DONE | NOT_DONE
+end note
+
+Room ||--o{ DailyCleaningTask
+Room ||--o{ HousekeepingTask
+User ||--o{ DailyCleaningTask : worker
+User ||--o{ DailyCleaningTask : assignedBy
+User ||--o{ HousekeepingTask : assignedTo
+User ||--o{ HousekeepingTask : assignedBy
+User ||--o{ WorkerShiftSchedule : worker
+User ||--o{ WorkerShiftSchedule : createdBy
+User ||--o{ AuditLog : actor
+
+@enduml

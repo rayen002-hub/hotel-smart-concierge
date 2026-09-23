@@ -1,0 +1,140 @@
+@startuml sprint8_classes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "Frontend React — Manager" {
+  class "ManagerDashboard.tsx" as MgrDash {
+    +complaints : Complaint[]
+    +employees : Employee[]
+    +handleAssign(complaintId, employeeId)
+    +handleTransfer(complaintId, category)
+    +handleCreateEmployee(data)
+  }
+
+  class "staffApi.ts" as StaffApi {
+    +getComplaints()
+    +assignComplaint(id, employeeId)
+    +transferComplaint(id, category)
+    +getEmployees()
+    +createEmployee(data)
+  }
+}
+
+package "Backend Routes / Controllers" {
+  class "staffComplaint.routes.ts" as StaffCompRoutes {
+    GET /api/staff/complaints
+    PATCH /api/staff/complaints/:id/assign
+    PATCH /api/staff/complaints/:id/transfer
+  }
+
+  class "staffComplaint.controller.ts" as StaffCompCtrl {
+    +getComplaints(req, res)
+    +assignComplaint(req, res)
+    +transferComplaint(req, res)
+  }
+
+  class "mobile.routes.ts" as MobRoutes {
+    GET /api/mobile/complaints
+    POST /api/mobile/scan-entry
+    POST /api/mobile/scan-exit
+    POST /api/mobile/intervention-result
+    GET/POST /api/mobile/messages
+  }
+
+  class "mobile.controller.ts" as MobCtrl {
+    +getMyComplaints(req, res)
+    +scanEntry(req, res)
+    +scanExit(req, res)
+    +submitResult(req, res)
+    +getMessages(req, res)
+    +sendMessage(req, res)
+  }
+}
+
+package "Backend Services" {
+  class "complaint.service.ts" as CompSvc {
+    +assign(id, employeeId, managerId)
+    +transfer(id, newCategory)
+    +scanEntry(complaintId, qrData, userId)
+    +scanExit(complaintId, qrData, userId)
+    +submitResult(complaintId, result, comment)
+  }
+
+  class "employee.service.ts" as EmpSvc {
+    +findByDepartment(dept)
+    +create(data)
+  }
+
+  class "qrToken.service.ts" as QrSvc {
+    +verifyWorkerToken(token)
+  }
+}
+
+package "Flutter (worker-app)" {
+  class "task_list_screen.dart" as FlutterTasks {
+    +complaints : List
+    +fetchTasks()
+  }
+
+  class "task_detail_screen.dart" as FlutterDetail {
+    +complaint : Complaint
+  }
+
+  class "qr_scanner_screen.dart" as FlutterQrEntry {
+    +onScan(qrData)
+  }
+
+  class "qr_exit_scanner_screen.dart" as FlutterQrExit {
+    +onScan(qrData)
+  }
+
+  class "intervention_result_screen.dart" as FlutterResult {
+    +result : InterventionResult
+    +comment : String
+    +submit()
+  }
+
+  class "messages_screen.dart" as FlutterMsg {
+    +messages : List
+    +sendMessage()
+  }
+
+  class "api_client.dart" as FlutterApi {
+    +dio : Dio
+    +getComplaints()
+    +scanEntry(data)
+    +scanExit(data)
+    +submitResult(data)
+    +getMessages(complaintId)
+    +sendMessage(data)
+  }
+}
+
+package "Prisma" {
+  class "Complaint" as CompModel
+  class "InterventionLog" as IntModel
+  class "InternalMessage" as MsgModel
+}
+
+MgrDash --> StaffApi
+StaffApi --> StaffCompRoutes
+StaffCompRoutes --> StaffCompCtrl
+StaffCompCtrl --> CompSvc
+StaffCompCtrl --> EmpSvc
+
+FlutterTasks --> FlutterApi
+FlutterDetail --> FlutterQrEntry
+FlutterQrEntry --> FlutterApi
+FlutterQrExit --> FlutterApi
+FlutterResult --> FlutterApi
+FlutterMsg --> FlutterApi
+FlutterApi --> MobRoutes : HTTP
+MobRoutes --> MobCtrl
+MobCtrl --> CompSvc
+MobCtrl --> QrSvc
+
+CompSvc --> CompModel
+CompSvc --> IntModel
+MobCtrl --> MsgModel
+
+@enduml
