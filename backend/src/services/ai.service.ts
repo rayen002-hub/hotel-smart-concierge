@@ -97,15 +97,22 @@ export class AIService {
    * Retourne le code ISO 639-1 (ex: "fr", "en", "es").
    */
   async detectLanguage(message: string): Promise<string> {
+    const url = `${this.baseUrl}/detect-language`;
+    console.log(`[AI] detectLanguage → POST ${url} | message length: ${message.length}`);
     try {
       const response = await axios.post(
-        `${this.baseUrl}/detect-language`,
+        url,
         { message },
-        { timeout: 5000, headers: { "Content-Type": "application/json" } }
+        // 30s: accounts for Hugging Face Space cold-start warm-up time
+        { timeout: 30000, headers: { "Content-Type": "application/json" } }
       );
-      return response.data.language || "fr";
+      const lang = response.data.language || "fr";
+      console.log(`[AI] detectLanguage ← HTTP ${response.status} | detected: "${lang}" (confidence: ${response.data.confidence ?? "n/a"})`);
+      return lang;
     } catch (error: any) {
-      console.warn(`[AI SERVICE WARNING] Detection de langue echouee: ${error.message}`);
+      const code = error.response?.status ?? error.code ?? "UNKNOWN";
+      console.warn(`[AI SERVICE WARNING] detectLanguage failed — ${code}: ${error.message}`);
+      console.warn(`[AI SERVICE WARNING] Fallback: assuming language = "fr"`);
       return "fr"; // fallback
     }
   }
@@ -119,11 +126,17 @@ export class AIService {
     sourceLang: string,
     targetLang: string
   ): Promise<string> {
-    if (sourceLang === targetLang) return message;
+    if (sourceLang === targetLang) {
+      console.log(`[AI] translateMessage — source === target ("${sourceLang}"), skipping translation, returning original.`);
+      return message;
+    }
+
+    const url = `${this.baseUrl}/translate`;
+    console.log(`[AI] translateMessage → POST ${url} | ${sourceLang} → ${targetLang} | message length: ${message.length}`);
 
     try {
       const response = await axios.post(
-        `${this.baseUrl}/translate`,
+        url,
         {
           message,
           source_language: sourceLang,
@@ -131,9 +144,14 @@ export class AIService {
         },
         { timeout: 60000, headers: { "Content-Type": "application/json" } }
       );
-      return response.data.translated_text || message;
+      const translated = response.data.translated_text || message;
+      console.log(`[AI] translateMessage ← HTTP ${response.status} | cached: ${response.data.cached ?? false} | result length: ${translated.length}`);
+      return translated;
     } catch (error: any) {
-      console.warn(`[AI SERVICE WARNING] Traduction echouee (${sourceLang}->${targetLang}): ${error.message}`);
+      const code = error.response?.status ?? error.code ?? "UNKNOWN";
+      const detail = error.response?.data?.detail ?? error.message;
+      console.warn(`[AI SERVICE WARNING] translateMessage failed — ${sourceLang}→${targetLang} — ${code}: ${detail}`);
+      console.warn(`[AI SERVICE WARNING] Fallback: returning original message untranslated.`);
       return message; // fallback: message original
     }
   }
