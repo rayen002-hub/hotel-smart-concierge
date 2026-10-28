@@ -53,9 +53,8 @@ export class GuestMessageService {
 
   /**
    * Creer un message envoye par le staff (receptionniste).
-   * Utilise le vote majoritaire sur toutes les langues detectees du client
-   * pour determiner la langue cible — une seule mauvaise detection ne fausse
-   * plus la traduction.
+   * Le staff ecrit toujours en francais.
+   * Le message est traduit vers la langue du dernier message du client.
    */
   async createFromStaff(params: {
     message: string;
@@ -63,59 +62,31 @@ export class GuestMessageService {
     roomId: string;
     userId: string;
   }) {
-    // 1. Detect the actual language of the staff message (staff may type in any language)
-    const staffLang = await aiService.detectLanguage(params.message);
-    console.log(
-      `[GuestMessageService] createFromStaff — staff message language detected: "${staffLang}"`
-    );
-
-    // 2. Recuperer TOUTES les langues detectees du client pour cette reservation
-    const allClientMsgs = await prisma.guestStaffMessage.findMany({
+    // 1. Recuperer la langue du DERNIER message du client pour cette reservation
+    const lastClientMsg = await prisma.guestStaffMessage.findFirst({
       where: {
         reservationId: params.reservationId,
         senderType: MessageSenderType.CLIENT,
         detectedLanguage: { not: null },
       },
+      orderBy: { createdAt: "desc" },
       select: { detectedLanguage: true },
     });
 
-    // 3. Vote majoritaire sur les langues detectees
-    //    Default = "en" (most common international hotel guest language)
-    let clientLanguage = "en";
-    if (allClientMsgs.length > 0) {
-      const langCounts: Record<string, number> = {};
-      for (const m of allClientMsgs) {
-        const l = m.detectedLanguage!;
-        langCounts[l] = (langCounts[l] || 0) + 1;
-      }
-      clientLanguage = Object.entries(langCounts).sort(([, a], [, b]) => b - a)[0][0];
-      // Safety net: if the voted client language is the same as the staff message
-      // language, the client probably speaks a different language that was
-      // misdetected. Default to "en" so translation is still attempted.
-      if (clientLanguage === staffLang) {
-        console.log(
-          `[GuestMessageService] createFromStaff — client language "${clientLanguage}" same as staff language, overriding to "en"`
-        );
-        clientLanguage = "en";
-      }
-      console.log(
-        `[GuestMessageService] createFromStaff — target language: "${clientLanguage}" | votes: ${JSON.stringify(langCounts)}`
-      );
-    }
+    // Default to "en" if no client messages yet
+    const clientLanguage = lastClientMsg?.detectedLanguage || "en";
+    console.log(
+      `[GuestMessageService] createFromStaff — client language (from last msg): "${clientLanguage}"`
+    );
 
-    // 4. Translate staff message to French for staff view (if not already French)
-    const staffMessage = staffLang === "fr"
-      ? params.message
-      : await aiService.translateMessage(params.message, staffLang, "fr");
-
-    // 5. Traduire vers la langue du client
+    // 2. Traduire du francais vers la langue du client
     const clientMessage = await aiService.translateMessage(
       params.message,
-      staffLang,
+      "fr",
       clientLanguage
     );
 
-    // 6. Sauvegarder
+    // 3. Sauvegarder
     const msg = await prisma.guestStaffMessage.create({
       data: {
         reservationId: params.reservationId,
@@ -123,8 +94,8 @@ export class GuestMessageService {
         senderType: MessageSenderType.STAFF,
         senderUserId: params.userId,
         originalMessage: params.message,
-        detectedLanguage: staffLang,
-        staffMessage,
+        detectedLanguage: "fr",
+        staffMessage: params.message,
         clientMessage,
       },
       select: {
