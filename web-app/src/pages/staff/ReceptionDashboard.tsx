@@ -324,9 +324,10 @@ export const ReceptionDashboard: React.FC = () => {
             senderType: msg.senderType,
             staffMessage: msg.staffMessage,
             clientMessage: msg.clientMessage,
-            originalMessage: msg.staffMessage,
-            detectedLanguage: null,
+            originalMessage: msg.originalMessage ?? msg.staffMessage,
+            detectedLanguage: msg.detectedLanguage ?? null,
             createdAt: msg.createdAt,
+            senderUser: msg.senderUser ?? null,
           }];
         });
       });

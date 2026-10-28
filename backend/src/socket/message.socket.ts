@@ -65,6 +65,9 @@ export const registerMessageHandlers = (io: Server, socket: AuthenticatedSocket)
         senderType: fullMsg.senderType,
         clientMessage: fullMsg.clientMessage,
         staffMessage: fullMsg.staffMessage,
+        originalMessage: fullMsg.originalMessage,
+        detectedLanguage: fullMsg.detectedLanguage,
+        senderUser: fullMsg.senderUser,
         createdAt: fullMsg.createdAt,
       });
 
@@ -74,6 +77,9 @@ export const registerMessageHandlers = (io: Server, socket: AuthenticatedSocket)
         senderType: fullMsg.senderType,
         clientMessage: fullMsg.clientMessage,
         staffMessage: fullMsg.staffMessage,
+        originalMessage: fullMsg.originalMessage,
+        detectedLanguage: fullMsg.detectedLanguage,
+        senderUser: fullMsg.senderUser,
         createdAt: fullMsg.createdAt,
         reservationId: socket.reservationId,
       });
@@ -125,6 +131,9 @@ export const registerMessageHandlers = (io: Server, socket: AuthenticatedSocket)
         senderType: fullMsg.senderType,
         clientMessage: fullMsg.clientMessage,
         staffMessage: fullMsg.staffMessage,
+        originalMessage: fullMsg.originalMessage,
+        detectedLanguage: fullMsg.detectedLanguage,
+        senderUser: fullMsg.senderUser,
         createdAt: fullMsg.createdAt,
         reservationId: payload.reservationId,
       });
