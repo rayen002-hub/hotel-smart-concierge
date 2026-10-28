@@ -83,6 +83,15 @@ export class GuestMessageService {
         langCounts[l] = (langCounts[l] || 0) + 1;
       }
       clientLanguage = Object.entries(langCounts).sort(([, a], [, b]) => b - a)[0][0];
+      // Safety net: if the voted language is "fr" (same as staff), detection
+      // was most likely wrong (staff already writes in French). Default to "en"
+      // so translation is still attempted for the client.
+      if (clientLanguage === "fr") {
+        console.log(
+          `[GuestMessageService] createFromStaff — majority vote = "fr" (same as staff language), overriding to "en"`
+        );
+        clientLanguage = "en";
+      }
       console.log(
         `[GuestMessageService] createFromStaff — target language: "${clientLanguage}" | votes: ${JSON.stringify(langCounts)}`
       );
