@@ -106,14 +106,14 @@ export class AIService {
         // 30s: accounts for Hugging Face Space cold-start warm-up time
         { timeout: 30000, headers: { "Content-Type": "application/json" } }
       );
-      const lang = response.data.language || "fr";
+      const lang = response.data.language || "en";
       console.log(`[AI] detectLanguage ← HTTP ${response.status} | detected: "${lang}" (confidence: ${response.data.confidence ?? "n/a"})`);
       return lang;
     } catch (error: any) {
       const code = error.response?.status ?? error.code ?? "UNKNOWN";
       console.warn(`[AI SERVICE WARNING] detectLanguage failed — ${code}: ${error.message}`);
-      console.warn(`[AI SERVICE WARNING] Fallback: assuming language = "fr"`);
-      return "fr"; // fallback
+      console.warn(`[AI SERVICE WARNING] Fallback: assuming language = "en"`);
+      return "en"; // fallback: assume English (most common international guest language)
     }
   }
 

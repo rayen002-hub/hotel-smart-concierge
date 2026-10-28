@@ -10,93 +10,25 @@ const aiService = new AIService();
 export class GuestMessageService {
 
   /**
-   * Determine la langue dominante du client dans une conversation.
-   *
-   * Strategie double pour contrer les mauvaises detections sur les messages courts :
-   *  1. Re-detecte la langue sur la concatenation de TOUS les messages precedents
-   *     + le message courant (plus de texte = modele plus fiable).
-   *  2. Vote majoritaire entre les langues stockees + les deux detections.
-   *     Le resultat de la detection combinee recoit un poids double.
-   *
-   * Resultat : une mauvaise detection sur un message court n'impacte plus
-   * la langue de traduction des reponses du staff.
-   */
-  private async resolveClientLanguage(
-    reservationId: string,
-    candidateLang: string,
-    candidateMessage: string
-  ): Promise<string> {
-    // Recuperer tous les messages precedents du client pour cette reservation
-    const priorMsgs = await prisma.guestStaffMessage.findMany({
-      where: {
-        reservationId,
-        senderType: MessageSenderType.CLIENT,
-        detectedLanguage: { not: null },
-      },
-      orderBy: { createdAt: "asc" },
-      select: { detectedLanguage: true, originalMessage: true },
-    });
-
-    if (priorMsgs.length === 0) {
-      // Aucun historique — utiliser la detection courante telle quelle
-      return candidateLang;
-    }
-
-    // Concatener tous les messages precedents + le message courant pour la re-detection
-    // Plus de texte = bien meilleure precision du modele de detection
-    const allText = [
-      ...priorMsgs.map((m) => m.originalMessage),
-      candidateMessage,
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const combinedDetected = await aiService.detectLanguage(allText);
-
-    // Vote majoritaire : langues stockees + candidat courant + detection combinee (poids x2)
-    const langCounts: Record<string, number> = {};
-    for (const m of priorMsgs) {
-      const l = m.detectedLanguage!;
-      langCounts[l] = (langCounts[l] || 0) + 1;
-    }
-    langCounts[candidateLang] = (langCounts[candidateLang] || 0) + 1;
-    // La detection sur le texte complet est plus fiable -> poids double
-    langCounts[combinedDetected] = (langCounts[combinedDetected] || 0) + 2;
-
-    const dominant = Object.entries(langCounts).sort(([, a], [, b]) => b - a)[0][0];
-    console.log(
-      `[GuestMessageService] resolveClientLanguage — candidate: "${candidateLang}", combined: "${combinedDetected}", dominant: "${dominant}" | votes: ${JSON.stringify(langCounts)}`
-    );
-    return dominant;
-  }
-
-  /**
    * Creer un message envoye par le client.
-   * Detecte la langue (avec consolidation historique), traduit en FR pour le staff.
+   * Detecte la langue, traduit en FR pour le staff.
    */
   async createFromClient(params: {
     message: string;
     reservationId: string;
     roomId: string;
   }) {
-    // 1. Detection initiale sur le message courant
-    const rawDetected = await aiService.detectLanguage(params.message);
+    // 1. Detecter la langue du message courant
+    const detectedLanguage = await aiService.detectLanguage(params.message);
 
-    // 2. Consolider avec l'historique pour fiabilite maximale
-    const detectedLanguage = await this.resolveClientLanguage(
-      params.reservationId,
-      rawDetected,
-      params.message
-    );
-
-    // 3. Traduire vers FR pour le staff
+    // 2. Traduire vers FR pour le staff
     const staffMessage = await aiService.translateMessage(
       params.message,
       detectedLanguage,
       "fr"
     );
 
-    // 4. Sauvegarder
+    // 3. Sauvegarder
     const msg = await prisma.guestStaffMessage.create({
       data: {
         reservationId: params.reservationId,
@@ -131,7 +63,7 @@ export class GuestMessageService {
     roomId: string;
     userId: string;
   }) {
-    // 1. Recuperer TOUTES les langues detectees pour cette reservation
+    // 1. Recuperer TOUTES les langues detectees du client pour cette reservation
     const allClientMsgs = await prisma.guestStaffMessage.findMany({
       where: {
         reservationId: params.reservationId,
@@ -142,6 +74,7 @@ export class GuestMessageService {
     });
 
     // 2. Vote majoritaire sur les langues detectees
+    //    Default = "en" (most common international hotel guest language)
     let clientLanguage = "en";
     if (allClientMsgs.length > 0) {
       const langCounts: Record<string, number> = {};
