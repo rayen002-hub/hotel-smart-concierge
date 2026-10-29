@@ -1,7 +1,9 @@
 import prisma from "../config/prisma";
-import { RoomStatus } from "@prisma/client";
+import { CheckinCompletionStatus, ReservationStatus, RoomStatus } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
+import { getHotelTimeZone } from "../utils/hotelDate";
+import { getRoomDisplayStatus } from "./roomOccupancy.service";
 
 /**
  * Service de gestion des chambres.
@@ -24,12 +26,33 @@ export class RoomService {
         skip,
         take: limit,
         orderBy: { roomNumber: "asc" },
+        include: {
+          reservations: {
+            where: {
+              OR: [
+                { status: ReservationStatus.CHECKED_IN },
+                { checkinCompletionStatus: CheckinCompletionStatus.COMPLETED },
+              ],
+            },
+            select: {
+              status: true,
+              checkinCompletionStatus: true,
+              checkInDate: true,
+              checkOutDate: true,
+            },
+          },
+        },
       }),
       prisma.room.count({ where }),
     ]);
+    const statusNow = new Date();
+    const timeZone = getHotelTimeZone();
 
     return {
-      data: rooms,
+      data: rooms.map(({ reservations, ...room }) => ({
+        ...room,
+        displayStatus: getRoomDisplayStatus(room.status, reservations, statusNow, timeZone),
+      })),
       pagination: {
         page,
         limit,

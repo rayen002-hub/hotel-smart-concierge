@@ -2,7 +2,7 @@ import prisma from "../config/prisma";
 import {
   HousekeepingTaskStatus,
   HousekeepingTaskResult,
-  RoomStatus,
+  CheckinCompletionStatus,
   ReservationStatus,
   Department,
   UserRole,
@@ -10,6 +10,8 @@ import {
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
 import { verifyWorkerRoomQr } from "./qrToken.service";
+import { getHotelTimeZone } from "../utils/hotelDate";
+import { isCurrentlyOccupiedBy } from "./roomOccupancy.service";
 
 // Inclusions standard pour les requetes de tache
 const TASK_INCLUDE = {
@@ -34,21 +36,29 @@ export class HousekeepingService {
    * Lister les chambres occupees avec leur tache housekeeping active.
    */
   async listOccupiedRooms() {
+    const checkinCandidates = {
+      OR: [
+        { status: ReservationStatus.CHECKED_IN },
+        { checkinCompletionStatus: CheckinCompletionStatus.COMPLETED },
+      ],
+    };
     const rooms = await prisma.room.findMany({
-      where: { status: RoomStatus.OCCUPIED },
+      where: { reservations: { some: checkinCandidates } },
       orderBy: { roomNumber: "asc" },
       include: {
         reservations: {
-          where: { status: ReservationStatus.CHECKED_IN },
+          where: checkinCandidates,
           select: {
             id: true,
             reservationNumber: true,
             guestFirstName: true,
             guestLastName: true,
+            status: true,
+            checkinCompletionStatus: true,
             checkInDate: true,
             checkOutDate: true,
           },
-          take: 1,
+          orderBy: { checkInDate: "desc" },
         },
         housekeepingTasks: {
           where: {
@@ -70,13 +80,23 @@ export class HousekeepingService {
       },
     });
 
-    return rooms.map((room) => ({
-      ...room,
-      activeReservation: room.reservations[0] || null,
-      activeTask: room.housekeepingTasks[0] || null,
-      reservations: undefined,
-      housekeepingTasks: undefined,
-    }));
+    const now = new Date();
+    const timeZone = getHotelTimeZone();
+    return rooms.flatMap((room) => {
+      const activeReservations = room.reservations.filter((reservation) =>
+        isCurrentlyOccupiedBy(reservation, now, timeZone)
+      );
+      if (activeReservations.length === 0) return [];
+
+      return [{
+        ...room,
+        displayStatus: "OCCUPIED" as const,
+        activeReservation: activeReservations[0],
+        activeTask: room.housekeepingTasks[0] || null,
+        reservations: undefined,
+        housekeepingTasks: undefined,
+      }];
+    });
   }
 
   /**

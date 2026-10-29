@@ -45,6 +45,7 @@ interface Room {
   type: string;
   floor: number;
   status: string;
+  displayStatus?: string;
 }
 
 interface Complaint {
@@ -593,7 +594,7 @@ export const AdminDashboard: React.FC = () => {
 
   const filteredRooms = rooms.filter(r => {
     const matchNum = !roomSearch || r.roomNumber.toLowerCase().includes(roomSearch.toLowerCase());
-    const matchStatus = !roomStatusFilter || r.status === roomStatusFilter;
+    const matchStatus = !roomStatusFilter || (r.displayStatus ?? r.status) === roomStatusFilter;
     return matchNum && matchStatus;
   });
 
@@ -838,7 +839,7 @@ export const AdminDashboard: React.FC = () => {
                             <td className="py-2.5 px-2 font-bold">Chambre {r.roomNumber}</td>
                             <td className="py-2.5 px-2">{r.type}</td>
                             <td className="py-2.5 px-2">Étage {r.floor}</td>
-                            <td className="py-2.5 px-2"><StatusBadge status={r.status} /></td>
+                            <td className="py-2.5 px-2"><StatusBadge status={r.displayStatus ?? r.status} /></td>
                           </tr>
                         ))}
                       </tbody>

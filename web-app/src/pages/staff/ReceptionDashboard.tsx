@@ -38,6 +38,7 @@ interface Room {
   floor: number;
   type: string;
   status: string;
+  displayStatus?: string;
 }
 
 interface Reservation {
@@ -489,7 +490,7 @@ export const ReceptionDashboard: React.FC = () => {
                 <h3 className="text-sm font-bold text-[hsl(var(--foreground))]">Chambre {room.roomNumber}</h3>
                 <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Étage {room.floor} · {room.type}</p>
               </div>
-              <StatusBadge status={room.status} />
+              <StatusBadge status={room.displayStatus ?? room.status} />
             </div>
             <button
               onClick={() => handleGenerateWorkerQr(room.id, room.roomNumber)}
@@ -1603,7 +1604,7 @@ export const ReceptionDashboard: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Réservations" value={reservations.length || '—'} icon="📋" accent="blue" />
-        <StatCard label="Chambres disponibles" value={rooms.filter(r => r.status === 'AVAILABLE').length || '—'} icon="🚪" accent="emerald" />
+        <StatCard label="Chambres disponibles" value={rooms.filter(r => (r.displayStatus ?? r.status) === 'AVAILABLE').length || '—'} icon="🚪" accent="emerald" />
         <StatCard label="Réclamations" value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'} icon="📢" accent="red" />
         <StatCard
           label="Messages"
