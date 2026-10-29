@@ -7,9 +7,10 @@ interface StatusBadgeProps {
 const statusConfig: Record<string, { label: string; classes: string; dot: string }> = {
   // Reservations
   PENDING:      { label: 'En attente',   classes: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30',    dot: 'bg-amber-500' },
+  NO_SHOW:      { label: 'No Show',      classes: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30',                dot: 'bg-red-500' },
   CONFIRMED:    { label: 'Confirmé',     classes: 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30',           dot: 'bg-blue-500' },
   CHECKED_IN:   { label: 'Arrivé',       classes: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30', dot: 'bg-emerald-500' },
-  CHECKED_OUT:  { label: 'Parti',        classes: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/30 dark:text-slate-300 dark:border-slate-700/30',     dot: 'bg-slate-400' },
+  CHECKED_OUT:  { label: 'Checked Out', classes: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/30 dark:text-slate-300 dark:border-slate-700/30',     dot: 'bg-slate-400' },
   CANCELLED:    { label: 'Annulé',       classes: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30',                dot: 'bg-red-500' },
   // Rooms
   AVAILABLE:    { label: 'Disponible',   classes: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30', dot: 'bg-emerald-500' },

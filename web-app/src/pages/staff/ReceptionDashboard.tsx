@@ -51,6 +51,7 @@ interface Reservation {
   checkInDate: string;
   checkOutDate: string;
   status: string;
+  displayStatus?: string;
   roomId?: string;
   room?: { id: string; roomNumber: string; type: string } | null;
   adultsCount?: number;
@@ -453,7 +454,7 @@ export const ReceptionDashboard: React.FC = () => {
                 </td>
                 <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{formatDate(r.checkInDate)}</td>
                 <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{formatDate(r.checkOutDate)}</td>
-                <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                <td className="px-4 py-3"><StatusBadge status={r.displayStatus ?? r.status} /></td>
               </tr>
               );
             })}
@@ -906,7 +907,7 @@ export const ReceptionDashboard: React.FC = () => {
   const renderQrTab = () => {
     if (loading) return <LoadingSpinner message="Chargement des QR codes..." />;
 
-    const checkedInReservations = reservations.filter((r) => r.status === 'CHECKED_IN');
+    const checkedInReservations = reservations.filter((r) => (r.displayStatus ?? r.status) === 'CHECKED_IN');
 
     return (
       <div className="space-y-6">

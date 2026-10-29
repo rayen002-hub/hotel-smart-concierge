@@ -9,7 +9,11 @@ import {
 import { AppError } from "./auth.service";
 import { encryptField } from "../utils/encryption";
 import { env } from "../config/env";
-import { assertCheckinEligible, getCheckinEligibility } from "./reservationLifecycle.service";
+import {
+  assertCheckinEligible,
+  getCheckinEligibility,
+  getReservationDisplayStatus,
+} from "./reservationLifecycle.service";
 import { getHotelTimeZone } from "../utils/hotelDate";
 
 /** Public QR check-in service. The service is the authoritative enforcement
@@ -62,11 +66,8 @@ export class CheckinService {
       });
     }
 
-    const checkInEligibility = getCheckinEligibility(
-      reservation,
-      this.now(),
-      this.timeZone
-    );
+    const now = this.now();
+    const checkInEligibility = getCheckinEligibility(reservation, now, this.timeZone);
 
     return {
       reservationId: reservation.id,
@@ -75,6 +76,11 @@ export class CheckinService {
       checkInDate: reservation.checkInDate,
       checkOutDate: reservation.checkOutDate,
       status: reservation.status,
+      displayStatus: getReservationDisplayStatus(
+        reservation,
+        now,
+        this.timeZone
+      ),
       adultsCount: reservation.adultsCount,
       childrenCount: reservation.childrenCount,
       totalGuests: reservation.totalGuests,

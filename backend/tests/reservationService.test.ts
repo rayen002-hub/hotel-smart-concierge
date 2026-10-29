@@ -1,10 +1,16 @@
 jest.mock("../src/config/prisma", () => ({
   __esModule: true,
-  default: { $transaction: jest.fn() },
+  default: {
+    $transaction: jest.fn(),
+    reservation: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
+  },
 }));
 
 import prisma from "../src/config/prisma";
-import { ReservationStatus } from "@prisma/client";
+import { CheckinCompletionStatus, ReservationStatus } from "@prisma/client";
 import { ReservationService } from "../src/services/reservation.service";
 
 describe("reservation creation and lifecycle-owned status updates", () => {
@@ -28,6 +34,81 @@ describe("reservation creation and lifecycle-owned status updates", () => {
     tx.reservation.findMany.mockResolvedValue([]);
     tx.room.findUnique.mockResolvedValue({ id: "room-1" });
     tx.auditLog.create.mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("derives dashboard reservation statuses from check-in records and hotel-local dates", async () => {
+    jest.useFakeTimers({
+      doNotFake: ["nextTick", "setImmediate", "setTimeout", "clearTimeout"],
+    });
+    jest.setSystemTime(new Date("2026-10-29T22:59:59.000Z")); // 23:59:59 in Tunis
+
+    const reservations = [
+      {
+        id: "no-show",
+        status: ReservationStatus.PENDING,
+        checkinCompletionStatus: CheckinCompletionStatus.NOT_STARTED,
+        checkInDate: new Date("2026-10-28T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-28T00:00:00.000Z"),
+      },
+      {
+        id: "arrived",
+        status: ReservationStatus.CHECKED_IN,
+        checkinCompletionStatus: CheckinCompletionStatus.COMPLETED,
+        checkInDate: new Date("2026-10-29T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-30T00:00:00.000Z"),
+      },
+      {
+        id: "departed",
+        status: ReservationStatus.CHECKED_IN,
+        checkinCompletionStatus: CheckinCompletionStatus.COMPLETED,
+        checkInDate: new Date("2026-10-27T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-29T00:00:00.000Z"),
+      },
+      {
+        id: "upcoming",
+        status: ReservationStatus.PENDING,
+        checkinCompletionStatus: CheckinCompletionStatus.NOT_STARTED,
+        checkInDate: new Date("2026-10-30T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-31T00:00:00.000Z"),
+      },
+      {
+        id: "already-checked-out",
+        status: ReservationStatus.CHECKED_OUT,
+        checkinCompletionStatus: CheckinCompletionStatus.COMPLETED,
+        checkInDate: new Date("2026-10-28T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-30T00:00:00.000Z"),
+      },
+      {
+        id: "cancelled",
+        status: ReservationStatus.CANCELLED,
+        checkinCompletionStatus: CheckinCompletionStatus.NOT_STARTED,
+        checkInDate: new Date("2026-10-27T00:00:00.000Z"),
+        checkOutDate: new Date("2026-10-28T00:00:00.000Z"),
+      },
+    ];
+    (prisma.reservation.findMany as jest.Mock).mockResolvedValue(reservations);
+    (prisma.reservation.count as jest.Mock).mockResolvedValue(reservations.length);
+
+    const result = await new ReservationService().list({ page: 1, limit: 20 });
+
+    expect(result.data.map((reservation) => [reservation.id, reservation.displayStatus])).toEqual([
+      ["no-show", "NO_SHOW"],
+      ["arrived", ReservationStatus.CHECKED_IN],
+      ["departed", ReservationStatus.CHECKED_IN],
+      ["upcoming", ReservationStatus.PENDING],
+      ["already-checked-out", ReservationStatus.CHECKED_OUT],
+      ["cancelled", ReservationStatus.CANCELLED],
+    ]);
+
+    jest.setSystemTime(new Date("2026-10-29T23:00:00.000Z")); // local midnight in Tunis
+    const afterLocalMidnight = await new ReservationService().list({ page: 1, limit: 20 });
+    expect(afterLocalMidnight.data[0].displayStatus).toBe("NO_SHOW");
+    expect(afterLocalMidnight.data[2].displayStatus).toBe(ReservationStatus.CHECKED_OUT);
+    expect(afterLocalMidnight.data[4].displayStatus).toBe(ReservationStatus.CHECKED_OUT);
   });
 
   const createInput = {

@@ -17,6 +17,13 @@ jest.mock("../src/config/prisma", () => ({
 }));
 
 describe("Check-in Access (POST /api/public/checkin/lookup)", () => {
+  const freezeHotelClock = () => {
+    jest.useFakeTimers({
+      doNotFake: ["nextTick", "setImmediate", "setTimeout", "clearTimeout"],
+    });
+    jest.setSystemTime(new Date("2026-10-29T12:00:00.000Z"));
+  };
+
   afterEach(() => {
     jest.useRealTimers();
   });
@@ -90,6 +97,7 @@ describe("Check-in Access (POST /api/public/checkin/lookup)", () => {
   });
 
   it("rejects a direct QR check-in submit after the checkout calendar date ended", async () => {
+    freezeHotelClock();
     const tx = {
       reservation: {
         findUnique: jest.fn().mockResolvedValue({
@@ -130,12 +138,13 @@ describe("Check-in Access (POST /api/public/checkin/lookup)", () => {
 
     expect(res.status).toBe(410);
     expect(res.body.success).toBe(false);
-    expect(res.body.error).toContain("période");
+    expect(res.body.error).toContain("No Show");
     expect(tx.guestForm.upsert).not.toHaveBeenCalled();
     expect(tx.room.update).not.toHaveBeenCalled();
   });
 
   it("applies the same expired-date check to the authenticated reception-assisted route", async () => {
+    freezeHotelClock();
     (prisma.reservation.findUnique as jest.Mock).mockResolvedValue({ reservationNumber: "RES-OLD" });
     const tx = {
       reservation: {
@@ -173,16 +182,13 @@ describe("Check-in Access (POST /api/public/checkin/lookup)", () => {
       });
 
     expect(res.status).toBe(410);
-    expect(res.body.error).toContain("période");
+    expect(res.body.error).toContain("No Show");
     expect(tx.guestForm.upsert).not.toHaveBeenCalled();
     expect(tx.room.update).not.toHaveBeenCalled();
   });
 
   it("checks in an eligible arrival and updates room occupancy with the traveler forms", async () => {
-    jest.useFakeTimers({
-      doNotFake: ["nextTick", "setImmediate", "setTimeout", "clearTimeout"],
-    });
-    jest.setSystemTime(new Date("2026-10-29T12:00:00.000Z"));
+    freezeHotelClock();
 
     const tx = {
       reservation: {
@@ -231,10 +237,7 @@ describe("Check-in Access (POST /api/public/checkin/lookup)", () => {
   });
 
   it("does not complete a second concurrent check-in after the status compare-and-set loses", async () => {
-    jest.useFakeTimers({
-      doNotFake: ["nextTick", "setImmediate", "setTimeout", "clearTimeout"],
-    });
-    jest.setSystemTime(new Date("2026-10-29T12:00:00.000Z"));
+    freezeHotelClock();
 
     const tx = {
       reservation: {

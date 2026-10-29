@@ -3,6 +3,7 @@ import { Prisma, ReservationStatus } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
 import { getHotelTimeZone, hotelCalendarDate } from "../utils/hotelDate";
+import { getReservationDisplayStatus } from "./reservationLifecycle.service";
 
 function reservationsOverlapInHotelCalendar(
   existing: { checkInDate: Date; checkOutDate: Date },
@@ -45,9 +46,14 @@ export class ReservationService {
       }),
       prisma.reservation.count({ where }),
     ]);
+    const statusNow = new Date();
+    const timeZone = getHotelTimeZone();
 
     return {
-      data: reservations,
+      data: reservations.map((reservation) => ({
+        ...reservation,
+        displayStatus: getReservationDisplayStatus(reservation, statusNow, timeZone),
+      })),
       pagination: {
         page,
         limit,
