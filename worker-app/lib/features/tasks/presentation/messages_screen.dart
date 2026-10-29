@@ -228,7 +228,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
           // Show a date separator when the day changes
           final showDateSeparator = index == 0 ||
-              !_isSameDay(
+              !TaskHelpers.isSameHotelDay(
                 _messages[index - 1].createdAt,
                 msg.createdAt,
               );
