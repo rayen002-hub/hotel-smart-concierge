@@ -15,15 +15,15 @@ enum HousekeepingTaskStatus {
       case HousekeepingTaskStatus.PENDING:
         return 'En attente';
       case HousekeepingTaskStatus.ASSIGNED:
-        return 'Assigné';
+        return 'Affectée';
       case HousekeepingTaskStatus.IN_PROGRESS:
         return 'En cours';
       case HousekeepingTaskStatus.COMPLETED:
-        return 'Terminé';
+        return 'Terminée';
       case HousekeepingTaskStatus.NEEDS_REVIEW:
-        return 'À revoir';
+        return 'À vérifier';
       case HousekeepingTaskStatus.CANCELLED:
-        return 'Annulé';
+        return 'Annulée';
     }
   }
 }

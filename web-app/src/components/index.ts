@@ -2,7 +2,7 @@
 export { AuthGuard } from './AuthGuard';
 export { CategoryBadge } from './CategoryBadge';
 export { EmptyState } from './EmptyState';
-export { ErrorMessage } from './ErrorMessage';
+export { ErrorMessage, SuccessMessage } from './ErrorMessage';
 export { LoadingSpinner } from './LoadingSpinner';
 export { PwaInstallBanner } from './PwaInstallBanner';
 export { QRCodeCard } from './QRCodeCard';

@@ -29,9 +29,11 @@ import {
   LoadingSpinner,
   EmptyState,
   ErrorMessage,
+  SuccessMessage,
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
+import { getStatusLabel, getStatusTone, STATUS_TONE_CLASSES } from '../../utils/statusPresentation';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -503,7 +505,7 @@ export const ManagerDashboard: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <StatusBadge status={c.status} />
+                      <StatusBadge status={c.status} context="complaint" />
                       <CategoryBadge category={c.category} />
                       <span className="text-[10px] text-[hsl(var(--muted-foreground))]">·</span>
                       <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</span>
@@ -604,7 +606,7 @@ export const ManagerDashboard: React.FC = () => {
 
               {/* Status + Category */}
               <div className="flex items-center gap-2 flex-wrap">
-                <StatusBadge status={c.status} />
+                <StatusBadge status={c.status} context="complaint" />
                 <CategoryBadge category={c.category} />
                 <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{formatDateTime(c.createdAt)}</span>
               </div>
@@ -807,8 +809,8 @@ export const ManagerDashboard: React.FC = () => {
                     </div>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
                       emp.employeeProfile?.isAvailable
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
-                        : 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300'
+                        ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
+                        : 'bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
                     }`}>
                       {emp.employeeProfile?.isAvailable ? 'Disponible' : 'Indisponible'}
                     </span>
@@ -904,10 +906,7 @@ export const ManagerDashboard: React.FC = () => {
     return r.activeTask?.status === hkFilter;
   });
 
-  const hkStatusLabel = (s: string) => {
-    const map: Record<string, string> = { PENDING: '⏳ En attente', ASSIGNED: '👤 Assignée', IN_PROGRESS: '🔄 En cours', COMPLETED: '✅ Terminée', NEEDS_REVIEW: '⚠️ À revoir', CANCELLED: '❌ Annulée' };
-    return map[s] || s;
-  };
+  const hkStatusLabel = (s: string) => getStatusLabel(s, 'task');
 
   const hkResultLabel = (r: string | null | undefined) => {
     if (!r) return '—';
@@ -959,14 +958,7 @@ export const ManagerDashboard: React.FC = () => {
                       </div>
                     </div>
                     {room.activeTask ? (
-                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                        room.activeTask.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
-                        room.activeTask.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400' :
-                        room.activeTask.status === 'NEEDS_REVIEW' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
-                        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400'
-                      }`}>
-                        {hkStatusLabel(room.activeTask.status)}
-                      </span>
+                      <StatusBadge status={room.activeTask.status} context="task" className="text-[10px] px-2 py-1" />
                     ) : (
                       <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-[hsl(var(--muted))]/30 text-[hsl(var(--muted-foreground))]">Pas de tâche</span>
                     )}
@@ -1151,13 +1143,8 @@ export const ManagerDashboard: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════
 
   const DAILY_STATUS_LABEL: Record<string, string> = {
-    ASSIGNED: '👤 Assignée', IN_PROGRESS: '🔄 En cours', DONE: '✅ Terminée', SKIPPED: '⏭️ Ignorée',
-  };
-  const DAILY_STATUS_CLS: Record<string, string> = {
-    ASSIGNED: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-    IN_PROGRESS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    DONE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-    SKIPPED: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+    ASSIGNED: getStatusLabel('ASSIGNED', 'task'), IN_PROGRESS: getStatusLabel('IN_PROGRESS', 'task'),
+    DONE: getStatusLabel('DONE', 'task'), SKIPPED: getStatusLabel('SKIPPED', 'task'),
   };
   const SHIFT_ICONS_DC: Record<WorkerShift, string> = { MORNING: '🌅', EVENING: '🌆', NIGHT: '🌙', DAY_OFF: '😴' };
   const SHIFT_COLORS_DC: Record<WorkerShift, string> = {
@@ -1307,8 +1294,8 @@ export const ManagerDashboard: React.FC = () => {
                       <p className="text-sm font-bold">🚪 Chambre {t.room?.roomNumber || '—'}</p>
                       <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Étage {t.room?.floor ?? '—'} · {t.room?.type || '—'}</p>
                     </div>
-                    <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${DAILY_STATUS_CLS[t.status] || ''}`}>
-                      {DAILY_STATUS_LABEL[t.status] || t.status}
+                    <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${STATUS_TONE_CLASSES[getStatusTone(t.status)]}`}>
+                      {DAILY_STATUS_LABEL[t.status] || getStatusLabel(t.status, 'task')}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -1357,14 +1344,7 @@ export const ManagerDashboard: React.FC = () => {
 
       {/* Banners */}
       <ErrorMessage message={error} onRetry={() => activeTab === 'complaints' ? fetchComplaints() : activeTab === 'housekeeping' ? fetchOccupiedRooms() : fetchEmployees()} />
-      {success && (
-        <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 p-4 text-sm dark:border-emerald-900/30 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <span className="text-base select-none">✅</span>
-            <p className="font-medium">{success}</p>
-          </div>
-        </div>
-      )}
+      <SuccessMessage message={success} />
 
       {/* Tab Navigation */}
       <TabNav

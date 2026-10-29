@@ -20,27 +20,29 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = Color.lerp(color, isDark ? Colors.white : Colors.black, isDark ? 0.32 : 0.55)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
+        color: color.withValues(alpha: isDark ? 0.24 : 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: isDark ? 0.6 : 0.45), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, color: color, size: fontSize + 2),
+            Icon(icon, color: foreground, size: fontSize + 2),
             const SizedBox(width: 5),
           ],
           Text(
-            label.toUpperCase(),
+            label,
             style: TextStyle(
-              color: color,
-              fontSize: fontSize,
+              color: foreground,
+              fontSize: fontSize < 12 ? 12 : fontSize,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+              letterSpacing: 0,
             ),
           ),
         ],

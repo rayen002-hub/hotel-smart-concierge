@@ -24,7 +24,6 @@ const navItems: NavItem[] = [
   { key: 'admin-complaints', label: 'Réclamations',      icon: '📢', route: '/dashboard/admin', tab: 'complaints', roles: ['ADMIN'] },
   { key: 'admin-logs',       label: "Logs d'activité",   icon: '📜', route: '/dashboard/admin', tab: 'logs',       roles: ['ADMIN'] },
   { key: 'admin-hotel',      label: 'Infos Hôtel',       icon: '🛎️', route: '/dashboard/admin', tab: 'hotel',      roles: ['ADMIN'] },
-  { key: 'admin-currency',   label: 'Devises',           icon: '💱', route: '/dashboard/admin', tab: 'currency',   roles: ['ADMIN'] },
 
   // ── Reception tabs ─────────────────────────────────────────────────
   { key: 'rec-reservations', label: 'Réservations',      icon: '📋', route: '/dashboard/reception', tab: 'reservations', roles: ['RECEPTIONIST'] },

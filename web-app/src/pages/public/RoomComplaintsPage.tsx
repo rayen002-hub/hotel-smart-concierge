@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listMyComplaints, confirmComplaint, reopenComplaint } from '../../api/complaintApi';
 import type { ApiError } from '../../api/apiClient';
+import { StatusBadge } from '../../components/StatusBadge';
+import { ErrorMessage } from '../../components';
 
 interface Complaint {
   id: string;
@@ -13,26 +15,6 @@ interface Complaint {
   confirmedAt?: string | null;
   reopenedAt?: string | null;
 }
-
-const statusLabels: Record<string, string> = {
-  PENDING: 'En attente',
-  ASSIGNED: 'Assignée',
-  IN_PROGRESS: 'En cours',
-  NEEDS_REVIEW: 'En révision',
-  RESOLVED: 'Résolue',
-  CONFIRMED: 'Confirmée',
-  REOPENED: 'Réouverte',
-};
-
-const statusStyles: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/30',
-  ASSIGNED: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/30',
-  IN_PROGRESS: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/30',
-  NEEDS_REVIEW: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900/30',
-  RESOLVED: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/30',
-  CONFIRMED: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700/30',
-  REOPENED: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/30',
-};
 
 const categoryLabels: Record<string, string> = {
   MAINTENANCE: '🔧 Service technique',
@@ -138,14 +120,7 @@ export const RoomComplaintsPage: React.FC = () => {
         </div>
 
         {/* Error banner */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-            <div className="flex items-start gap-3">
-              <span className="text-lg leading-none">⚠️</span>
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
         {/* Complaints list */}
         {loading ? (
@@ -195,9 +170,7 @@ export const RoomComplaintsPage: React.FC = () => {
                 <div className="flex items-center justify-between pt-2 border-t border-[hsl(var(--border))]">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[hsl(var(--muted-foreground))]">Statut :</span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusStyles[complaint.status] || ''}`}>
-                      {statusLabels[complaint.status] || complaint.status}
-                    </span>
+                    <StatusBadge status={complaint.status} context="complaint" />
                   </div>
                 </div>
 

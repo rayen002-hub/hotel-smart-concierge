@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listGuestMessages, sendGuestMessage } from '../../api/complaintApi';
 import { connectClientSocket, disconnectSocket, getSocket } from '../../api/socketClient';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage, SuccessMessage } from '../../components';
 
 interface Message {
   id: string;
@@ -174,16 +175,8 @@ export const RoomMessagesPage: React.FC = () => {
         </div>
 
         {/* Error / Success */}
-        {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-            ⚠️ {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400">
-            ✅ {success}
-          </div>
-        )}
+        <ErrorMessage message={error} />
+        <SuccessMessage message={success} />
 
         {/* Messages area */}
         <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm overflow-hidden">

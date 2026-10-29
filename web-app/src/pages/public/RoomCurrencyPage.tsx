@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrencyRates, convertCurrency } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage } from '../../components';
 
 // Popular currencies to display
 const POPULAR = ['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AED', 'SAR', 'MAD', 'DZD', 'LYD', 'JPY', 'CNY'];
@@ -118,14 +119,7 @@ export const RoomCurrencyPage: React.FC = () => {
         </div>
 
         {/* Error banner */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-            <div className="flex items-start gap-3">
-              <span className="text-lg leading-none">⚠️</span>
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-3">

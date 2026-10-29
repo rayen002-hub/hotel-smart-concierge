@@ -44,17 +44,17 @@ enum TaskStatus {
       case TaskStatus.PENDING:
         return 'En attente';
       case TaskStatus.ASSIGNED:
-        return 'Assigné';
+        return 'Affectée';
       case TaskStatus.IN_PROGRESS:
         return 'En cours';
       case TaskStatus.RESOLVED:
-        return 'Résolu';
+        return 'Résolue';
       case TaskStatus.CONFIRMED:
-        return 'Confirmé';
+        return 'Confirmée';
       case TaskStatus.NEEDS_REVIEW:
-        return 'À valider';
+        return 'À vérifier';
       case TaskStatus.REOPENED:
-        return 'Réouvert';
+        return 'Réouverte';
     }
   }
 }

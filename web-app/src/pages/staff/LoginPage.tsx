@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../api/authApi';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage } from '../../components';
 
 const STAFF_USER_KEY = 'staff_user';
 
@@ -158,12 +159,7 @@ export const LoginPage: React.FC = () => {
 
           {/* Error Banner */}
           {error && !employeeBlock && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-              <div className="flex items-start gap-3">
-                <span className="text-lg leading-none">⚠️</span>
-                <span>{error}</span>
-              </div>
-            </div>
+            <ErrorMessage message={error} />
           )}
 
           {/* Login Form */}

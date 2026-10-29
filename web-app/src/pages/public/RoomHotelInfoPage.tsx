@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getHotelInfo } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage } from '../../components';
 
 interface HotelInfo {
   id: string;
@@ -77,14 +78,7 @@ export const RoomHotelInfoPage: React.FC = () => {
         </div>
 
         {/* Error banner */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-            <div className="flex items-start gap-3">
-              <span className="text-lg leading-none">⚠️</span>
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
         {/* Info Content */}
         {loading ? (

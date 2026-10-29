@@ -19,9 +19,19 @@ import {
   LoadingSpinner,
   EmptyState,
   ErrorMessage,
+  SuccessMessage,
 } from '../../components';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
+import {
+  getActionLabel,
+  getActorLabel,
+  getEntityContext,
+  getEntityLabel,
+  getRoleLabel,
+  getSafeMetadata,
+} from '../../utils/auditLogPresentation';
+import { getStatusLabel } from '../../utils/statusPresentation';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -105,38 +115,10 @@ const DEPT_LABELS: Record<string, string> = {
   GENERAL: 'Général',
 };
 
-// ─── Action labels for audit logs ─────────────────────────────────────
-
-const ACTION_LABELS: Record<string, string> = {
-  CREATE_COMPLAINT:          'Création réclamation',
-  ASSIGN_COMPLAINT:          'Affectation réclamation',
-  UPDATE_COMPLAINT_STATUS:   'Mise à jour statut réclamation',
-  RESOLVE_COMPLAINT:         'Résolution réclamation',
-  TRANSFER_COMPLAINT:        'Transfert réclamation',
-  GENERATE_CLIENT_ROOM_LINK: 'Génération QR client',
-  GENERATE_WORKER_QR:        'Génération QR agent',
-  CREATE_HOUSEKEEPING_TASK:  'Création tâche ménage',
-  UPDATE_HOUSEKEEPING_TASK:  'Mise à jour tâche ménage',
-  START_HOUSEKEEPING_TASK:   'Début tâche ménage',
-  FINISH_HOUSEKEEPING_TASK:  'Fin tâche ménage',
-  CREATE_EMPLOYEE:           'Création employé',
-  UPDATE_EMPLOYEE:           'Mise à jour employé',
-  UPDATE_HOTEL_INFO:         'Mise à jour infos hôtel',
-  UPDATE_CURRENCY_RATE:      'Mise à jour taux devise',
-  CREATE_RESERVATION:        'Création réservation',
-  UPDATE_RESERVATION:        'Mise à jour réservation',
-  DELETE_RESERVATION:        'Suppression réservation',
-  CHECKIN_COMPLETE:          'Check-in complété',
-  SUBMIT_TRAVELER_FORM:      'Soumission fiche voyageur',
-  LOGIN:                     'Connexion',
-  LOGOUT:                    'Déconnexion',
-  CREATE_DAILY_TASK:         'Création tâche quotidienne',
-  START_DAILY_TASK:          'Début tâche quotidienne',
-  COMPLETE_DAILY_TASK:       'Fin tâche quotidienne',
-  UPSERT_SHIFT:              'Mise à jour planning',
+const COMPLAINT_CATEGORY_LABELS: Record<string, string> = {
+  MAINTENANCE: 'Maintenance', HOUSEKEEPING: 'Ménage', RECEPTION: 'Réception',
+  RESTAURANT: 'Restaurant', COMPLAINT: 'Générale', OTHER: 'Autre',
 };
-
-const actionLabel = (action: string) => ACTION_LABELS[action] ?? action;
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -259,11 +241,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           >✕</button>
         </div>
 
-        {formError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900/30 p-3 text-xs text-red-700 dark:text-red-400">
-            ⚠️ {formError}
-          </div>
-        )}
+        <ErrorMessage message={formError} />
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
@@ -349,46 +327,34 @@ const LogDetailsModal: React.FC<{ log: AuditLog; onClose: () => void }> = ({ log
     className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
     onClick={e => { if (e.target === e.currentTarget) onClose(); }}
   >
-    <div className="w-full max-w-xl rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl p-6 space-y-4">
+    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold">📜 Détails du log</h2>
+        <h2 className="text-sm font-bold">📜 Détails de l’activité</h2>
         <button onClick={onClose}
           className="w-7 h-7 rounded-lg hover:bg-[hsl(var(--accent))] flex items-center justify-center text-[hsl(var(--muted-foreground))] cursor-pointer">
           ✕
         </button>
       </div>
-      <div className="space-y-2 text-xs">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <span className="font-semibold text-[hsl(var(--muted-foreground))] uppercase text-[10px]">Date</span>
-            <p className="mt-0.5">{formatDateTime(log.createdAt)}</p>
-          </div>
-          <div>
-            <span className="font-semibold text-[hsl(var(--muted-foreground))] uppercase text-[10px]">Action</span>
-            <p className="mt-0.5 font-semibold">{actionLabel(log.action)}</p>
-            <code className="text-[9px] text-[hsl(var(--muted-foreground))]">{log.action}</code>
-          </div>
-          <div>
-            <span className="font-semibold text-[hsl(var(--muted-foreground))] uppercase text-[10px]">Acteur</span>
-            <p className="mt-0.5">{log.actor?.name ?? 'Système/Client'}</p>
-            <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{log.actor?.role ?? ''} · {log.actor?.email ?? ''}</p>
-          </div>
-          <div>
-            <span className="font-semibold text-[hsl(var(--muted-foreground))] uppercase text-[10px]">Entité</span>
-            <p className="mt-0.5">{log.entity}</p>
-            <p className="text-[10px] font-mono text-[hsl(var(--muted-foreground))]">{log.entityId ?? '—'}</p>
-          </div>
-        </div>
-        {log.metadata && (
-          <div>
-            <span className="font-semibold text-[hsl(var(--muted-foreground))] uppercase text-[10px]">Métadonnées</span>
-            <pre className="mt-1 rounded-lg bg-[hsl(var(--muted))]/30 p-3 text-[10px] font-mono overflow-auto max-h-60 text-[hsl(var(--foreground))] whitespace-pre-wrap">
-              {JSON.stringify(log.metadata, null, 2)}
-            </pre>
-          </div>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <DetailField label="Date et heure" value={formatDateTime(log.createdAt)} />
+        <DetailField label="Action" value={getActionLabel(log.action, log.entity)} />
+        <DetailField label="Acteur" value={getActorLabel(log)} />
+        <DetailField label="Rôle" value={log.actor?.role ? getRoleLabel(log.actor.role) : ['Client', 'Système'].includes(getActorLabel(log)) ? getActorLabel(log) : 'Non renseigné'} />
+        <DetailField label="Élément concerné" value={getEntityContext(log.entity, log.metadata) ?? getEntityLabel(log.entity)} />
+        {log.actor?.email && <DetailField label="Adresse e-mail" value={log.actor.email} />}
+        {log.entityId && <DetailField label="Identifiant technique" value={log.entityId} mono />}
+        {log.metadata && getSafeMetadata(log.metadata).map(([key, value]) => (
+          <DetailField key={key} label={key} value={value} />
+        ))}
       </div>
     </div>
+  </div>
+);
+
+const DetailField: React.FC<{ label: string; value: string; mono?: boolean }> = ({ label, value, mono }) => (
+  <div className="min-w-0 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/10 p-3">
+    <span className="block text-[10px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">{label}</span>
+    <p className={`mt-1 break-words text-[hsl(var(--foreground))] ${mono ? 'font-mono text-[10px]' : 'font-medium'}`}>{value}</p>
   </div>
 );
 
@@ -432,6 +398,8 @@ export const AdminDashboard: React.FC = () => {
   const [logSearch, setLogSearch] = useState('');
   const [logAction, setLogAction] = useState('');
   const [logEntity, setLogEntity] = useState('');
+  const [logActor, setLogActor] = useState('');
+  const [logRole, setLogRole] = useState('');
   const [logDateFrom, setLogDateFrom] = useState('');
   const [logDateTo, setLogDateTo] = useState('');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -610,21 +578,31 @@ export const AdminDashboard: React.FC = () => {
   });
 
   const filteredLogs = logs.filter(l => {
+    const actorLabel = getActorLabel(l);
+    const actionName = getActionLabel(l.action, l.entity);
+    const entityName = getEntityLabel(l.entity);
     const matchSearch = !logSearch || (
-      (l.actor?.name ?? '').toLowerCase().includes(logSearch.toLowerCase()) ||
+      actorLabel.toLowerCase().includes(logSearch.toLowerCase()) ||
       l.action.toLowerCase().includes(logSearch.toLowerCase()) ||
-      l.entity.toLowerCase().includes(logSearch.toLowerCase())
+      actionName.toLowerCase().includes(logSearch.toLowerCase()) ||
+      l.entity.toLowerCase().includes(logSearch.toLowerCase()) ||
+      entityName.toLowerCase().includes(logSearch.toLowerCase())
     );
-    const matchAction = !logAction || l.action === logAction;
+    const matchAction = !logAction || `${l.action}::${l.entity}` === logAction;
     const matchEntity = !logEntity || l.entity === logEntity;
+    const matchActor = !logActor || actorLabel === logActor;
+    const matchRole = !logRole || l.actor?.role === logRole;
     const logDate = new Date(l.createdAt);
     const matchFrom = !logDateFrom || logDate >= new Date(logDateFrom);
     const matchTo = !logDateTo || logDate <= new Date(logDateTo + 'T23:59:59');
-    return matchSearch && matchAction && matchEntity && matchFrom && matchTo;
+    return matchSearch && matchAction && matchEntity && matchActor && matchRole && matchFrom && matchTo;
   });
 
-  const logActions = [...new Set(logs.map(l => l.action))].sort();
+  const logActions = [...new Map(logs.map(l => [`${l.action}::${l.entity}`, { action: l.action, entity: l.entity }])).values()]
+    .sort((a, b) => getActionLabel(a.action, a.entity).localeCompare(getActionLabel(b.action, b.entity), 'fr'));
   const logEntities = [...new Set(logs.map(l => l.entity))].sort();
+  const logActors = [...new Set(logs.map(l => getActorLabel(l)))].sort((a, b) => a.localeCompare(b, 'fr'));
+  const logRoles = [...new Set(logs.flatMap(l => l.actor?.role ? [l.actor.role] : []))].sort();
 
   // ── Render ─────────────────────────────────────────────────────────
 
@@ -646,14 +624,7 @@ export const AdminDashboard: React.FC = () => {
         else if (activeTab === 'logs') fetchLogs();
         else fetchHotel();
       }} />
-      {success && (
-        <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 p-4 text-sm dark:border-emerald-900/30 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <span className="text-base">✅</span>
-            <p className="font-medium">{success}</p>
-          </div>
-        </div>
-      )}
+      <SuccessMessage message={success} />
 
       {/* Tab Navigation */}
       <TabNav tabs={tabs} active={activeTab} onChange={handleTabChange} />
@@ -731,7 +702,7 @@ export const AdminDashboard: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <span className={`w-2 h-2 rounded-full shrink-0 ${online ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
                                   <span>{u.name}</span>
-                                  {!isActive && <span className="px-1 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950/20 dark:text-red-400 text-[9px] font-bold">INACTIF</span>}
+                                  {!isActive && <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800 text-[10px] font-semibold">Inactif</span>}
                                 </div>
                               </td>
                               <td className="py-2.5 px-2 text-[hsl(var(--muted-foreground))]">{u.email}</td>
@@ -747,7 +718,7 @@ export const AdminDashboard: React.FC = () => {
                               </td>
                               <td className="py-2.5 px-2">
                                 {u.employeeProfile ? (
-                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${u.employeeProfile.isAvailable ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400' : 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'}`}>
+                                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${u.employeeProfile.isAvailable ? 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800' : 'bg-red-50 text-red-900 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'}`}>
                                     {u.employeeProfile.isAvailable ? 'Disponible' : 'Indisponible'}
                                   </span>
                                 ) : <span className="text-[hsl(var(--muted-foreground))]">—</span>}
@@ -814,8 +785,8 @@ export const AdminDashboard: React.FC = () => {
                     <option value="">Tous statuts</option>
                     <option value="AVAILABLE">Disponible</option>
                     <option value="OCCUPIED">Occupée</option>
-                    <option value="CLEANING">Nettoyage</option>
-                    <option value="MAINTENANCE">Maintenance</option>
+                    <option value="CLEANING">En nettoyage</option>
+                    <option value="MAINTENANCE">En maintenance</option>
                   </select>
                   <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{filteredRooms.length}/{rooms.length}</span>
                 </div>
@@ -863,11 +834,11 @@ export const AdminDashboard: React.FC = () => {
                     placeholder="🔍 Message ou chambre..." className={`${selectCls} flex-1 min-w-[160px]`} />
                   <select value={compStatus} onChange={e => setCompStatus(e.target.value)} className={selectCls}>
                     <option value="">Tous statuts</option>
-                    {['PENDING','ASSIGNED','IN_PROGRESS','RESOLVED','NEEDS_REVIEW'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['PENDING','ASSIGNED','IN_PROGRESS','RESOLVED','NEEDS_REVIEW'].map(s => <option key={s} value={s}>{getStatusLabel(s, 'complaint')}</option>)}
                   </select>
                   <select value={compCategory} onChange={e => setCompCategory(e.target.value)} className={selectCls}>
                     <option value="">Toutes catégories</option>
-                    {['MAINTENANCE','HOUSEKEEPING','RECEPTION','RESTAURANT','COMPLAINT','OTHER'].map(c => <option key={c} value={c}>{c}</option>)}
+                    {['MAINTENANCE','HOUSEKEEPING','RECEPTION','RESTAURANT','COMPLAINT','OTHER'].map(c => <option key={c} value={c}>{COMPLAINT_CATEGORY_LABELS[c]}</option>)}
                   </select>
                   <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{filteredComplaints.length}/{complaints.length}</span>
                 </div>
@@ -895,7 +866,7 @@ export const AdminDashboard: React.FC = () => {
                             <td className="py-2.5 px-2 max-w-[220px] truncate" title={c.staffMessage || c.originalMessage}>
                               {c.staffMessage || c.originalMessage}
                             </td>
-                            <td className="py-2.5 px-2"><StatusBadge status={c.status} /></td>
+                            <td className="py-2.5 px-2"><StatusBadge status={c.status} context="complaint" /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -909,79 +880,88 @@ export const AdminDashboard: React.FC = () => {
             {activeTab === 'logs' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-3">
-                  <h2 className="text-sm font-bold">📜 Logs d'activité — <span className="text-[hsl(var(--muted-foreground))] font-normal">{filteredLogs.length} affiché(s) / {logs.length} total</span></h2>
-                  <button onClick={fetchLogs} className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] text-xs font-semibold hover:bg-[hsl(var(--accent))] cursor-pointer">🔄 Rafraîchir</button>
+                  <div>
+                    <h2 className="text-sm font-bold">📜 Journal d’activité</h2>
+                    <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{filteredLogs.length} résultat(s) affiché(s) sur {logs.length}</p>
+                  </div>
+                  <button onClick={fetchLogs} className="h-9 px-3 rounded-lg border border-[hsl(var(--border))] text-xs font-semibold hover:bg-[hsl(var(--accent))] cursor-pointer" aria-label="Actualiser le journal">🔄 Actualiser</button>
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-2 items-center rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3">
                   <input type="text" value={logSearch} onChange={e => setLogSearch(e.target.value)}
-                    placeholder="🔍 Acteur / action / entité..." className={`${selectCls} flex-1 min-w-[160px]`} />
+                    aria-label="Rechercher dans le journal" placeholder="Rechercher un acteur, une action ou un élément…" className={`${selectCls} flex-1 min-w-[220px]`} />
+                  <select aria-label="Filtrer par acteur" value={logActor} onChange={e => setLogActor(e.target.value)} className={selectCls}>
+                    <option value="">Tous les acteurs</option>
+                    {logActors.map(actor => <option key={actor} value={actor}>{actor}</option>)}
+                  </select>
+                  <select aria-label="Filtrer par rôle" value={logRole} onChange={e => setLogRole(e.target.value)} className={selectCls}>
+                    <option value="">Tous les rôles</option>
+                    {logRoles.map(role => <option key={role} value={role}>{getRoleLabel(role)}</option>)}
+                  </select>
                   <select value={logAction} onChange={e => setLogAction(e.target.value)} className={selectCls}>
-                    <option value="">Toutes actions</option>
-                    {logActions.map(a => <option key={a} value={a}>{actionLabel(a)}</option>)}
+                    <option value="">Toutes les actions</option>
+                    {logActions.map(({ action, entity }) => (
+                      <option key={`${action}::${entity}`} value={`${action}::${entity}`}>{getActionLabel(action, entity)}</option>
+                    ))}
                   </select>
                   <select value={logEntity} onChange={e => setLogEntity(e.target.value)} className={selectCls}>
-                    <option value="">Toutes entités</option>
-                    {logEntities.map(e => <option key={e} value={e}>{e}</option>)}
+                    <option value="">Tous les éléments</option>
+                    {logEntities.map(entity => <option key={entity} value={entity}>{getEntityLabel(entity)}</option>)}
                   </select>
-                  <input type="date" value={logDateFrom} onChange={e => setLogDateFrom(e.target.value)} className={selectCls} title="Date début" />
-                  <input type="date" value={logDateTo} onChange={e => setLogDateTo(e.target.value)} className={selectCls} title="Date fin" />
-                  {(logSearch || logAction || logEntity || logDateFrom || logDateTo) && (
-                    <button onClick={() => { setLogSearch(''); setLogAction(''); setLogEntity(''); setLogDateFrom(''); setLogDateTo(''); }}
-                      className="h-8 px-3 rounded-lg border border-[hsl(var(--border))] text-[10px] font-semibold text-red-600 hover:bg-red-50 cursor-pointer">✕ Effacer</button>
+                  <label className="flex items-center gap-2 text-[10px] font-medium text-[hsl(var(--muted-foreground))]">Du
+                    <input type="date" value={logDateFrom} onChange={e => setLogDateFrom(e.target.value)} className={selectCls} aria-label="Date de début" />
+                  </label>
+                  <label className="flex items-center gap-2 text-[10px] font-medium text-[hsl(var(--muted-foreground))]">Au
+                    <input type="date" value={logDateTo} onChange={e => setLogDateTo(e.target.value)} className={selectCls} aria-label="Date de fin" />
+                  </label>
+                  {(logSearch || logAction || logEntity || logActor || logRole || logDateFrom || logDateTo) && (
+                    <button onClick={() => { setLogSearch(''); setLogAction(''); setLogEntity(''); setLogActor(''); setLogRole(''); setLogDateFrom(''); setLogDateTo(''); }}
+                      className="h-8 px-3 rounded-lg border border-red-200 bg-red-50 text-[10px] font-semibold text-red-900 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/40 dark:text-red-100 dark:hover:bg-red-950/70 cursor-pointer">Effacer les filtres</button>
                   )}
                 </div>
 
                 {filteredLogs.length === 0 ? (
-                  <EmptyState message="Aucun log" icon="📜" description="Aucune activité pour ces filtres." />
+                  <EmptyState message="Aucun résultat trouvé" icon="📜" description="Aucune activité ne correspond aux filtres sélectionnés." />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left border-collapse">
+                  <div className="overflow-x-auto rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+                    <table className="w-full min-w-[900px] table-fixed text-xs text-left border-collapse">
                       <thead>
                         <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20 text-[hsl(var(--muted-foreground))]">
-                          <th className="py-2.5 px-2 font-semibold whitespace-nowrap">Date / Heure</th>
-                          <th className="py-2.5 px-2 font-semibold">Acteur</th>
-                          <th className="py-2.5 px-2 font-semibold">Rôle</th>
-                          <th className="py-2.5 px-2 font-semibold">Action</th>
-                          <th className="py-2.5 px-2 font-semibold">Entité</th>
-                          <th className="py-2.5 px-2 font-semibold">Détails</th>
+                          <th className="w-[17%] py-3 px-3 font-semibold whitespace-nowrap">Date et heure</th>
+                          <th className="w-[16%] py-3 px-3 font-semibold">Acteur</th>
+                          <th className="w-[14%] py-3 px-3 font-semibold">Rôle</th>
+                          <th className="w-[23%] py-3 px-3 font-semibold">Action</th>
+                          <th className="w-[19%] py-3 px-3 font-semibold">Élément concerné</th>
+                          <th className="w-[11%] py-3 px-3 font-semibold">Détails</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[hsl(var(--border))]">
+                      <tbody className="divide-y divide-[hsl(var(--border))]/70">
                         {filteredLogs.map(l => (
-                          <tr key={l.id} className="hover:bg-[hsl(var(--muted))]/10">
-                            <td className="py-2 px-2 whitespace-nowrap text-[hsl(var(--muted-foreground))] text-[11px]">
+                          <tr key={l.id} className="align-middle transition-colors hover:bg-[hsl(var(--muted))]/20">
+                            <td className="py-3 px-3 whitespace-nowrap text-[hsl(var(--muted-foreground))] text-[11px]">
                               {formatDateTime(l.createdAt)}
                             </td>
-                            <td className="py-2 px-2">
-                              <span className="font-semibold">{l.actor?.name ?? '—'}</span>
-                              {!l.actor && <span className="text-[10px] text-[hsl(var(--muted-foreground))] italic block">Système/Client</span>}
+                            <td className="py-3 px-3">
+                              <span className="block truncate font-semibold" title={getActorLabel(l)}>{getActorLabel(l)}</span>
                             </td>
-                            <td className="py-2 px-2 text-[10px] text-[hsl(var(--muted-foreground))]">
-                              {l.actor?.role ? (ROLE_LABELS[l.actor.role] ?? l.actor.role) : '—'}
+                            <td className="py-3 px-3 text-[11px] text-[hsl(var(--muted-foreground))]">
+                              {l.actor?.role ? getRoleLabel(l.actor.role) : getActorLabel(l) === 'Client' || getActorLabel(l) === 'Système' ? getActorLabel(l) : 'Non renseigné'}
                             </td>
-                            <td className="py-2 px-2">
-                              <span className="font-semibold text-[11px]">{actionLabel(l.action)}</span>
-                              <span className="block text-[9px] font-mono text-[hsl(var(--muted-foreground))]">{l.action}</span>
+                            <td className="py-3 px-3">
+                              <span className="block truncate font-semibold text-[11px]" title={getActionLabel(l.action, l.entity)}>{getActionLabel(l.action, l.entity)}</span>
                             </td>
-                            <td className="py-2 px-2 text-[hsl(var(--muted-foreground))]">
-                              <span className="font-medium">{l.entity}</span>
-                              {l.entityId && (
-                                <span className="block text-[9px] font-mono">…{l.entityId.slice(-8)}</span>
-                              )}
+                            <td className="py-3 px-3 text-[hsl(var(--muted-foreground))]">
+                              <span className="block truncate font-medium text-[hsl(var(--foreground))]" title={getEntityContext(l.entity, l.metadata) ?? getEntityLabel(l.entity)}>{getEntityContext(l.entity, l.metadata) ?? getEntityLabel(l.entity)}</span>
+                              {!getEntityContext(l.entity, l.metadata) && l.entityId && <span className="block text-[10px]">Réf. …{l.entityId.slice(-6)}</span>}
                             </td>
-                            <td className="py-2 px-2">
-                              {l.metadata ? (
-                                <button
-                                  onClick={() => setSelectedLog(l)}
-                                  className="h-6 px-2.5 rounded-lg border border-[hsl(var(--border))] text-[10px] font-semibold hover:bg-[hsl(var(--accent))] cursor-pointer transition-colors"
-                                >
-                                  Voir détails
-                                </button>
-                              ) : (
-                                <span className="text-[hsl(var(--muted-foreground))]">—</span>
-                              )}
+                            <td className="py-3 px-3">
+                              <button
+                                onClick={() => setSelectedLog(l)}
+                                className="min-h-8 px-2.5 rounded-lg border border-[hsl(var(--border))] text-[10px] font-semibold hover:bg-[hsl(var(--accent))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] cursor-pointer transition-colors whitespace-nowrap"
+                              >
+                                Voir les détails
+                              </button>
                             </td>
                           </tr>
                         ))}

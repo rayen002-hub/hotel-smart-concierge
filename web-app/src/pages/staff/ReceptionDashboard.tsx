@@ -26,6 +26,7 @@ import {
   ErrorMessage,
   QRCodeCard,
 } from '../../components';
+import { getStatusLabel } from '../../utils/statusPresentation';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
 import { resolveEventImageUrl } from '../../utils/imageUrl';
@@ -531,11 +532,7 @@ export const ReceptionDashboard: React.FC = () => {
       new Set(reservations.map((r) => r.room?.roomNumber).filter(Boolean) as string[])
     ).sort();
 
-    const completionStatusLabel = (s?: string) => {
-      if (s === 'COMPLETED') return { label: 'Complète', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', icon: '✅' };
-      if (s === 'PARTIAL')   return { label: 'Partielle', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', icon: '🟡' };
-      return { label: 'Non commencée', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400', icon: '⬜' };
-    };
+    const completionStatusLabel = (s?: string) => getStatusLabel(s ?? 'NOT_STARTED', 'checkin');
 
     return (
       <div className="space-y-4">
@@ -605,7 +602,6 @@ export const ReceptionDashboard: React.FC = () => {
               const total = r.totalGuests ?? 1;
               const filled = r._count?.guestForms ?? 0;
               const cStatus = r.checkinCompletionStatus ?? 'NOT_STARTED';
-              const { label: csLabel, cls: csCls, icon: csIcon } = completionStatusLabel(cStatus);
               return (
                 <div
                   key={r.id}
@@ -622,10 +618,9 @@ export const ReceptionDashboard: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${csCls}`}>
-                        {csIcon} {filled}/{total} {csLabel}
-                      </span>
-                      <StatusBadge status={r.status} />
+                      <span className="text-[10px] font-medium text-[hsl(var(--muted-foreground))]">{filled}/{total}</span>
+                      <StatusBadge status={cStatus} context="checkin" className="text-[10px] px-2 py-0.5" />
+                      <StatusBadge status={r.status} context="reservation" />
                     </div>
                   </div>
 
@@ -694,11 +689,7 @@ export const ReceptionDashboard: React.FC = () => {
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
                 {ficheDetailLoading && <LoadingSpinner message="Chargement des fiches..." />}
 
-                {ficheDetailError && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20 p-4 text-xs text-red-700 dark:text-red-300">
-                    {ficheDetailError}
-                  </div>
-                )}
+                <ErrorMessage message={ficheDetailError} />
 
                 {ficheDetail && (
                   <>
@@ -724,7 +715,7 @@ export const ReceptionDashboard: React.FC = () => {
                         </div>
                         <div>
                           <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Statut check-in</span>
-                          <p className="font-medium">{ficheDetail.reservation.checkinCompletionStatus}</p>
+                          <p className="font-medium">{completionStatusLabel(ficheDetail.reservation.checkinCompletionStatus)}</p>
                         </div>
                         <div>
                           <span className="text-[10px] font-semibold text-[hsl(var(--muted-foreground))] uppercase">Voyageurs</span>
@@ -892,7 +883,7 @@ export const ReceptionDashboard: React.FC = () => {
                   {c.staffMessage || c.originalMessage}
                 </td>
                 <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{c.assignedTo?.name || '—'}</td>
-                <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                <td className="px-4 py-3"><StatusBadge status={c.status} context="complaint" /></td>
               </tr>
             ))}
           </tbody>

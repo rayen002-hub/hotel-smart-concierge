@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { lookupReservation, submitCheckin } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { ErrorMessage } from '../../components';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -239,14 +240,7 @@ export const CheckInPage: React.FC = () => {
         )}
 
         {/* ── Error banner ────────────────────────────────────────── */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400 animate-in fade-in">
-            <div className="flex items-start gap-3">
-              <span className="text-lg leading-none">⚠️</span>
-              <span>{error}</span>
-            </div>
-          </div>
-        )}
+        <ErrorMessage message={error} />
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/*  Step 1 — Lookup                                          */}
