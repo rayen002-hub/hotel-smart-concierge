@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listMyComplaints, confirmComplaint, reopenComplaint } from '../../api/complaintApi';
 import type { ApiError } from '../../api/apiClient';
+import { formatHotelDateTime } from '../../utils/hotelDate';
 import { StatusBadge } from '../../components/StatusBadge';
 import { ErrorMessage } from '../../components';
 
@@ -91,12 +92,7 @@ export const RoomComplaintsPage: React.FC = () => {
   };
 
   const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      day: 'numeric',
-      month: 'short',
-    });
+    return formatHotelDateTime(isoStr);
   };
 
   return (

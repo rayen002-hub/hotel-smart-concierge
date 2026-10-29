@@ -30,6 +30,7 @@ import { getStatusLabel } from '../../utils/statusPresentation';
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
 import { resolveEventImageUrl } from '../../utils/imageUrl';
+import { formatHotelDate, formatHotelDateTime } from '../../utils/hotelDate';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -126,10 +127,10 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  formatHotelDate(iso);
 
 const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  formatHotelDateTime(iso);
 
 // ─── Main Component ──────────────────────────────────────────────────
 

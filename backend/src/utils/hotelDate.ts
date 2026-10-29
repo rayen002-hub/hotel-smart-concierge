@@ -1,12 +1,11 @@
 /**
- * Hotel-local calendar helpers. Existing LoomStay business-day logic uses TZ
- * and falls back to Africa/Tunis, so reservation lifecycle checks share that
- * setting instead of comparing UTC timestamps directly.
+ * Hotel-local calendar helpers. Africa/Tunis is authoritative; server host or
+ * deployment TZ settings must not change reservation or worker business time.
  */
 export const DEFAULT_HOTEL_TIME_ZONE = "Africa/Tunis";
 
 export function getHotelTimeZone(): string {
-  return process.env.TZ || DEFAULT_HOTEL_TIME_ZONE;
+  return DEFAULT_HOTEL_TIME_ZONE;
 }
 
 export function hotelCalendarDate(

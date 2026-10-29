@@ -55,6 +55,8 @@ export interface ReservationPayload {
   checkInDate: string;
   checkOutDate: string;
   roomId?: string;
+  adultsCount?: number;
+  childrenCount?: number;
 }
 
 export async function listReservations() {
@@ -84,6 +86,24 @@ export async function generateClientRoomLink(reservationId: string) {
 
 export async function getGuestForms(reservationId: string) {
   const { data } = await staffClient.get(`/reservations/${reservationId}/guest-forms`);
+  return data;
+}
+
+export interface ReceptionCheckinTravelerPayload {
+  travelerIndex: number;
+  travelerType: 'ADULT' | 'CHILD';
+  fullName: string;
+  nationality: string;
+  passportNumber?: string;
+  phone?: string;
+  address?: string;
+}
+
+export async function submitReceptionCheckinTraveler(
+  reservationId: string,
+  payload: ReceptionCheckinTravelerPayload
+) {
+  const { data } = await staffClient.post(`/reservations/${reservationId}/check-in`, payload);
   return data;
 }
 

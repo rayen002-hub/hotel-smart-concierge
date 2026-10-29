@@ -12,6 +12,7 @@ import { createAuditLog } from "../utils/audit";
 import { verifyWorkerRoomQr } from "./qrToken.service";
 import { getHotelTimeZone } from "../utils/hotelDate";
 import { isCurrentlyOccupiedBy } from "./roomOccupancy.service";
+import { getWorkerAvailabilityAt } from "./workerAvailability.service";
 
 // Inclusions standard pour les requetes de tache
 const TASK_INCLUDE = {
@@ -32,6 +33,8 @@ const TASK_INCLUDE = {
  * Service de gestion des taches de menage (housekeeping).
  */
 export class HousekeepingService {
+  constructor(private readonly now: () => Date = () => new Date()) {}
+
   /**
    * Lister les chambres occupees avec leur tache housekeeping active.
    */
@@ -116,6 +119,23 @@ export class HousekeepingService {
       throw new AppError("Chambre introuvable.", 404);
     }
 
+    const activeTask = await prisma.housekeepingTask.findFirst({
+      where: {
+        roomId: params.roomId,
+        status: {
+          in: [
+            HousekeepingTaskStatus.ASSIGNED,
+            HousekeepingTaskStatus.IN_PROGRESS,
+            HousekeepingTaskStatus.NEEDS_REVIEW,
+          ],
+        },
+      },
+      select: { id: true },
+    });
+    if (activeTask) {
+      throw new AppError("Une tâche de ménage est déjà active pour cette chambre.", 409);
+    }
+
     const employee = await prisma.user.findUnique({
       where: { id: params.assignedToId },
       include: { employeeProfile: true },
@@ -129,6 +149,20 @@ export class HousekeepingService {
     if (employee.employeeProfile?.department !== Department.HOUSEKEEPING) {
       throw new AppError(
         "L'employe assigne doit appartenir au departement HOUSEKEEPING.",
+        400
+      );
+    }
+
+    const occurrenceAt = this.now();
+    const availability = await getWorkerAvailabilityAt({
+      workerId: employee.id,
+      at: occurrenceAt,
+      isActive: employee.isActive,
+      isAvailable: employee.employeeProfile.isAvailable,
+    });
+    if (!availability.eligible) {
+      throw new AppError(
+        `Employé non planifié ou indisponible à l'heure de la tâche (${availability.label}).`,
         400
       );
     }
@@ -150,6 +184,8 @@ export class HousekeepingService {
         assignedById: params.assignedById,
         note: params.note || null,
         status: HousekeepingTaskStatus.ASSIGNED,
+        // This task is created for the current occurrence instant validated above.
+        createdAt: occurrenceAt,
       },
       include: TASK_INCLUDE,
     });

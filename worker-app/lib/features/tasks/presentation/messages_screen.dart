@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/time/hotel_time.dart';
 import '../../../core/storage/auth_storage.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../auth/data/auth_service.dart';
@@ -248,18 +249,16 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Widget _buildDateSeparator(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    final now = DateTime.now();
+    final hotelDate = HotelTime.from(dateTime);
+    final now = HotelTime.now();
     String label;
 
-    if (_isSameDay(local, now)) {
+    if (TaskHelpers.isSameHotelDay(hotelDate, now)) {
       label = 'Aujourd\'hui';
-    } else if (_isSameDay(local, now.subtract(const Duration(days: 1)))) {
+    } else if (TaskHelpers.isSameHotelDay(hotelDate, now.subtract(const Duration(days: 1)))) {
       label = 'Hier';
     } else {
-      final d = local.day.toString().padLeft(2, '0');
-      final m = local.month.toString().padLeft(2, '0');
-      label = '$d/$m/${local.year}';
+      label = TaskHelpers.formatDate(hotelDate);
     }
 
     return Padding(
@@ -282,12 +281,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
         ],
       ),
     );
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    final la = a.toLocal();
-    final lb = b.toLocal();
-    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
   }
 
   Widget _buildInputBar() {
@@ -378,9 +371,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localTime = message.createdAt.toLocal();
-    final timeStr =
-        '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
+    final timeStr = TaskHelpers.formatTime(message.createdAt);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),

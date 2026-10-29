@@ -34,6 +34,7 @@ import {
 import { TabNav } from '../../components/ui/TabNav';
 import { StatCard } from '../../components/ui/StatCard';
 import { getStatusLabel, getStatusTone, STATUS_TONE_CLASSES } from '../../utils/statusPresentation';
+import { formatHotelDateTime, getCurrentHotelShift } from '../../utils/hotelDate';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ const resultLabels: Record<string, string> = {
 };
 
 const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  formatHotelDateTime(iso);
 
 const isOnline = (lastSeenAt?: string | null) => {
   if (!lastSeenAt) return false;
@@ -206,6 +207,8 @@ export const ManagerDashboard: React.FC = () => {
   const [hkLoading, setHkLoading] = useState(false);
   const [assigningRoomId, setAssigningRoomId] = useState<string | null>(null);
   const [hkAssignEmployeeId, setHkAssignEmployeeId] = useState('');
+  const [hkAssignmentEmployees, setHkAssignmentEmployees] = useState<Employee[]>([]);
+  const [hkAssignmentLoading, setHkAssignmentLoading] = useState(false);
   const [hkAssignNote, setHkAssignNote] = useState('');
   const [hkAssignLoading, setHkAssignLoading] = useState(false);
 
@@ -908,6 +911,10 @@ export const ManagerDashboard: React.FC = () => {
 
   const handleHkAssign = async (roomId: string, reservationId?: string | null) => {
     if (!hkAssignEmployeeId) return;
+    if (!hkAssignmentEmployees.find((employee) => employee.id === hkAssignEmployeeId)?.availability?.eligible) {
+      setError('Cet employé n’est pas planifié ou disponible à l’heure de la tâche.');
+      return;
+    }
     setHkAssignLoading(true);
     setError('');
     try {
@@ -920,6 +927,7 @@ export const ManagerDashboard: React.FC = () => {
       setSuccess('Tâche de ménage assignée !');
       setAssigningRoomId(null);
       setHkAssignEmployeeId('');
+      setHkAssignmentEmployees([]);
       setHkAssignNote('');
       await Promise.all([fetchOccupiedRooms(), fetchHkTasks()]);
       setTimeout(() => setSuccess(''), 4000);
@@ -927,6 +935,22 @@ export const ManagerDashboard: React.FC = () => {
       setError((err as ApiError).error || 'Erreur lors de l\'assignation.');
     } finally {
       setHkAssignLoading(false);
+    }
+  };
+
+  const openHkAssignment = async (roomId: string) => {
+    setAssigningRoomId(roomId);
+    setHkAssignEmployeeId('');
+    setHkAssignmentLoading(true);
+    setError('');
+    try {
+      const result = await listEmployees();
+      setHkAssignmentEmployees(result.data || []);
+    } catch (err) {
+      setHkAssignmentEmployees([]);
+      setError((err as ApiError).error || 'Impossible de vérifier les plannings des employés.');
+    } finally {
+      setHkAssignmentLoading(false);
     }
   };
 
@@ -952,15 +976,14 @@ export const ManagerDashboard: React.FC = () => {
     return r === 'DONE' ? '✅ Fait' : '❌ Non fait';
   };
 
-  const housekeepingEmployees = employees.filter(
-    (e) => e.employeeProfile?.department === 'HOUSEKEEPING'
-  );
-
   const renderHousekeeping = () => {
     if (hkLoading) return <LoadingSpinner message="Chargement des chambres..." />;
 
     return (
       <div className="space-y-6">
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+          Ménage : tâches ponctuelles assignées explicitement. Le ménage de routine reste dans l’onglet « Ménage quotidien ».
+        </p>
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2">
           {hkStatusFilters.map((f) => (
@@ -1029,12 +1052,13 @@ export const ManagerDashboard: React.FC = () => {
                         <select
                           value={hkAssignEmployeeId}
                           onChange={(e) => setHkAssignEmployeeId(e.target.value)}
+                          disabled={hkAssignmentLoading}
                           className="w-full h-8 rounded-md border bg-[hsl(var(--card))] text-[10px] px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                          <option value="">Choisir un(e) gouvernant(e)…</option>
-                          {housekeepingEmployees.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.name} {isOnline(emp.employeeProfile?.lastSeenAt) ? '🟢' : '⚪'}
+                          <option value="">{hkAssignmentLoading ? 'Vérification des plannings…' : 'Choisir un(e) gouvernant(e)…'}</option>
+                          {hkAssignmentEmployees.map((emp) => (
+                            <option key={emp.id} value={emp.id} disabled={!emp.availability?.eligible}>
+                              {emp.name} — {emp.availability?.label || 'Aucun planning valide'}
                             </option>
                           ))}
                         </select>
@@ -1048,13 +1072,13 @@ export const ManagerDashboard: React.FC = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleHkAssign(room.id, room.activeReservation?.id)}
-                            disabled={hkAssignLoading || !hkAssignEmployeeId}
+                            disabled={hkAssignLoading || hkAssignmentLoading || !hkAssignmentEmployees.find((emp) => emp.id === hkAssignEmployeeId)?.availability?.eligible}
                             className="h-7 px-3 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                           >
                             {hkAssignLoading ? 'Assignation…' : '✓ Assigner'}
                           </button>
                           <button
-                            onClick={() => { setAssigningRoomId(null); setHkAssignEmployeeId(''); setHkAssignNote(''); }}
+                            onClick={() => { setAssigningRoomId(null); setHkAssignEmployeeId(''); setHkAssignmentEmployees([]); setHkAssignNote(''); }}
                             className="h-7 px-3 rounded-md border text-[10px] hover:bg-[hsl(var(--accent))] transition-colors"
                           >
                             ✕ Annuler
@@ -1063,7 +1087,7 @@ export const ManagerDashboard: React.FC = () => {
                       </div>
                     ) : (
                       <button
-                        onClick={() => setAssigningRoomId(room.id)}
+                        onClick={() => { void openHkAssignment(room.id); }}
                         className="w-full h-8 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 transition-colors"
                       >
                         👤 Assigner un(e) gouvernant(e)
@@ -1209,7 +1233,7 @@ export const ManagerDashboard: React.FC = () => {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-sm font-bold">🧹 Ménage quotidien — <span className="font-mono text-[hsl(var(--muted-foreground))]">{dailyBusinessDay || "Aujourd'hui"}</span></h2>
-            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Assignation de chambres indépendante des réclamations. Réinitialisation à 06:00.</p>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">Routine quotidienne gérée ici, séparée des tâches ponctuelles « Ménage ». Réinitialisation à 06:00.</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowDailyForm(v => !v)} className="h-8 px-4 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity">➕ Assigner chambre</button>
@@ -1248,8 +1272,7 @@ export const ManagerDashboard: React.FC = () => {
                 <label className="block text-[10px] font-semibold uppercase text-[hsl(var(--muted-foreground))] mb-1">Agent de ménage</label>
                 {(() => {
                   // Determine current shift for availability check
-                  const hour = new Date().getUTCHours();
-                  const currentShift: typeof shiftWorkers[0]['shift'] = hour >= 7 && hour < 15 ? 'MORNING' : hour >= 15 && hour < 23 ? 'EVENING' : 'NIGHT';
+                  const currentShift: typeof shiftWorkers[0]['shift'] = getCurrentHotelShift();
                   const availableWorkers = housekeepingWorkers.filter(w => {
                     const wShift = shiftWorkers.find(s => s.id === w.id)?.shift;
                     if (wShift === 'DAY_OFF') return false;
@@ -1269,7 +1292,7 @@ export const ManagerDashboard: React.FC = () => {
                           const isDayOff = wShift === 'DAY_OFF';
                           const isUnavailable = !w.employeeProfile?.isAvailable;
                           const wrongShift = wShift && wShift !== 'DAY_OFF' && wShift !== currentShift;
-                          const blocked = isDayOff || isUnavailable;
+                          const blocked = isDayOff || isUnavailable || Boolean(wShift && wrongShift);
                           const label = isDayOff ? `${w.name} — 😴 Repos (non assignable)`
                             : isUnavailable ? `${w.name} — ⚠️ Indisponible`
                             : wrongShift ? `${w.name} — ⚠️ Shift ${wShift ? SHIFT_LABELS[wShift].split('–')[0] : ''} (hors shift actuel)`

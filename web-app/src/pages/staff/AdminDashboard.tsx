@@ -32,6 +32,7 @@ import {
   getSafeMetadata,
 } from '../../utils/auditLogPresentation';
 import { getStatusLabel } from '../../utils/statusPresentation';
+import { formatHotelDateTime } from '../../utils/hotelDate';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -129,10 +130,7 @@ const COMPLAINT_CATEGORY_LABELS: Record<string, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  formatHotelDateTime(iso, { year: 'numeric' });
 
 const isOnline = (lastSeenAt?: string | null) => {
   if (!lastSeenAt) return false;

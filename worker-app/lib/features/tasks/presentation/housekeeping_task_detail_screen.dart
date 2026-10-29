@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../auth/data/auth_service.dart';
+import '../../../shared/widgets/task_helpers.dart';
 import '../data/housekeeping_task_model.dart';
 import '../data/housekeeping_task_service.dart';
 
@@ -101,8 +102,7 @@ class _HousekeepingTaskDetailScreenState
   // ── Date formatting ────────────────────────────────────────────────
 
   String _formatDate(DateTime dt) {
-    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return TaskHelpers.formatDateTime(dt);
   }
 
   // ── Build ──────────────────────────────────────────────────────────

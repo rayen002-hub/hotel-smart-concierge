@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { lookupReservation, submitCheckin } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { formatHotelDate } from '../../utils/hotelDate';
 import { ErrorMessage } from '../../components';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -187,12 +188,7 @@ export const CheckInPage: React.FC = () => {
   // ── Helpers ────────────────────────────────────────────────────────
 
   const formatDate = (iso: string) => {
-    return new Date(iso).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    return formatHotelDate(iso, { weekday: 'long', month: 'long' });
   };
 
   const completedCount = reservation?.travelers.filter(t => t.isCompleted).length ?? 0;

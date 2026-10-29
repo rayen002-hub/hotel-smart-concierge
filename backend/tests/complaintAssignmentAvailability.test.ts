@@ -67,6 +67,62 @@ describe("complaint assignment shift validation", () => {
     }));
   });
 
+  it("accepts a maintenance night shift at 23:30 on its scheduled start date", async () => {
+    const at2330 = new Date("2026-10-30T22:30:00.000Z"); // 23:30 Tunisia time
+    (prisma.complaint.findUnique as jest.Mock).mockResolvedValue({
+      id: "complaint-1",
+      createdAt: at2330,
+      category: ComplaintCategory.MAINTENANCE,
+      status: ComplaintStatus.PENDING,
+    });
+    (prisma.workerShiftSchedule.findUnique as jest.Mock).mockResolvedValue({ shift: WorkerShift.NIGHT });
+
+    await service.assignComplaint("complaint-1", "worker-1", "manager-1");
+
+    expect(prisma.workerShiftSchedule.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { workerId_businessDay: { workerId: "worker-1", businessDay: new Date("2026-10-30T00:00:00.000Z") } },
+    }));
+    expect(prisma.complaint.update).toHaveBeenCalled();
+  });
+
+  it("matches a 02:00 maintenance complaint to the previous date's night shift", async () => {
+    const at0200 = new Date("2026-10-31T01:00:00.000Z"); // 02:00 Tunisia time
+    (prisma.complaint.findUnique as jest.Mock).mockResolvedValue({
+      id: "complaint-1",
+      createdAt: at0200,
+      category: ComplaintCategory.MAINTENANCE,
+      status: ComplaintStatus.PENDING,
+    });
+    (prisma.workerShiftSchedule.findUnique as jest.Mock).mockResolvedValue({ shift: WorkerShift.NIGHT });
+
+    await service.assignComplaint("complaint-1", "worker-1", "manager-1");
+
+    expect(prisma.workerShiftSchedule.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { workerId_businessDay: { workerId: "worker-1", businessDay: new Date("2026-10-30T00:00:00.000Z") } },
+    }));
+    expect(prisma.complaint.update).toHaveBeenCalled();
+  });
+
+  it("preserves housekeeping night-shift assignment eligibility", async () => {
+    (prisma.complaint.findUnique as jest.Mock).mockResolvedValue({
+      id: "complaint-1",
+      createdAt: new Date("2026-10-30T22:30:00.000Z"), // 23:30 Tunisia time
+      category: ComplaintCategory.HOUSEKEEPING,
+      status: ComplaintStatus.PENDING,
+    });
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      id: "worker-1",
+      role: "EMPLOYEE",
+      isActive: true,
+      employeeProfile: { department: Department.HOUSEKEEPING, isAvailable: true },
+    });
+    (prisma.workerShiftSchedule.findUnique as jest.Mock).mockResolvedValue({ shift: WorkerShift.NIGHT });
+
+    await service.assignComplaint("complaint-1", "worker-1", "manager-1");
+
+    expect(prisma.complaint.update).toHaveBeenCalled();
+  });
+
   it("rejects the assignment if the occurrence timestamp is unavailable", async () => {
     (prisma.complaint.findUnique as jest.Mock).mockResolvedValue({
       id: "complaint-1",

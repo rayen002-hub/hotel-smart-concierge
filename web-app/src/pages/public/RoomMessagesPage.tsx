@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { listGuestMessages, sendGuestMessage } from '../../api/complaintApi';
 import { connectClientSocket, disconnectSocket, getSocket } from '../../api/socketClient';
 import type { ApiError } from '../../api/apiClient';
+import { formatHotelDate, formatHotelTime } from '../../utils/hotelDate';
 import { ErrorMessage, SuccessMessage } from '../../components';
 
 interface Message {
@@ -124,10 +125,10 @@ export const RoomMessagesPage: React.FC = () => {
   };
 
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    formatHotelTime(iso);
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    formatHotelDate(iso, { year: undefined });
 
   // Group messages by date
   const groupedMessages: { date: string; items: Message[] }[] = [];

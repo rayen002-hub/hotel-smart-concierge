@@ -371,7 +371,7 @@ class _TimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatted = '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
+    final formatted = TaskHelpers.formatDateTime(value);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(

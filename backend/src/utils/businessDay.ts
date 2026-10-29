@@ -5,6 +5,7 @@
  * A request at 03:00 on June 26 belongs to the June 25 business day.
  * businessDay is stored as midnight UTC of the calendar day.
  */
+import { getHotelTimeZone, hotelCalendarDate } from "./hotelDate";
 
 const RESET_HOUR = 6; // 06:00
 
@@ -13,28 +14,18 @@ const RESET_HOUR = 6; // 06:00
  * Result is midnight UTC of the corresponding calendar day.
  */
 export function getBusinessDay(date: Date = new Date()): Date {
-  // Use local time for hour comparison
-  const local = new Date(date.toLocaleString("en-US", { timeZone: process.env.TZ || "Africa/Tunis" }));
-  const hour = local.getHours();
+  const timeParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: getHotelTimeZone(),
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const hour = Number(timeParts.find((part) => part.type === "hour")?.value);
+  const [year, month, day] = hotelCalendarDate(date).split("-").map(Number);
+  const calendarDate = new Date(Date.UTC(year, month - 1, day));
 
-  // If before 06:00, the business day is yesterday
-  const calendarDate = new Date(date);
-  if (hour < RESET_HOUR) {
-    calendarDate.setDate(calendarDate.getDate() - 1);
-  }
-
-  // Return midnight UTC for that calendar date (YYYY-MM-DD 00:00:00 UTC)
-  return new Date(
-    Date.UTC(
-      calendarDate.getFullYear(),
-      calendarDate.getMonth(),
-      calendarDate.getDate(),
-      0,
-      0,
-      0,
-      0
-    )
-  );
+  // Before the 06:00 Tunisia boundary, use the previous local calendar date.
+  if (hour < RESET_HOUR) calendarDate.setUTCDate(calendarDate.getUTCDate() - 1);
+  return calendarDate;
 }
 
 /**

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listPublicEvents } from '../../api/publicApi';
 import type { ApiError } from '../../api/apiClient';
+import { formatHotelDate, formatHotelTime } from '../../utils/hotelDate';
 import { ErrorMessage } from '../../components';
 import { resolveEventImageUrl } from '../../utils/imageUrl';
 
@@ -63,15 +64,10 @@ export const RoomEventsPage: React.FC = () => {
   }, []);
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    formatHotelDate(iso, { weekday: 'long', month: 'long' });
 
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    formatHotelTime(iso);
 
   return (
     <div className="min-h-[80vh] flex items-start justify-center px-4 py-6">

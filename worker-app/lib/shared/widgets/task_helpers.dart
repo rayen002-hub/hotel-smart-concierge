@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/time/hotel_time.dart';
 import '../../features/tasks/data/task_model.dart';
 
 /// Centralized helper methods for task category and status display values.
@@ -69,16 +70,33 @@ class TaskHelpers {
 
   static String formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return 'Non renseigné';
-    final local = dateTime.toLocal();
-    final h = local.hour.toString().padLeft(2, '0');
-    final m = local.minute.toString().padLeft(2, '0');
-    final d = local.day.toString().padLeft(2, '0');
-    final mo = local.month.toString().padLeft(2, '0');
-    return '$d/$mo/${local.year} à $h:$m';
+    final hotelTime = HotelTime.from(dateTime);
+    final h = hotelTime.hour.toString().padLeft(2, '0');
+    final m = hotelTime.minute.toString().padLeft(2, '0');
+    final d = hotelTime.day.toString().padLeft(2, '0');
+    final mo = hotelTime.month.toString().padLeft(2, '0');
+    return '$d/$mo/${hotelTime.year} à $h:$m';
+  }
+
+  static String formatTime(DateTime? dateTime) {
+    if (dateTime == null) return 'Non renseigné';
+    final hotelTime = HotelTime.from(dateTime);
+    return '${hotelTime.hour.toString().padLeft(2, '0')}:${hotelTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  static String formatDate(DateTime dateTime) {
+    final hotelTime = HotelTime.from(dateTime);
+    return '${hotelTime.day.toString().padLeft(2, '0')}/${hotelTime.month.toString().padLeft(2, '0')}/${hotelTime.year}';
+  }
+
+  static bool isSameHotelDay(DateTime a, DateTime b) {
+    final hotelA = HotelTime.from(a);
+    final hotelB = HotelTime.from(b);
+    return hotelA.year == hotelB.year && hotelA.month == hotelB.month && hotelA.day == hotelB.day;
   }
 
   static String formatTimeAgo(DateTime dateTime) {
-    final diff = DateTime.now().difference(dateTime);
+    final diff = DateTime.now().toUtc().difference(dateTime.toUtc());
     if (diff.inDays >= 1) {
       return 'Il y a ${diff.inDays} j';
     } else if (diff.inHours >= 1) {

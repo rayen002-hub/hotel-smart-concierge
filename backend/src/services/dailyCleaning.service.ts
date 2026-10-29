@@ -3,6 +3,7 @@ import { DailyCleaningStatus, WorkerShift } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { getBusinessDay, parseBusinessDay, formatBusinessDay } from "../utils/businessDay";
 import { createAuditLog } from "../utils/audit";
+import { getShiftScheduleDay, shiftCoversInstant } from "./workerAvailability.service";
 
 const taskInclude = {
   room: { select: { id: true, roomNumber: true, floor: true, type: true, status: true } },
@@ -12,15 +13,10 @@ const taskInclude = {
 
 // ─── Shift availability helpers ─────────────────────────────────────────────
 
-/**
- * Determine which shift is currently active based on the current UTC hour.
- * 07:00–15:00 → MORNING, 15:00–23:00 → EVENING, 23:00–07:00 → NIGHT
- */
-function getCurrentShift(): WorkerShift {
-  const hour = new Date().getUTCHours();
-  if (hour >= 7 && hour < 15) return WorkerShift.MORNING;
-  if (hour >= 15 && hour < 23) return WorkerShift.EVENING;
-  return WorkerShift.NIGHT;
+/** Determine the active shift using the authoritative hotel-local clock. */
+function getCurrentShift(at: Date): WorkerShift {
+  return ([WorkerShift.MORNING, WorkerShift.EVENING, WorkerShift.NIGHT] as WorkerShift[])
+    .find((shift) => shiftCoversInstant(shift, at)) ?? WorkerShift.NIGHT;
 }
 
 /**
@@ -107,9 +103,10 @@ export class DailyCleaningService {
 
     // 3. Shift availability check (skippable by admin override)
     if (!params.skipShiftCheck) {
-      // Look up shift using the same Date object used elsewhere
+      // A shift schedule is keyed to the date on which the shift starts.
+      const now = new Date();
       const shiftSchedule = await prisma.workerShiftSchedule.findFirst({
-        where: { workerId: params.workerId, businessDay: day },
+        where: { workerId: params.workerId, businessDay: getShiftScheduleDay(now) },
       });
 
       const workerShift = shiftSchedule?.shift ?? null;
@@ -124,8 +121,8 @@ export class DailyCleaningService {
 
       // If shift is defined, check it matches the current time window
       if (workerShift !== null) {
-        const currentShift = getCurrentShift();
-        if (workerShift !== currentShift) {
+        const currentShift = getCurrentShift(now);
+        if (!shiftCoversInstant(workerShift, now)) {
           throw new AppError(
             `${worker.name} est planifié pour le shift ${SHIFT_LABEL[workerShift]}, mais le shift actuel est ${SHIFT_LABEL[currentShift]}. Impossible d'assigner une tâche hors de son shift.`,
             400
