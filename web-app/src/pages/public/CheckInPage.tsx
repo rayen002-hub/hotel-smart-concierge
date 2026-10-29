@@ -23,6 +23,7 @@ interface ReservationSummary {
   childrenCount: number;
   totalGuests: number;
   checkinCompletionStatus: string;
+  checkInEligibility?: { eligible: boolean; reason: string | null };
   travelers: TravelerSlot[];
 }
 
@@ -74,14 +75,23 @@ export const CheckInPage: React.FC = () => {
       const res = await lookupReservation({ reservationNumber: reservationNumber.trim() }, checkinToken);
       const data: ReservationSummary = res.data;
 
-      if (data.status === 'CHECKED_OUT') {
-        setError('Cette réservation est terminée (CHECKED_OUT).');
-        setLoading(false);
+      if (data.checkInEligibility && !data.checkInEligibility.eligible) {
+        // Preserve the existing completion confirmation for guests who already
+        // finished every traveler form. The submit endpoint still rejects replay.
+        if (data.status === 'CHECKED_IN' && data.checkinCompletionStatus === 'COMPLETED') {
+          setReservation(data);
+          setStep('complete');
+          return;
+        }
+        setError(data.checkInEligibility.reason || 'Cette réservation ne permet pas le check-in.');
         return;
       }
-      if (data.status === 'CANCELLED') {
-        setError('Cette réservation a été annulée.');
-        setLoading(false);
+      // Compatibility with a backend build that has not yet rolled out the
+      // eligibility field; the new backend independently enforces every rule.
+      if (!data.checkInEligibility && (data.status === 'CHECKED_OUT' || data.status === 'CANCELLED')) {
+        setError(data.status === 'CANCELLED'
+          ? 'Cette réservation a été annulée.'
+          : 'Cette réservation est déjà terminée.');
         return;
       }
 

@@ -1,24 +1,26 @@
 import prisma from "../config/prisma";
 import {
+  CheckinCompletionStatus,
+  Prisma,
   ReservationStatus,
   RoomStatus,
-  CheckinCompletionStatus,
   TravelerType,
 } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { encryptField } from "../utils/encryption";
-import { createAuditLog } from "../utils/audit";
 import { env } from "../config/env";
+import { assertCheckinEligible, getCheckinEligibility } from "./reservationLifecycle.service";
+import { getHotelTimeZone } from "../utils/hotelDate";
 
-/**
- * Service de check-in public (sans authentification).
- * Supporte plusieurs voyageurs par reservation.
- */
+/** Public QR check-in service. The service is the authoritative enforcement
+ * point for every request to submit guest details, regardless of client. */
 export class CheckinService {
-  /**
-   * Rechercher une reservation par son numero.
-   * Retourne la reservation + la liste des slots voyageurs.
-   */
+  constructor(
+    private readonly now: () => Date = () => new Date(),
+    private readonly timeZone: string = getHotelTimeZone()
+  ) {}
+
+  /** Look up a reservation and return server-computed check-in eligibility. */
   async lookup(reservationNumber: string) {
     const reservation = await prisma.reservation.findUnique({
       where: { reservationNumber },
@@ -49,20 +51,22 @@ export class CheckinService {
       throw new AppError("Reservation introuvable.", 404);
     }
 
-    // Construire la liste des slots attendus (1..totalGuests)
     const travelers = [];
     for (let i = 1; i <= reservation.totalGuests; i++) {
       const form = reservation.guestForms.find((f) => f.travelerIndex === i);
       travelers.push({
         travelerIndex: i,
-        travelerType:
-          i <= reservation.adultsCount
-            ? TravelerType.ADULT
-            : TravelerType.CHILD,
+        travelerType: i <= reservation.adultsCount ? TravelerType.ADULT : TravelerType.CHILD,
         isCompleted: form?.isCompleted ?? false,
         fullName: form?.fullName ?? null,
       });
     }
+
+    const checkInEligibility = getCheckinEligibility(
+      reservation,
+      this.now(),
+      this.timeZone
+    );
 
     return {
       reservationId: reservation.id,
@@ -75,13 +79,15 @@ export class CheckinService {
       childrenCount: reservation.childrenCount,
       totalGuests: reservation.totalGuests,
       checkinCompletionStatus: reservation.checkinCompletionStatus,
+      checkInEligibility: {
+        eligible: checkInEligibility.eligible,
+        reason: checkInEligibility.reason,
+      },
       travelers,
     };
   }
 
-  /**
-   * Soumettre une fiche voyageur pour un index donne.
-   */
+  /** Submit one traveler form and transition atomically when all are complete. */
   async submit(data: {
     reservationNumber: string;
     travelerIndex: number;
@@ -92,170 +98,129 @@ export class CheckinService {
     phone?: string;
     address?: string;
   }) {
-    // Chercher la reservation
-    const reservation = await prisma.reservation.findUnique({
-      where: { reservationNumber: data.reservationNumber },
-      include: { room: true },
-    });
+    const passportEncrypted = data.passportNumber
+      ? encryptField(data.passportNumber, env.FIELD_ENCRYPTION_KEY)
+      : null;
+    const travelerType = data.travelerType === "CHILD" ? TravelerType.CHILD : TravelerType.ADULT;
 
-    if (!reservation) {
-      throw new AppError("Reservation introuvable.", 404);
-    }
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { reservationNumber: data.reservationNumber },
+          include: { room: true },
+        });
 
-    // Refuser si CHECKED_OUT ou CANCELLED
-    if (reservation.status === ReservationStatus.CHECKED_OUT) {
-      throw new AppError(
-        "Cette reservation est deja terminee (CHECKED_OUT).",
-        400
-      );
-    }
-    if (reservation.status === ReservationStatus.CANCELLED) {
-      throw new AppError("Cette reservation a ete annulee.", 400);
-    }
+        if (!reservation) {
+          throw new AppError("Reservation introuvable.", 404);
+        }
 
-    // Valider travelerIndex
-    if (
-      data.travelerIndex < 1 ||
-      data.travelerIndex > reservation.totalGuests
-    ) {
-      throw new AppError(
-        `Index voyageur invalide. Doit etre entre 1 et ${reservation.totalGuests}.`,
-        400
-      );
-    }
+        const now = this.now();
+        assertCheckinEligible(reservation, now, this.timeZone);
 
-    // Chiffrer le numero de passeport si fourni
-    let passportEncrypted: string | null = null;
-    if (data.passportNumber) {
-      passportEncrypted = encryptField(
-        data.passportNumber,
-        env.FIELD_ENCRYPTION_KEY
-      );
-    }
+        if (data.travelerIndex < 1 || data.travelerIndex > reservation.totalGuests) {
+          throw new AppError(
+            `Index voyageur invalide. Doit etre entre 1 et ${reservation.totalGuests}.`,
+            400
+          );
+        }
 
-    // Determiner le type de voyageur
-    const travelerType =
-      data.travelerType === "CHILD" ? TravelerType.CHILD : TravelerType.ADULT;
+        await tx.guestForm.upsert({
+          where: {
+            reservationId_travelerIndex: {
+              reservationId: reservation.id,
+              travelerIndex: data.travelerIndex,
+            },
+          },
+          update: {
+            fullName: data.fullName,
+            nationality: data.nationality,
+            travelerType,
+            passportEncrypted,
+            phone: data.phone || null,
+            address: data.address || null,
+            isCompleted: true,
+            submittedAt: now,
+          },
+          create: {
+            reservationId: reservation.id,
+            travelerIndex: data.travelerIndex,
+            travelerType,
+            fullName: data.fullName,
+            nationality: data.nationality,
+            passportEncrypted,
+            phone: data.phone || null,
+            address: data.address || null,
+            isCompleted: true,
+            submittedAt: now,
+          },
+        });
 
-    // Upsert le GuestForm par (reservationId, travelerIndex)
-    await prisma.guestForm.upsert({
-      where: {
-        reservationId_travelerIndex: {
-          reservationId: reservation.id,
+        const completedCount = await tx.guestForm.count({
+          where: { reservationId: reservation.id, isCompleted: true },
+        });
+        const completionStatus = completedCount === 0
+          ? CheckinCompletionStatus.NOT_STARTED
+          : completedCount < reservation.totalGuests
+            ? CheckinCompletionStatus.PARTIAL
+            : CheckinCompletionStatus.COMPLETED;
+        const completed = completionStatus === CheckinCompletionStatus.COMPLETED;
+
+        // Conditional status update is the final compare-and-set. With the
+        // serializable transaction it prevents duplicate/replayed completions.
+        const transition = await tx.reservation.updateMany({
+          where: { id: reservation.id, status: ReservationStatus.PENDING },
+          data: {
+            checkinCompletionStatus: completionStatus,
+            ...(completed ? { status: ReservationStatus.CHECKED_IN } : {}),
+          },
+        });
+        if (transition.count !== 1) {
+          throw new AppError("Cette réservation a changé pendant le check-in. Rechargez-la.", 409);
+        }
+
+        if (completed && reservation.roomId) {
+          await tx.room.update({
+            where: { id: reservation.roomId },
+            data: { status: RoomStatus.OCCUPIED },
+          });
+        }
+
+        await tx.auditLog.create({
+          data: {
+            actorId: null,
+            action: "CHECKIN_TRAVELER",
+            entity: "GuestForm",
+            entityId: reservation.id,
+            metadata: {
+              reservationNumber: reservation.reservationNumber,
+              travelerIndex: data.travelerIndex,
+              travelerType,
+              source: "public_checkin",
+            },
+          },
+        });
+
+        return {
+          message: completed
+            ? "Check-in complet ! Toutes les fiches sont remplies."
+            : `Fiche voyageur ${data.travelerIndex} enregistree.`,
+          reservationNumber: reservation.reservationNumber,
           travelerIndex: data.travelerIndex,
-        },
-      },
-      update: {
-        fullName: data.fullName,
-        nationality: data.nationality,
-        travelerType,
-        passportEncrypted,
-        phone: data.phone || null,
-        address: data.address || null,
-        isCompleted: true,
-        submittedAt: new Date(),
-      },
-      create: {
-        reservationId: reservation.id,
-        travelerIndex: data.travelerIndex,
-        travelerType,
-        fullName: data.fullName,
-        nationality: data.nationality,
-        passportEncrypted,
-        phone: data.phone || null,
-        address: data.address || null,
-        isCompleted: true,
-      },
-    });
-
-    // Recalculer le statut de completion
-    const newStatus = await this.recalculateCheckinStatus(reservation.id);
-
-    // Si COMPLETED → passer la chambre a OCCUPIED
-    if (
-      newStatus === CheckinCompletionStatus.COMPLETED &&
-      reservation.roomId
-    ) {
-      await prisma.room.update({
-        where: { id: reservation.roomId },
-        data: { status: RoomStatus.OCCUPIED },
-      });
+          checkinCompletionStatus: completionStatus,
+          status: completed ? ReservationStatus.CHECKED_IN : reservation.status,
+          room: reservation.room
+            ? { roomNumber: reservation.room.roomNumber, type: reservation.room.type }
+            : null,
+        };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034"
+      ) {
+        throw new AppError("Une autre opération a modifié cette réservation. Rechargez-la.", 409);
+      }
+      throw error;
     }
-
-    // Audit log
-    await createAuditLog({
-      actorId: null,
-      action: "CHECKIN_TRAVELER",
-      entity: "GuestForm",
-      entityId: reservation.id,
-      metadata: {
-        reservationNumber: reservation.reservationNumber,
-        travelerIndex: data.travelerIndex,
-        travelerType: data.travelerType,
-        guestName: data.fullName,
-        source: "public_checkin",
-      },
-    });
-
-    return {
-      message:
-        newStatus === CheckinCompletionStatus.COMPLETED
-          ? "Check-in complet ! Toutes les fiches sont remplies."
-          : `Fiche voyageur ${data.travelerIndex} enregistree.`,
-      reservationNumber: reservation.reservationNumber,
-      travelerIndex: data.travelerIndex,
-      checkinCompletionStatus: newStatus,
-      status:
-        newStatus === CheckinCompletionStatus.COMPLETED
-          ? "CHECKED_IN"
-          : reservation.status,
-      room: reservation.room
-        ? {
-            roomNumber: reservation.room.roomNumber,
-            type: reservation.room.type,
-          }
-        : null,
-    };
-  }
-
-  /**
-   * Recalculer le statut de completion du check-in.
-   */
-  private async recalculateCheckinStatus(
-    reservationId: string
-  ): Promise<CheckinCompletionStatus> {
-    const reservation = await prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { guestForms: true },
-    });
-
-    if (!reservation) {
-      throw new AppError("Reservation introuvable.", 404);
-    }
-
-    const completedCount = reservation.guestForms.filter(
-      (f) => f.isCompleted
-    ).length;
-
-    let newStatus: CheckinCompletionStatus;
-    if (completedCount === 0) {
-      newStatus = CheckinCompletionStatus.NOT_STARTED;
-    } else if (completedCount < reservation.totalGuests) {
-      newStatus = CheckinCompletionStatus.PARTIAL;
-    } else {
-      newStatus = CheckinCompletionStatus.COMPLETED;
-    }
-
-    await prisma.reservation.update({
-      where: { id: reservationId },
-      data: {
-        checkinCompletionStatus: newStatus,
-        ...(newStatus === CheckinCompletionStatus.COMPLETED
-          ? { status: ReservationStatus.CHECKED_IN }
-          : {}),
-      },
-    });
-
-    return newStatus;
   }
 }

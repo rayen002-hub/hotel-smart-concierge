@@ -3,6 +3,7 @@ import prisma from "../config/prisma";
 import { env } from "../config/env";
 import { AppError } from "./auth.service";
 import { ReservationStatus } from "@prisma/client";
+import { compareHotelCalendarDates, getHotelTimeZone, startOfNextHotelDate } from "../utils/hotelDate";
 
 // -----------------------------------------------------------
 // Types
@@ -31,7 +32,9 @@ interface WorkerRoomTokenPayload {
 export const generateClientRoomToken = (
   reservationId: string,
   roomId: string,
-  checkOutDate: Date
+  checkOutDate: Date,
+  now: Date = new Date(),
+  timeZone: string = getHotelTimeZone()
 ): string => {
   const payload: ClientRoomTokenPayload = {
     type: "CLIENT_ROOM_ACCESS",
@@ -39,10 +42,10 @@ export const generateClientRoomToken = (
     roomId,
   };
 
-  // Calculer le temps restant jusqu'au checkout (en secondes)
-  const expiresInSeconds = Math.floor(
-    (checkOutDate.getTime() - Date.now()) / 1000
-  );
+  // DateTime fields are used as hotel-local stay dates. Keep the room link valid
+  // through the entire checkout date; it expires at the following local midnight.
+  const checkoutEndExclusive = startOfNextHotelDate(checkOutDate, timeZone);
+  const expiresInSeconds = Math.floor((checkoutEndExclusive.getTime() - now.getTime()) / 1000);
 
   if (expiresInSeconds <= 0) {
     throw new AppError("La date de checkout est deja passee.", 400);
@@ -91,7 +94,7 @@ export const verifyClientRoomToken = async (token: string) => {
   }
 
   // Verifier que le checkout n'est pas depasse
-  if (new Date() > reservation.checkOutDate) {
+  if (compareHotelCalendarDates(reservation.checkOutDate, new Date(), getHotelTimeZone()) < 0) {
     throw new AppError("La date de checkout est depassee.", 403);
   }
 

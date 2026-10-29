@@ -5,9 +5,11 @@ import { ReservationStatus } from "@prisma/client";
 import prisma from "../config/prisma";
 import { decryptField } from "../utils/encryption";
 import { env } from "../config/env";
+import { CheckinService } from "../services/checkin.service";
 
 
 const reservationService = new ReservationService();
+const checkinService = new CheckinService();
 
 /**
  * GET /api/reservations
@@ -151,6 +153,36 @@ export const getReservationGuestForms = async (req: AuthRequest, res: Response, 
         guestForms,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/reservations/:id/check-in
+ * Reception-assisted traveler form submission. Uses the same lifecycle rules
+ * and transaction as the QR check-in route.
+ */
+export const receptionAssistedCheckin = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: req.params.id as string },
+      select: { reservationNumber: true },
+    });
+    if (!reservation) {
+      res.status(404).json({ success: false, error: "Reservation introuvable." });
+      return;
+    }
+
+    const result = await checkinService.submit({
+      ...req.body,
+      reservationNumber: reservation.reservationNumber,
+    });
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

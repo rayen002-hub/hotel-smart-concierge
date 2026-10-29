@@ -6,6 +6,7 @@ import {
   updateReservation,
   deleteReservation,
   getReservationGuestForms,
+  receptionAssistedCheckin,
 } from "../controllers/reservation.controller";
 import { generateClientRoomLink } from "../controllers/qr.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -64,9 +65,33 @@ router.post(
       .optional()
       .isUUID()
       .withMessage("ID de chambre invalide."),
+    body("adultsCount")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Le nombre d'adultes doit être un entier supérieur ou égal à 1."),
+    body("childrenCount")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Le nombre d'enfants doit être un entier supérieur ou égal à 0."),
   ],
   validateRequest,
   createReservation
+);
+
+/** Reception-assisted check-in uses the same traveler workflow as the QR route. */
+router.post(
+  "/:id/check-in",
+  [
+    body("travelerIndex").isInt({ min: 1 }).withMessage("Index voyageur invalide."),
+    body("travelerType").isIn(["ADULT", "CHILD"]).withMessage("Type de voyageur invalide."),
+    body("fullName").isString().trim().isLength({ min: 2 }).withMessage("Nom complet requis."),
+    body("nationality").isString().trim().notEmpty().withMessage("Nationalité requise."),
+    body("passportNumber").optional().isString().trim().notEmpty(),
+    body("phone").optional().isString(),
+    body("address").optional().isString(),
+  ],
+  validateRequest,
+  receptionAssistedCheckin
 );
 
 /**
@@ -105,8 +130,8 @@ router.patch(
       .withMessage("Date de checkout invalide."),
     body("status")
       .optional()
-      .isIn(["PENDING", "CHECKED_IN", "CHECKED_OUT", "CANCELLED"])
-      .withMessage("Statut invalide."),
+      .isIn(["CANCELLED"])
+      .withMessage("Seule l'annulation manuelle est autorisée depuis cette route."),
     body("roomId")
       .optional()
       .isUUID()
