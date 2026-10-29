@@ -3,6 +3,7 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 import prisma from "../config/prisma";
 import { UserRole, Department, Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { attachWorkerAvailability } from "../services/workerAvailability.service";
 
 const SALT_ROUNDS = 10;
 
@@ -75,7 +76,7 @@ export const adminListUsers = async (
       }),
     ]);
 
-    const data = users.map(sanitize);
+    const data = await attachWorkerAvailability(users.map(sanitize), new Date());
 
     res.status(200).json({
       success: true,

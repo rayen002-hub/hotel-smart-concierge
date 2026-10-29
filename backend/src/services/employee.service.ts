@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { UserRole, Department } from "@prisma/client";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
+import { attachWorkerAvailability } from "./workerAvailability.service";
 
 const SALT_ROUNDS = 10;
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
@@ -19,8 +20,9 @@ export class EmployeeService {
     limit: number;
     department?: Department;
     allowedDepartments?: Department[];
+    availabilityAt?: Date;
   }) {
-    const { page, limit, department, allowedDepartments } = params;
+    const { page, limit, department, allowedDepartments, availabilityAt } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -45,6 +47,7 @@ export class EmployeeService {
           name: true,
           email: true,
           role: true,
+          isActive: true,
           createdAt: true,
           employeeProfile: {
             select: {
@@ -62,7 +65,7 @@ export class EmployeeService {
     ]);
 
     return {
-      data: employees,
+      data: await attachWorkerAvailability(employees, availabilityAt ?? new Date()),
       pagination: {
         page,
         limit,

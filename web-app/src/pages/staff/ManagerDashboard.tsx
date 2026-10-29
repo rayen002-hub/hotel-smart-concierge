@@ -63,11 +63,20 @@ interface Complaint {
   interventionLogs?: InterventionLog[];
 }
 
+interface Availability {
+  status: 'AVAILABLE' | 'DAY_OFF' | 'OUTSIDE_SHIFT' | 'NO_SCHEDULE' | 'UNAVAILABLE' | 'INACTIVE';
+  label: string;
+  eligible: boolean;
+  at: string;
+}
+
 interface Employee {
   id: string;
   name: string;
   email: string;
   role: string;
+  isActive?: boolean;
+  availability?: Availability | null;
   employeeProfile?: {
     department: string;
     isAvailable: boolean;
@@ -148,6 +157,8 @@ export const ManagerDashboard: React.FC = () => {
   // Assign
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [assignEmployeeId, setAssignEmployeeId] = useState('');
+  const [assignmentEmployees, setAssignmentEmployees] = useState<Employee[]>([]);
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
 
   // Create employee form
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -439,17 +450,44 @@ export const ManagerDashboard: React.FC = () => {
 
   const handleAssign = async (complaintId: string) => {
     if (!assignEmployeeId) return;
+    const selectedEmployee = assignmentEmployees.find((employee) => employee.id === assignEmployeeId);
+    if (!selectedEmployee?.availability?.eligible) {
+      setError('Cet employé n’est pas planifié ou disponible à l’heure de la réclamation.');
+      return;
+    }
     setError('');
     try {
       await assignComplaint(complaintId, assignEmployeeId);
       setSuccess('Réclamation assignée.');
       setAssigningId(null);
       setAssignEmployeeId('');
+      setAssignmentEmployees([]);
       await fetchComplaints();
       if (selectedComplaint?.id === complaintId) await openDetail(complaintId);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError((err as ApiError).error || 'Erreur lors de l\'assignation.');
+    }
+  };
+
+  const openComplaintAssignment = async (complaint: Complaint) => {
+    const occurrenceAt = complaint.createdAt;
+    if (!occurrenceAt || !Number.isFinite(new Date(occurrenceAt).getTime())) {
+      setError('La date et l’heure de cette réclamation ne permettent pas de vérifier le planning.');
+      return;
+    }
+    setError('');
+    setAssigningId(complaint.id);
+    setAssignEmployeeId('');
+    setAssignmentLoading(true);
+    try {
+      const result = await listEmployees(occurrenceAt);
+      setAssignmentEmployees(result.data || []);
+    } catch (err) {
+      setAssignmentEmployees([]);
+      setError((err as ApiError).error || 'Impossible de vérifier les plannings des employés.');
+    } finally {
+      setAssignmentLoading(false);
     }
   };
 
@@ -531,21 +569,22 @@ export const ManagerDashboard: React.FC = () => {
                         <select
                           value={assignEmployeeId}
                           onChange={(e) => setAssignEmployeeId(e.target.value)}
+                          disabled={assignmentLoading}
                           className="flex-1 h-7 rounded-md border bg-[hsl(var(--card))] text-[10px] px-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                          <option value="">Choisir…</option>
-                          {employees.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.name} {isOnline(emp.employeeProfile?.lastSeenAt) ? '🟢' : '⚪'}
+                          <option value="">{assignmentLoading ? 'Vérification des plannings…' : 'Choisir…'}</option>
+                          {assignmentEmployees.map((emp) => (
+                            <option key={emp.id} value={emp.id} disabled={!emp.availability?.eligible}>
+                              {emp.name} — {emp.availability?.label || 'Aucun planning valide'}
                             </option>
                           ))}
                         </select>
-                        <button onClick={() => handleAssign(c.id)} className="h-7 px-2 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 transition-colors">OK</button>
-                        <button onClick={() => { setAssigningId(null); setAssignEmployeeId(''); }} className="h-7 px-2 rounded-md border text-[10px] hover:bg-[hsl(var(--accent))] transition-colors">✕</button>
+                        <button onClick={() => handleAssign(c.id)} disabled={assignmentLoading || !assignmentEmployees.find((emp) => emp.id === assignEmployeeId)?.availability?.eligible} className="h-7 px-2 rounded-md bg-indigo-600 text-white text-[10px] font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">OK</button>
+                        <button onClick={() => { setAssigningId(null); setAssignEmployeeId(''); setAssignmentEmployees([]); }} className="h-7 px-2 rounded-md border text-[10px] hover:bg-[hsl(var(--accent))] transition-colors">✕</button>
                       </div>
                     ) : (
                       <button
-                        onClick={() => setAssigningId(c.id)}
+                        onClick={() => { void openComplaintAssignment(c); }}
                         className="h-7 px-2 rounded-md border text-[10px] font-medium hover:bg-[hsl(var(--accent))] transition-colors"
                       >
                         👤 Assigner
@@ -807,12 +846,12 @@ export const ManagerDashboard: React.FC = () => {
                       <span className={`w-2.5 h-2.5 rounded-full ${online ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`} />
                       <h3 className="text-xs font-bold">{emp.name}</h3>
                     </div>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                      emp.employeeProfile?.isAvailable
+                    <span title={emp.availability?.label || 'Aucun planning valide'} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      emp.availability?.eligible
                         ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800'
                         : 'bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'
                     }`}>
-                      {emp.employeeProfile?.isAvailable ? 'Disponible' : 'Indisponible'}
+                      {emp.availability?.label || 'Aucun planning valide'}
                     </span>
                   </div>
                   <div className="text-[10px] text-[hsl(var(--muted-foreground))] space-y-0.5">
@@ -1339,7 +1378,7 @@ export const ManagerDashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Réclamations actives" value={complaints.filter(c => c.status !== 'RESOLVED').length || '—'} icon="📢" accent="red" />
         <StatCard label="Employés" value={employees.length || '—'} icon="👷" accent="blue" />
-        <StatCard label="Disponibles" value={employees.filter(e => e.employeeProfile?.isAvailable).length || '—'} icon="✅" accent="emerald" />
+        <StatCard label="Disponibles" value={employees.filter(e => e.availability?.eligible).length || '—'} icon="✅" accent="emerald" />
       </div>
 
       {/* Banners */}

@@ -4,6 +4,7 @@ import { AIService, AIAnalysisResult } from "./ai.service";
 import { AppError } from "./auth.service";
 import { createAuditLog } from "../utils/audit";
 import { verifyWorkerRoomQr } from "./qrToken.service";
+import { getWorkerAvailabilityAt } from "./workerAvailability.service";
 
 const aiService = new AIService();
 
@@ -377,6 +378,13 @@ export class ComplaintService {
       throw new AppError("Employe introuvable ou profil employe manquant.", 404);
     }
 
+    if (!(complaint.createdAt instanceof Date) || !Number.isFinite(complaint.createdAt.getTime())) {
+      throw new AppError(
+        "Impossible de vérifier l'éligibilité : la date et l'heure de la réclamation sont indisponibles.",
+        400
+      );
+    }
+
     const empDept = employee.employeeProfile.department;
     const category = complaint.category;
 
@@ -390,6 +398,19 @@ export class ComplaintService {
       !["GENERAL", "RECEPTION"].includes(empDept)
     ) {
       throw new AppError(`Les reclamations de categorie ${category} doivent etre assignees a GENERAL ou RECEPTION.`, 400);
+    }
+
+    const availability = await getWorkerAvailabilityAt({
+      workerId: employee.id,
+      at: complaint.createdAt,
+      isActive: employee.isActive,
+      isAvailable: employee.employeeProfile.isAvailable,
+    });
+    if (!availability.eligible) {
+      throw new AppError(
+        `Employé non planifié ou indisponible à l'heure de la réclamation (${availability.label}).`,
+        400
+      );
     }
 
     const updated = await prisma.complaint.update({

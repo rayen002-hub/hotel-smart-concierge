@@ -134,8 +134,10 @@ export interface EmployeePayload {
   department: string;
 }
 
-export async function listEmployees() {
-  const { data } = await staffClient.get('/employees');
+export async function listEmployees(availabilityAt?: string) {
+  const { data } = await staffClient.get('/employees', {
+    params: availabilityAt ? { availabilityAt } : undefined,
+  });
   return data;
 }
 

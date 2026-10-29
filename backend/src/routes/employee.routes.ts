@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import {
   listEmployees,
   createEmployee,
@@ -40,6 +40,13 @@ router.get(
     UserRole.MAINTENANCE_MANAGER,
     UserRole.HOUSEKEEPING_MANAGER
   ),
+  [
+    query("availabilityAt")
+      .optional()
+      .isISO8601({ strict: true })
+      .withMessage("availabilityAt doit être une date ISO valide."),
+  ],
+  validateRequest,
   listEmployees
 );
 

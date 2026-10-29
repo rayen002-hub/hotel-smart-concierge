@@ -42,6 +42,12 @@ interface AdminUser {
   role: string;
   isActive: boolean;
   createdAt: string;
+  availability?: {
+    status: string;
+    label: string;
+    eligible: boolean;
+    at: string;
+  } | null;
   employeeProfile?: {
     department: string;
     isAvailable: boolean;
@@ -717,9 +723,9 @@ export const AdminDashboard: React.FC = () => {
                                   : <span className="text-[hsl(var(--muted-foreground))]">—</span>}
                               </td>
                               <td className="py-2.5 px-2">
-                                {u.employeeProfile ? (
-                                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${u.employeeProfile.isAvailable ? 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800' : 'bg-red-50 text-red-900 border-red-200 dark:bg-red-950/50 dark:text-red-200 dark:border-red-800'}`}>
-                                    {u.employeeProfile.isAvailable ? 'Disponible' : 'Indisponible'}
+                                {u.role === 'EMPLOYEE' && u.employeeProfile ? (
+                                  <span title={u.availability?.label || 'Aucun planning valide'} className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${u.availability?.eligible ? 'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800' : 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800'}`}>
+                                    {u.availability?.label || 'Aucun planning valide'}
                                   </span>
                                 ) : <span className="text-[hsl(var(--muted-foreground))]">—</span>}
                               </td>
